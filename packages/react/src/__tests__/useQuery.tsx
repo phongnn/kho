@@ -17,6 +17,7 @@ function MyComponent(props: { id: string }) {
 }
 
 it("should throw error if Provider not found", async () => {
+  jest.spyOn(console, "error").mockImplementation(() => {})
   expect.assertions(1)
   try {
     render(<MyComponent id="1" />)
