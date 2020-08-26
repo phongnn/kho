@@ -1,2 +1,2 @@
-export { Store } from "./Store"
-export { QueryOptions } from "./types"
+export { Store, InternalStore, createStore } from "./Store"
+export { Query, QueryOptions } from "./Query"

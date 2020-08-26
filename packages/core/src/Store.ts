@@ -1,15 +1,44 @@
-import { FNCOptions, QueryOptions } from "./types"
+import { FNCOptions } from "./types"
+import { Query, QueryOptions } from "./Query"
 
-const defaultQueryOptions: QueryOptions = {
-  fetchPolicy: "cache-first",
+/** Public interface exposed to developers */
+export interface Store {}
+
+/** Interface exposed to view connectors (e.g., React hooks) */
+export interface InternalStore extends Store {
+  registerQuery<TResult, TArguments extends any[]>(
+    query: Query<TResult, TArguments>,
+    callbacks: {
+      onData: (data: TResult) => void
+      onError: (err: Error) => void
+    },
+    options?: QueryOptions<TArguments>
+  ): void
+
+  unregisterQuery<TResult, TArguments extends any[]>(
+    query: Query<TResult, TArguments>
+  ): void
 }
 
-export class Store {
-  constructor(options: FNCOptions = {}) {}
+class BaseStore implements InternalStore {
+  registerQuery<TResult, TArguments extends any[]>(
+    query: Query<TResult, TArguments>,
+    callbacks: {
+      onData: (data: TResult) => void
+      onError: (err: Error) => void
+    },
+    options?: QueryOptions<TArguments>
+  ) {
+    throw new Error("Method not implemented.")
+  }
 
-  registerQuery<TResult, TArguments>(
-    key: string,
-    fn: (args: TArguments) => Promise<TResult>,
-    options: QueryOptions = defaultQueryOptions
-  ) {}
+  unregisterQuery<TResult, TArguments extends any[]>(
+    query: Query<TResult, TArguments>
+  ) {
+    throw new Error("Method not implemented.")
+  }
+}
+
+export function createStore(options?: FNCOptions): Store {
+  return new BaseStore()
 }

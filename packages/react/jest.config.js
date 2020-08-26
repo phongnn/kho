@@ -1,8 +1,8 @@
 module.exports = {
   transform: {
-    "\\.ts$": "ts-jest",
+    "\\.tsx?$": "ts-jest",
   },
   // testPathIgnorePatterns: ["<rootDir>/node_modules/"],
-  setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ["<rootDir>/src/setupTests.ts"],
   clearMocks: true,
 }

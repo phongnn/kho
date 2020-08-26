@@ -1,11 +1,15 @@
 import React, { ReactElement } from "react"
-import { Store } from "@fnc/core"
+import { Store, InternalStore } from "@fnc/core"
 
-const FNCContext = React.createContext<Store | null>(null)
+const FNCContext = React.createContext<InternalStore | null>(null)
 
 export function Provider(props: { store: Store; children: ReactElement }) {
   const { store, children } = props
-  return <FNCContext.Provider value={store}>{children}</FNCContext.Provider>
+  return (
+    <FNCContext.Provider value={store as InternalStore}>
+      {children}
+    </FNCContext.Provider>
+  )
 }
 
 export const useStore = () => {
