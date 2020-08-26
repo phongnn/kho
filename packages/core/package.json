@@ -1,0 +1,22 @@
+{
+  "name": "@fnc/core",
+  "description": "A library that fetches, normalizes and caches data for your front-end application.",
+  "version": "0.0.1",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest --watch",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.10",
+    "@types/node": "^14.6.0",
+    "eslint": "^7.7.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "jest": "^26.4.2",
+    "prettier": "^2.1.0",
+    "ts-jest": "^26.2.0",
+    "typescript": "^4.0.2"
+  }
+}
