@@ -1,7 +1,8 @@
-import { useReducer, Reducer, useEffect } from "react"
+import { useReducer, Reducer } from "react"
 import { QueryOptions, Query } from "@fnc/core"
 
 import { useStore } from "./Provider"
+import { useDeepCompareEffect } from "./helpers"
 
 interface DataLoadingState<TData> {
   loading: boolean
@@ -25,6 +26,7 @@ export function useQuery<TResult, TArguments extends any[]>(
   options?: QueryOptions<TArguments>
 ) {
   const store = useStore()
+
   const [{ data, loading, error }, dispatch] = useReducer<
     Reducer<DataLoadingState<TResult>, DataLoadingAction<TResult>>
   >((state, action) => {
@@ -40,16 +42,20 @@ export function useQuery<TResult, TArguments extends any[]>(
     }
   }, initialState)
 
-  useEffect(() => () => store.unregisterQuery(query), [store, query])
+  useDeepCompareEffect(() => {
+    const { key, fetcher, options: defaultOpts } = query
+    const actualQuery = !options
+      ? query
+      : new Query(key, fetcher, { ...defaultOpts, ...options })
 
-  store.registerQuery<TResult, TArguments>(
-    query,
-    {
+    store.registerQuery<TResult, TArguments>(actualQuery, {
+      onRequest: () => dispatch({ type: "ACTION_REQUEST" }),
       onData: (data) => dispatch({ type: "ACTION_SUCCESS", payload: data }),
       onError: (err) => dispatch({ type: "ACTION_FAILURE", payload: err }),
-    },
-    options
-  )
+    })
+
+    return () => store.unregisterQuery(actualQuery)
+  }, [store, query, options])
 
   return { loading, data, error }
 }

@@ -1,8 +1,9 @@
 import React from "react"
-import { Query } from "@fnc/core"
-import { render } from "@testing-library/react"
+import { Query, createStore } from "@fnc/core"
+import { render, screen } from "@testing-library/react"
 
 import { useQuery } from "../useQuery"
+import { Provider } from "../Provider"
 
 const fetchData = (id: string) =>
   new Promise<string>((r) => setTimeout(() => r(`Data for ${id}`), 2000))
@@ -24,4 +25,13 @@ it("should throw error if Provider not found", async () => {
   } catch (ex) {
     expect(ex.message).toMatch(/store not found/)
   }
+})
+
+it.only("should show loading state", async () => {
+  render(
+    <Provider store={createStore()}>
+      <MyComponent id="1" />
+    </Provider>
+  )
+  expect(await screen.findByText("loading...")).toBeInTheDocument()
 })
