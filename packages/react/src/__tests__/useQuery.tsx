@@ -5,15 +5,28 @@ import { render, screen } from "@testing-library/react"
 import { useQuery } from "../useQuery"
 import { Provider } from "../Provider"
 
-const fetchData = (id: string) =>
-  new Promise<string>((r) => setTimeout(() => r(`Data for ${id}`), 2000))
+let result: string | Error
+function fetchData(id: string): Promise<string> {
+  return typeof result === "string"
+    ? Promise.resolve(result)
+    : Promise.reject(result)
+}
 
 const query = new Query("GetData", fetchData)
 
-function MyComponent(props: { id: string }) {
+function DataLoadingComponent(props: { id: string }) {
   const { loading, data, error } = useQuery(query, { arguments: [props.id] })
   return (
     <p>{loading ? "loading..." : error ? error.message : data ? data : null}</p>
+  )
+}
+
+function renderDataLoadingComponent(fetchResult?: string | Error) {
+  result = fetchResult || "test data"
+  render(
+    <Provider store={createStore()}>
+      <DataLoadingComponent id="1" />
+    </Provider>
   )
 }
 
@@ -21,17 +34,25 @@ it("should throw error if Provider not found", async () => {
   jest.spyOn(console, "error").mockImplementation(() => {})
   expect.assertions(1)
   try {
-    render(<MyComponent id="1" />)
+    render(<DataLoadingComponent id="1" />)
   } catch (ex) {
     expect(ex.message).toMatch(/store not found/)
   }
 })
 
-it.only("should show loading state", async () => {
-  render(
-    <Provider store={createStore()}>
-      <MyComponent id="1" />
-    </Provider>
-  )
+it("should show loading state", async () => {
+  renderDataLoadingComponent()
   expect(await screen.findByText("loading...")).toBeInTheDocument()
+})
+
+it("should show error message", async () => {
+  const msg = "Some unknown error"
+  renderDataLoadingComponent(new Error(msg))
+  expect(await screen.findByText(msg)).toBeInTheDocument()
+})
+
+it("should show fetched data", async () => {
+  const data = "Hello, World!"
+  renderDataLoadingComponent(data)
+  expect(await screen.findByText(data)).toBeInTheDocument()
 })

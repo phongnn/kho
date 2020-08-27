@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useContext } from "react"
 import { Store, InternalStore } from "@fnc/core"
 
 const FNCContext = React.createContext<InternalStore | null>(null)
@@ -12,8 +12,8 @@ export function Provider(props: { store: Store; children: ReactElement }) {
   )
 }
 
-export const useStore = () => {
-  const store = React.useContext(FNCContext)
+export function useStore() {
+  const store = useContext(FNCContext)
   if (!store) {
     throw new Error(
       "FNC store not found. Make sure you have a Provider component in the tree."
