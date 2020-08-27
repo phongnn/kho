@@ -2,7 +2,8 @@
   "name": "@fnc/core",
   "description": "A library that fetches, normalizes and caches data for your front-end application.",
   "version": "0.0.1",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "license": "MIT",
   "scripts": {
     "test": "jest --watch",
@@ -18,5 +19,6 @@
     "prettier": "^2.1.0",
     "ts-jest": "^26.2.0",
     "typescript": "^4.0.2"
-  }
+  },
+  "dependencies": {}
 }

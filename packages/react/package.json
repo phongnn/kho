@@ -2,7 +2,8 @@
   "name": "@fnc/react",
   "description": "Provider and hooks to connect your React app to @fnc/core store.",
   "version": "0.0.1",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "license": "MIT",
   "scripts": {
     "test": "jest --watch",
