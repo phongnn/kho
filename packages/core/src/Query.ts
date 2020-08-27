@@ -4,7 +4,6 @@ export interface QueryOptions<TArguments extends any[]> {
     | "cache-and-network"
     | "network-only"
     | "cache-only"
-    | "no-cache"
 
   arguments?: TArguments
 }
