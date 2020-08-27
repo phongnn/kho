@@ -1,9 +1,11 @@
 import { InternalStore } from "../Store"
 import { Query } from "../Query"
 import Fetcher from "./Fetcher"
+import InMemoryCache from "./InMemoryCache"
 
 class StandardStore implements InternalStore {
   private fetcher = new Fetcher()
+  private cache = new InMemoryCache()
 
   registerQuery<TResult, TArguments extends any[]>(
     query: Query<TResult, TArguments>,
@@ -16,27 +18,31 @@ class StandardStore implements InternalStore {
     const { fetchPolicy } = query.options
     const { onRequest, onData, onError } = callbacks
 
+    this.cache.subscribe(query, onData)
+
     switch (fetchPolicy) {
       case "cache-first":
         // if (cache.hasDataForQuery(query)) {
-        //   cache.subscribe(query, onData)
+        //
         // } else {
-        this.fetcher.put(query, { onRequest, onError })
+        this.fetcher.put(query, {
+          onComplete: (data) => this.cache.put(query, data),
+          onRequest,
+          onError,
+        })
         // }
         break
 
       default:
-        throw new Error(
-          `[FNC] ${query.key} uses unsupported fetchPolicy: ${fetchPolicy}`
-        )
+        // prettier-ignore
+        throw new Error(`[FNC] ${query.key} uses unsupported fetchPolicy: ${fetchPolicy}`)
     }
   }
 
   unregisterQuery<TResult, TArguments extends any[]>(
     query: Query<TResult, TArguments>
   ) {
-    // TODO: unsubscribe the active query
-    // throw new Error("Method not implemented.")
+    this.cache.unsubscribe(query)
   }
 }
 
