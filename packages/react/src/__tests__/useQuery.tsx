@@ -5,12 +5,8 @@ import { render, screen } from "@testing-library/react"
 import { useQuery } from "../useQuery"
 import { Provider } from "../Provider"
 
-let result: string | Error
-function fetchData(id: string): Promise<string> {
-  return typeof result === "string"
-    ? Promise.resolve(result)
-    : Promise.reject(result)
-}
+let fetcher = (id: string) => Promise.resolve(`data for ${id}`)
+const fetchData = (id: string) => fetcher(id) // doing this enables us to replace fetcher with mocks
 
 const query = new Query("GetData", fetchData)
 
@@ -21,8 +17,8 @@ function DataLoadingComponent(props: { id: string }) {
   )
 }
 
-function renderDataLoadingComponent(fetchResult?: string | Error) {
-  result = fetchResult || "test data"
+function renderDataLoadingComponent(f?: typeof fetchData) {
+  fetcher = f ?? fetcher
   render(
     <Provider store={createStore()}>
       <DataLoadingComponent id="1" />
@@ -47,12 +43,12 @@ it("should show loading state", async () => {
 
 it("should show error message", async () => {
   const msg = "Some unknown error"
-  renderDataLoadingComponent(new Error(msg))
+  renderDataLoadingComponent(() => Promise.reject(msg))
   expect(await screen.findByText(msg)).toBeInTheDocument()
 })
 
 it("should show fetched data", async () => {
   const data = "Hello, World!"
-  renderDataLoadingComponent(data)
+  renderDataLoadingComponent(() => Promise.resolve(data))
   expect(await screen.findByText(data)).toBeInTheDocument()
 })
