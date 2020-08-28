@@ -33,13 +33,13 @@ class Fetcher {
     query: Query<TResult, TArguments>,
     callbacks: {
       onComplete: (data: TResult) => void
-      onRequest?: () => void
+      onStart?: () => void
       onError?: (err: Error) => void
     }
   ) {
-    const { onRequest, onError, onComplete } = callbacks
-    if (onRequest) {
-      onRequest()
+    const { onStart, onError, onComplete } = callbacks
+    if (onStart) {
+      onStart()
     }
 
     const [_, ongoingReqInfo] = this.getMatchedOngoingRequest(query)
