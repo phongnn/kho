@@ -81,6 +81,7 @@ class Fetcher {
         }
         errorCallbacks.forEach((cb) => cb(err))
       })
+      .finally(() => this.ongoingRequests.delete(query))
   }
 }
 

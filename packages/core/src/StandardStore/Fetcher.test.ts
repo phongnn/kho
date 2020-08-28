@@ -122,4 +122,21 @@ describe("request dedup", () => {
       },
     })
   })
+
+  it("should not mistakenly dedup subsequent request", (done) => {
+    fetchData = jest.fn().mockResolvedValue("blah")
+    const query = new Query("GetData", fetchData, { arguments: ["testid"] })
+    fetcher.addRequest(query, {
+      onComplete: () => {
+        setTimeout(() => {
+          fetcher.addRequest(query, {
+            onComplete: () => {
+              expect(fetchData).toBeCalledTimes(2)
+              done()
+            },
+          })
+        })
+      },
+    })
+  })
 })
