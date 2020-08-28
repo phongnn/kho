@@ -20,5 +20,7 @@
     "ts-jest": "^26.2.0",
     "typescript": "^4.0.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@wry/equality": "^0.2.0"
+  }
 }

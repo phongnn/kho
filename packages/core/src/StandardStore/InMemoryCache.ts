@@ -1,30 +1,38 @@
 import { Query } from "../Query"
+import { isProduction } from "../helpers"
+
+interface QueryInfo {
+  onData: (data: any) => void
+}
 
 class InMemoryCache {
-  private callbacks: Record<string, (data: any) => void> = {}
+  private queryMap = new Map<Query<any, any>, QueryInfo>()
 
   subscribe<TResult, TArguments extends any[]>(
     query: Query<TResult, TArguments>,
     onData: (data: TResult) => void
   ) {
-    this.callbacks[query.key] = onData
+    this.queryMap.set(query, { onData })
   }
 
   unsubscribe<TResult, TArguments extends any[]>(
     query: Query<TResult, TArguments>
   ) {
-    if (this.callbacks[query.key]) {
-      delete this.callbacks[query.key]
+    if (this.queryMap.has(query)) {
+      this.queryMap.delete(query)
+    } else if (!isProduction) {
+      console.error(`[FNC] Query not found to unsubscribe: ${query.key}`)
     }
   }
 
-  put<TResult, TArguments extends any[]>(
+  set<TResult, TArguments extends any[]>(
     query: Query<TResult, TArguments>,
     data: TResult
   ): void {
-    const cb = this.callbacks[query.key]
-    if (cb) {
-      cb(data)
+    // TODO: add data to state tree object
+    // for each active query, compute data and invoke onData callback
+    for (let queryInfo of this.queryMap.values()) {
+      queryInfo.onData(data)
     }
   }
 }

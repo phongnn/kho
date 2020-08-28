@@ -25,8 +25,8 @@ class StandardStore implements InternalStore {
         // if (cache.hasDataForQuery(query)) {
         //
         // } else {
-        this.fetcher.put(query, {
-          onComplete: (data) => this.cache.put(query, data),
+        this.fetcher.addRequest(query, {
+          onComplete: (data) => this.cache.set(query, data),
           onRequest,
           onError,
         })

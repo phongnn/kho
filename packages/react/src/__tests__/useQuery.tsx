@@ -1,7 +1,6 @@
 import React from "react"
 import { Query, createStore } from "@fnc/core"
-import { render, screen } from "@testing-library/react"
-
+import { render, screen, waitFor } from "@testing-library/react"
 import { useQuery } from "../useQuery"
 import { Provider } from "../Provider"
 
@@ -51,4 +50,24 @@ it("should show fetched data", async () => {
   const data = "Hello, World!"
   renderDataLoadingComponent(() => Promise.resolve(data))
   expect(await screen.findByText(data)).toBeInTheDocument()
+})
+
+it.only("should dedup requests", async () => {
+  const data = "Hello, World!"
+  const mockFetcher = jest.fn().mockImplementation(() => Promise.resolve(data))
+
+  fetcher = mockFetcher
+  render(
+    <Provider store={createStore()}>
+      <>
+        <DataLoadingComponent id="1" />
+        <DataLoadingComponent id="1" />
+      </>
+    </Provider>
+  )
+
+  await waitFor(() => expect(mockFetcher).toBeCalled())
+
+  expect(screen.getAllByText(data).length).toBe(2)
+  expect(mockFetcher).toBeCalledTimes(1)
 })
