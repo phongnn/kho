@@ -22,10 +22,10 @@ const toErrorObj = (e: any) =>
       )
 
 class Fetcher {
-  private ongoingRequests = new Map<Query<any, any>, RequestInfo<any>>()
+  private ongoingRequests = new Map<Query<any, any, any>, RequestInfo<any>>()
 
-  addRequest<TResult, TArguments extends any[]>(
-    query: Query<TResult, TArguments>,
+  addRequest<TResult, TArguments, TContext>(
+    query: Query<TResult, TArguments, TContext>,
     callbacks: {
       onComplete: (data: TResult) => void
       onStart?: () => void
@@ -47,9 +47,9 @@ class Fetcher {
     }
   }
 
-  private getMatchedOngoingRequest<TResult, TArguments extends any[]>(
-    query: Query<TResult, TArguments>
-  ): [Query<TResult, TArguments>, RequestInfo<TResult>] | [] {
+  private getMatchedOngoingRequest<TResult, TArguments, TContext>(
+    query: Query<TResult, TArguments, TContext>
+  ): [Query<TResult, TArguments, TContext>, RequestInfo<TResult>] | [] {
     for (let [q, reqInfo] of this.ongoingRequests) {
       if (query.key.matches(q.key)) {
         return [q, reqInfo]
@@ -58,15 +58,14 @@ class Fetcher {
     return []
   }
 
-  private startFetching<TResult, TArguments extends any[]>(
-    query: Query<TResult, TArguments>,
+  private startFetching<TResult, TArguments, TContext>(
+    query: Query<TResult, TArguments, TContext>,
     requestInfo: RequestInfo<TResult>
   ) {
     const { fetcher, options } = query
-    const args = (options.arguments || []) as TArguments
     const { completeCallback, errorCallbacks } = requestInfo
 
-    fetcher(...args)
+    fetcher(options.arguments!, options.context!)
       .then(completeCallback)
       .catch((e) => {
         const err = toErrorObj(e)

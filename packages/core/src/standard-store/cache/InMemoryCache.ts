@@ -1,21 +1,21 @@
-import { Query } from "../../Query"
+import { Query, BaseQuery } from "../../Query"
 import QueryBucket, { CacheKey } from "./QueryBucket"
 
-class ActiveQuery<TResult, TArguments extends any[]> {
+class ActiveQuery<TResult> {
   constructor(
-    readonly query: Query<TResult, TArguments>,
+    readonly query: BaseQuery<TResult>,
     readonly onData: (data: TResult) => void,
     readonly cacheKey?: CacheKey
   ) {}
 }
 
 class InMemoryCache {
-  private activeQueries: ActiveQuery<any, any>[] = []
+  private activeQueries: ActiveQuery<any>[] = []
   private queryBucket = new QueryBucket()
 
   /** returns true if query's data is already in cache */
-  subscribe<TResult, TArguments extends any[]>(
-    query: Query<TResult, TArguments>,
+  subscribe<TResult>(
+    query: BaseQuery<TResult>,
     onData: (data: TResult) => void
   ) {
     const cacheKey = this.queryBucket.findCacheKey(query)
@@ -31,17 +31,15 @@ class InMemoryCache {
     }
   }
 
-  unsubscribe<TResult, TArguments extends any[]>(
-    query: Query<TResult, TArguments>
-  ) {
+  unsubscribe<TResult>(query: BaseQuery<TResult>) {
     this.activeQueries = this.activeQueries.filter((aq) => aq.query !== query)
   }
 
-  storeData<TResult, TArguments extends any[]>(
-    query: Query<TResult, TArguments>,
-    data: TResult
+  storeFetchedData<TResult, TArguments, TContext>(
+    query: Query<TResult, TArguments, TContext>,
+    fetchedData: TResult
   ): void {
-    const cacheKey = this.queryBucket.set(query, data)
+    const cacheKey = this.queryBucket.set(query, fetchedData)
 
     // set cacheKey for those active queries that are pending for data fetching
     this.activeQueries = this.activeQueries.map((aq) =>

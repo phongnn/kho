@@ -2,11 +2,8 @@ import InMemoryCache from "./InMemoryCache"
 import { Query } from "../../Query"
 
 const cache = new InMemoryCache()
-const q1 = new Query("GetData", jest.fn(), { arguments: ["test", 1] })
-const q2 = new Query("GetData", jest.fn(), {
-  arguments: ["test", 1],
-  fetchPolicy: "cache-first",
-})
+const q1 = new Query("GetData", jest.fn(), { arguments: { x: "test", y: 1 } })
+const q2 = q1.clone()
 
 it("should invoke callback immediately with cached data", (done) => {
   const data = { msg: "blah" }
@@ -20,5 +17,5 @@ it("should invoke callback immediately with cached data", (done) => {
       })
     })
   })
-  cache.storeData(q1, data) // result for q1
+  cache.storeFetchedData(q1, data) // result for q1
 })

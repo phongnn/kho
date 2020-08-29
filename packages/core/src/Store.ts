@@ -5,8 +5,8 @@ export interface Store {}
 
 /** Interface exposed to view connectors (e.g., React hooks) */
 export interface InternalStore extends Store {
-  registerQuery<TResult, TArguments extends any[]>(
-    query: Query<TResult, TArguments>,
+  registerQuery<TResult, TArguments, TContext>(
+    query: Query<TResult, TArguments, TContext>,
     callbacks: {
       onRequest: () => void
       onData: (data: TResult) => void

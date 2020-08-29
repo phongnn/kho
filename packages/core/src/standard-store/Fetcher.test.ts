@@ -3,9 +3,9 @@ import { Query } from "../Query"
 
 const testId = "testId"
 const testPayload = { payload: { message: "Hello, World!" } }
-let fetchData: (id: string) => Promise<typeof testPayload>
-const query = new Query("GetData", (id: string) => fetchData(id), {
-  arguments: [testId],
+let fetchData: (args: { id: string }) => Promise<typeof testPayload>
+const query = new Query("GetData", (args: { id: string }) => fetchData(args), {
+  arguments: { id: testId },
 })
 
 let fetcher: Fetcher
@@ -16,7 +16,7 @@ it("should invoke onComplete callback", (done) => {
 
   fetcher.addRequest(query, {
     onComplete: (result) => {
-      expect(fetchData).toBeCalledWith(testId)
+      expect(fetchData).toBeCalledWith({ id: testId })
       expect(result).toBe(testPayload)
       done()
     },
@@ -40,8 +40,8 @@ it("should invoke onError callback", (done) => {
 describe("request dedup", () => {
   it("should fetch data only once and invoke first onComplete callback", (done) => {
     fetchData = jest.fn().mockResolvedValue(testPayload)
-    const q1 = new Query("GetData", fetchData, { arguments: [testId] })
-    const q2 = new Query("GetData", fetchData, { arguments: [testId] })
+    const q1 = query
+    const q2 = q1.clone()
     const q1StartHandler = jest.fn()
     const q2StartHandler = jest.fn()
     const q2CompleteHandler = jest.fn()
@@ -67,8 +67,8 @@ describe("request dedup", () => {
 
   it("should invoke both onError callbacks", (done) => {
     fetchData = jest.fn().mockRejectedValue("some error")
-    const q1 = new Query("GetData", fetchData, { arguments: [testId] })
-    const q2 = new Query("GetData", fetchData, { arguments: [testId] })
+    const q1 = query
+    const q2 = q1.clone()
     let q1ErrorHandlerInvoked = false
     let q2ErrorHandlerInvoked = false
 
@@ -96,8 +96,8 @@ describe("request dedup", () => {
 
   it("should not mistakenly dedup different requests", (done) => {
     fetchData = jest.fn().mockResolvedValue("blah")
-    const q1 = new Query("GetData", fetchData, { arguments: ["x"] })
-    const q2 = new Query("GetData", fetchData, { arguments: ["y"] })
+    const q1 = new Query("GetData", fetchData, { arguments: { id: "x" } })
+    const q2 = new Query("GetData", fetchData, { arguments: { id: "y" } })
     let q1Completed = false
     let q2Completed = false
 
@@ -125,7 +125,6 @@ describe("request dedup", () => {
 
   it("should not mistakenly dedup subsequent request", (done) => {
     fetchData = jest.fn().mockResolvedValue("blah")
-    const query = new Query("GetData", fetchData, { arguments: ["testid"] })
     fetcher.addRequest(query, {
       onComplete: () => {
         setTimeout(() => {

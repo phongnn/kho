@@ -1,15 +1,5 @@
 import { deepEqual } from "./helpers"
 
-export interface QueryOptions<TArguments extends any[]> {
-  fetchPolicy?:
-    | "cache-first"
-    | "cache-and-network"
-    | "network-only"
-    | "cache-only"
-
-  arguments?: TArguments
-}
-
 export class QueryKey {
   static of(k: any) {
     return new QueryKey(k)
@@ -30,23 +20,38 @@ export class QueryKey {
   }
 }
 
-export abstract class BaseQuery {
+export abstract class BaseQuery<TResult> {
   constructor(readonly key: QueryKey) {}
 }
 
-export class Query<TResult, TArguments extends any[]> extends BaseQuery {
+export interface QueryOptions<TArguments, TContext> {
+  fetchPolicy?:
+    | "cache-first"
+    | "cache-and-network"
+    | "network-only"
+    | "cache-only"
+
+  arguments?: TArguments
+  context?: TContext
+}
+
+const defaultQueryOptions: QueryOptions<any, any> = {
+  fetchPolicy: "cache-first",
+}
+
+export class Query<TResult, TArguments, TContext> extends BaseQuery<TResult> {
   constructor(
     readonly name: string,
-    readonly fetcher: (...args: TArguments) => Promise<TResult>,
-    readonly options: QueryOptions<TArguments> = {
-      fetchPolicy: "cache-first",
-    }
+    readonly fetcher: (args: TArguments, ctx: TContext) => Promise<TResult>,
+    readonly options: QueryOptions<TArguments, TContext> = defaultQueryOptions
   ) {
     super(QueryKey.of({ name, arguments: options.arguments || [] }))
   }
+
+  clone = () => new Query(this.name, this.fetcher, this.options)
 }
 
-export class LocalQuery extends BaseQuery {
+export class LocalQuery<TResult> extends BaseQuery<TResult> {
   constructor(readonly name: string) {
     super(QueryKey.of({ name }))
   }
