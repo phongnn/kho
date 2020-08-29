@@ -1,4 +1,4 @@
-import { Query, QueryOptions } from "./Query"
+import { Query } from "./Query"
 
 /** Public interface exposed to developers */
 export interface Store {}

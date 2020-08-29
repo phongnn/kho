@@ -55,9 +55,8 @@ class Fetcher {
   private getMatchedOngoingRequest<TResult, TArguments extends any[]>(
     query: Query<TResult, TArguments>
   ): [Query<TResult, TArguments>, RequestInfo<TResult>] | [] {
-    const signature = getQuerySignature(query)
     for (let [q, reqInfo] of this.ongoingRequests) {
-      if (deepEqual(getQuerySignature(q), signature)) {
+      if (deepEqual(q.key, query.key)) {
         return [q, reqInfo]
       }
     }

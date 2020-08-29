@@ -1,7 +1,7 @@
 import { InternalStore } from "../Store"
 import { Query } from "../Query"
 import Fetcher from "./Fetcher"
-import InMemoryCache from "./InMemoryCache"
+import InMemoryCache from "./cache/InMemoryCache"
 
 class StandardStore implements InternalStore {
   private fetcher = new Fetcher()
@@ -15,28 +15,26 @@ class StandardStore implements InternalStore {
       onError: (err: Error) => void
     }
   ) {
-    const { fetchPolicy } = query.options
     const { onRequest, onData, onError } = callbacks
 
-    this.cache.subscribe(query, onData)
-
-    switch (fetchPolicy) {
-      case "cache-first":
-        // if (cache.hasDataForQuery(query)) {
-        //
-        // } else {
-        this.fetcher.addRequest(query, {
-          onStart: onRequest,
-          onComplete: (data) => this.cache.set(query, data),
-          onError,
-        })
-        // }
-        break
-
-      default:
-        // prettier-ignore
-        throw new Error(`[FNC] ${query.key} uses unsupported fetchPolicy: ${fetchPolicy}`)
+    const alreadyCached = this.cache.subscribe(query, onData)
+    if (!alreadyCached) {
+      this.fetcher.addRequest(query, {
+        onStart: onRequest,
+        onComplete: (data) => this.cache.storeData(query, data),
+        onError,
+      })
     }
+
+    // const { fetchPolicy } = query.options
+    // switch (fetchPolicy) {
+    //   case "cache-first":
+    //     break
+
+    //   default:
+    //     // prettier-ignore
+    //     throw new Error(`[FNC] Unsupported fetchPolicy: ${fetchPolicy}`)
+    // }
   }
 
   unregisterQuery<TResult, TArguments extends any[]>(

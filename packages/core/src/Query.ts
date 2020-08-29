@@ -8,12 +8,18 @@ export interface QueryOptions<TArguments extends any[]> {
   arguments?: TArguments
 }
 
-export class Query<TResult, TArguments extends any[]> {
+abstract class BaseQuery {
+  constructor(readonly key: any) {}
+}
+
+export class Query<TResult, TArguments extends any[]> extends BaseQuery {
   constructor(
-    readonly key: string,
+    readonly name_toberemoved: string,
     readonly fetcher: (...args: TArguments) => Promise<TResult>,
     readonly options: QueryOptions<TArguments> = {
       fetchPolicy: "cache-first",
     }
-  ) {}
+  ) {
+    super({ fetcher, arguments: options.arguments || [] })
+  }
 }
