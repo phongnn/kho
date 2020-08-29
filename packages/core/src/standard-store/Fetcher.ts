@@ -1,5 +1,5 @@
 import { Query } from "../Query"
-import { isProduction, deepEqual } from "../helpers"
+import { isProduction } from "../helpers"
 
 class RequestInfo<TResult> {
   constructor(
@@ -11,11 +11,6 @@ class RequestInfo<TResult> {
     this.errorCallbacks.push(cb)
   }
 }
-
-const getQuerySignature = (q: Query<any, any>) => ({
-  fetcher: q.fetcher,
-  arguments: q.options.arguments || [],
-})
 
 const toErrorObj = (e: any) =>
   e instanceof Error
@@ -56,7 +51,7 @@ class Fetcher {
     query: Query<TResult, TArguments>
   ): [Query<TResult, TArguments>, RequestInfo<TResult>] | [] {
     for (let [q, reqInfo] of this.ongoingRequests) {
-      if (deepEqual(q.key, query.key)) {
+      if (query.key.matches(q.key)) {
         return [q, reqInfo]
       }
     }

@@ -40,8 +40,8 @@ it("should invoke onError callback", (done) => {
 describe("request dedup", () => {
   it("should fetch data only once and invoke first onComplete callback", (done) => {
     fetchData = jest.fn().mockResolvedValue(testPayload)
-    const q1 = new Query("GetX", fetchData, { arguments: [testId] })
-    const q2 = new Query("GetY", fetchData, { arguments: [testId] })
+    const q1 = new Query("GetData", fetchData, { arguments: [testId] })
+    const q2 = new Query("GetData", fetchData, { arguments: [testId] })
     const q1StartHandler = jest.fn()
     const q2StartHandler = jest.fn()
     const q2CompleteHandler = jest.fn()
@@ -67,8 +67,8 @@ describe("request dedup", () => {
 
   it("should invoke both onError callbacks", (done) => {
     fetchData = jest.fn().mockRejectedValue("some error")
-    const q1 = new Query("GetX", fetchData, { arguments: [testId] })
-    const q2 = new Query("GetY", fetchData, { arguments: [testId] })
+    const q1 = new Query("GetData", fetchData, { arguments: [testId] })
+    const q2 = new Query("GetData", fetchData, { arguments: [testId] })
     let q1ErrorHandlerInvoked = false
     let q2ErrorHandlerInvoked = false
 
@@ -96,8 +96,8 @@ describe("request dedup", () => {
 
   it("should not mistakenly dedup different requests", (done) => {
     fetchData = jest.fn().mockResolvedValue("blah")
-    const q1 = new Query("GetX", fetchData, { arguments: ["x"] })
-    const q2 = new Query("GetY", fetchData, { arguments: ["y"] })
+    const q1 = new Query("GetData", fetchData, { arguments: ["x"] })
+    const q2 = new Query("GetData", fetchData, { arguments: ["y"] })
     let q1Completed = false
     let q2Completed = false
 
