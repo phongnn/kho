@@ -4,10 +4,8 @@ import { render, screen, waitFor } from "@testing-library/react"
 import { useQuery } from "../useQuery"
 import { Provider } from "../Provider"
 
-let fetcher = (id: string) => Promise.resolve(`data for ${id}`)
-const fetchData = (id: string) => fetcher(id) // doing this enables us to replace fetcher with mocks
-
-const query = new Query("GetData", fetchData)
+let fetcher: (id: string) => Promise<any>
+const query = new Query("GetData", (id: string) => fetcher(id))
 
 function DataLoadingComponent(props: { id: string }) {
   const { loading, data, error } = useQuery(query, { arguments: [props.id] })
@@ -16,8 +14,8 @@ function DataLoadingComponent(props: { id: string }) {
   )
 }
 
-function renderDataLoadingComponent(f?: typeof fetchData) {
-  fetcher = f ?? fetcher
+function renderDataLoadingComponent(f?: typeof fetcher) {
+  fetcher = f ?? ((id: string) => Promise.resolve(`Data for ${id}`))
   render(
     <Provider store={createStore()}>
       <DataLoadingComponent id="1" />
@@ -41,9 +39,8 @@ it("should show loading state", async () => {
 })
 
 it("should show error message", async () => {
-  const msg = "Some unknown error"
-  renderDataLoadingComponent(() => Promise.reject(msg))
-  expect(await screen.findByText(msg)).toBeInTheDocument()
+  renderDataLoadingComponent(() => Promise.reject("Some unknown error"))
+  expect(await screen.findByText(/Some unknown error/)).toBeInTheDocument()
 })
 
 it("should show fetched data", async () => {
@@ -52,11 +49,10 @@ it("should show fetched data", async () => {
   expect(await screen.findByText(data)).toBeInTheDocument()
 })
 
-it.only("should dedup requests", async () => {
+it("should dedup requests", async () => {
   const data = "Hello, World!"
-  const mockFetcher = jest.fn().mockImplementation(() => Promise.resolve(data))
+  fetcher = jest.fn().mockImplementation(() => Promise.resolve(data))
 
-  fetcher = mockFetcher
   render(
     <Provider store={createStore()}>
       <>
@@ -66,8 +62,31 @@ it.only("should dedup requests", async () => {
     </Provider>
   )
 
-  await waitFor(() => expect(mockFetcher).toBeCalled())
+  await waitFor(() => expect(fetcher).toBeCalled())
 
   expect(screen.getAllByText(data).length).toBe(2)
-  expect(mockFetcher).toBeCalledTimes(1)
+  expect(fetcher).toBeCalledTimes(1)
+})
+
+test("cache-first fetchPolicy should work", async () => {
+  const data = "Hello, World!"
+  const store = createStore()
+  fetcher = jest.fn().mockImplementation(() => Promise.resolve(data))
+
+  const { rerender } = render(
+    <Provider store={store}>
+      <DataLoadingComponent id="1" />
+    </Provider>
+  )
+  expect(await screen.findByText(data)).toBeInTheDocument()
+
+  rerender(
+    <Provider store={store}>
+      <div>
+        <DataLoadingComponent id="1" />
+      </div>
+    </Provider>
+  )
+  expect(await screen.findByText(data)).toBeInTheDocument()
+  expect(fetcher).toBeCalledTimes(1)
 })
