@@ -8,11 +8,11 @@ import { BaseQuery, QueryKey } from "../../Query"
 export class CacheKey {
   private queryKey: QueryKey
 
-  constructor(query: BaseQuery) {
+  constructor(query: BaseQuery<any>) {
     this.queryKey = query.key
   }
 
-  matches(query: BaseQuery) {
+  matches(query: BaseQuery<any>) {
     return this.queryKey.matches(query.key)
   }
 }
@@ -20,7 +20,7 @@ export class CacheKey {
 class QueryBucket {
   private queryData = new Map<CacheKey, any>()
 
-  findCacheKey(query: BaseQuery) {
+  findCacheKey(query: BaseQuery<any>) {
     for (const key of this.queryData.keys()) {
       if (key.matches(query)) {
         return key
@@ -31,7 +31,7 @@ class QueryBucket {
 
   get = (cacheKey: CacheKey) => this.queryData.get(cacheKey)
 
-  set(query: BaseQuery, data: any) {
+  set(query: BaseQuery<any>, data: any) {
     const cacheKey = this.findCacheKey(query) || new CacheKey(query)
     this.queryData.set(cacheKey, data)
     return cacheKey

@@ -21,9 +21,9 @@ const initialState: DataLoadingState<any> = {
   error: null,
 }
 
-export function useQuery<TResult, TArguments extends any[]>(
-  query: Query<TResult, TArguments>,
-  options?: QueryOptions<TArguments>
+export function useQuery<TResult, TArguments, TContext>(
+  query: Query<TResult, TArguments, TContext>,
+  options?: QueryOptions<TArguments, TContext>
 ) {
   const store = useStore()
 
@@ -48,11 +48,14 @@ export function useQuery<TResult, TArguments extends any[]>(
       ? new Query(name, fetcher, defaultOpts) // makes sure query instance is unique
       : new Query(name, fetcher, { ...defaultOpts, ...options })
 
-    const subscription = store.registerQuery<TResult, TArguments>(actualQuery, {
-      onRequest: () => dispatch({ type: "ACTION_REQUEST" }),
-      onData: (data) => dispatch({ type: "ACTION_SUCCESS", payload: data }),
-      onError: (err) => dispatch({ type: "ACTION_FAILURE", payload: err }),
-    })
+    const subscription = store.registerQuery<TResult, TArguments, TContext>(
+      actualQuery,
+      {
+        onRequest: () => dispatch({ type: "ACTION_REQUEST" }),
+        onData: (data) => dispatch({ type: "ACTION_SUCCESS", payload: data }),
+        onError: (err) => dispatch({ type: "ACTION_FAILURE", payload: err }),
+      }
+    )
 
     return () => subscription.unsubscribe()
   }, [store, query, options])

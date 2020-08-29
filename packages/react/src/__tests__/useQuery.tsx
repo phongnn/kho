@@ -4,18 +4,20 @@ import { render, screen, waitFor } from "@testing-library/react"
 import { useQuery } from "../useQuery"
 import { Provider } from "../Provider"
 
-let fetcher: (id: string) => Promise<any>
-const query = new Query("GetData", (id: string) => fetcher(id))
+let fetcher: (args: { id: string }) => Promise<any>
+const query = new Query("GetData", (args: { id: string }) => fetcher(args))
 
 function DataLoadingComponent(props: { id: string }) {
-  const { loading, data, error } = useQuery(query, { arguments: [props.id] })
+  // prettier-ignore
+  const { loading, data, error } = useQuery(query, { arguments: { id: props.id } })
   return (
     <p>{loading ? "loading..." : error ? error.message : data ? data : null}</p>
   )
 }
 
 function renderDataLoadingComponent(f?: typeof fetcher) {
-  fetcher = f ?? ((id: string) => Promise.resolve(`Data for ${id}`))
+  fetcher =
+    f ?? ((args: { id: string }) => Promise.resolve(`Data for ${args.id}`))
   render(
     <Provider store={createStore()}>
       <DataLoadingComponent id="1" />
