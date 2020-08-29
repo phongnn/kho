@@ -12,11 +12,11 @@ export interface InternalStore extends Store {
       onData: (data: TResult) => void
       onError: (err: Error) => void
     }
-  ): void
-
-  unregisterQuery<TResult, TArguments extends any[]>(
-    query: Query<TResult, TArguments>
-  ): void
+  ): Subscription
 }
 
 export interface StoreOptions {}
+
+interface Subscription {
+  unsubscribe: () => void
+}

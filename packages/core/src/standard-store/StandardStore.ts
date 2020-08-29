@@ -26,21 +26,9 @@ class StandardStore implements InternalStore {
       })
     }
 
-    // const { fetchPolicy } = query.options
-    // switch (fetchPolicy) {
-    //   case "cache-first":
-    //     break
-
-    //   default:
-    //     // prettier-ignore
-    //     throw new Error(`[FNC] Unsupported fetchPolicy: ${fetchPolicy}`)
-    // }
-  }
-
-  unregisterQuery<TResult, TArguments extends any[]>(
-    query: Query<TResult, TArguments>
-  ) {
-    this.cache.unsubscribe(query)
+    return {
+      unsubscribe: () => this.cache.unsubscribe(query),
+    }
   }
 }
 

@@ -43,18 +43,18 @@ export function useQuery<TResult, TArguments extends any[]>(
   }, initialState)
 
   useDeepCompareEffect(() => {
-    const { key, fetcher, options: defaultOpts } = query
+    const { name, fetcher, options: defaultOpts } = query
     const actualQuery = !options
-      ? query
-      : new Query(key, fetcher, { ...defaultOpts, ...options })
+      ? new Query(name, fetcher, defaultOpts) // makes sure query instance is unique
+      : new Query(name, fetcher, { ...defaultOpts, ...options })
 
-    store.registerQuery<TResult, TArguments>(actualQuery, {
+    const subscription = store.registerQuery<TResult, TArguments>(actualQuery, {
       onRequest: () => dispatch({ type: "ACTION_REQUEST" }),
       onData: (data) => dispatch({ type: "ACTION_SUCCESS", payload: data }),
       onError: (err) => dispatch({ type: "ACTION_FAILURE", payload: err }),
     })
 
-    return () => store.unregisterQuery(actualQuery)
+    return () => subscription.unsubscribe()
   }, [store, query, options])
 
   return { loading, data, error }
