@@ -15,19 +15,21 @@ class StandardStore implements InternalStore {
       onError: (err: Error) => void
     }
   ) {
+    // makes sure query instance is unique, not shared among UI components
+    const uniqueQuery = query.clone()
     const { onRequest, onData, onError } = callbacks
 
-    const alreadyCached = this.cache.subscribe(query, onData)
+    const alreadyCached = this.cache.subscribe(uniqueQuery, onData)
     if (!alreadyCached) {
-      this.fetcher.addRequest(query, {
+      this.fetcher.addRequest(uniqueQuery, {
         onStart: onRequest,
-        onComplete: (data) => this.cache.storeFetchedData(query, data),
+        onComplete: (data) => this.cache.storeFetchedData(uniqueQuery, data),
         onError,
       })
     }
 
     return {
-      unsubscribe: () => this.cache.unsubscribe(query),
+      unsubscribe: () => this.cache.unsubscribe(uniqueQuery),
     }
   }
 }

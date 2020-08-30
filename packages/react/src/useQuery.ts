@@ -45,7 +45,7 @@ export function useQuery<TResult, TArguments, TContext>(
   useDeepCompareEffect(() => {
     const { name, fetcher, options: defaultOpts } = query
     const actualQuery = !options
-      ? new Query(name, fetcher, defaultOpts) // makes sure query instance is unique
+      ? query
       : new Query(name, fetcher, { ...defaultOpts, ...options })
 
     const subscription = store.registerQuery<TResult, TArguments, TContext>(
