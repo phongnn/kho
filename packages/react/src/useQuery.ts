@@ -23,7 +23,7 @@ const initialState: DataLoadingState<any> = {
 
 export function useQuery<TResult, TArguments, TContext>(
   query: Query<TResult, TArguments, TContext>,
-  options?: QueryOptions<TArguments, TContext>
+  options?: Omit<QueryOptions<TArguments, TContext>, "shape">
 ) {
   const store = useStore()
 

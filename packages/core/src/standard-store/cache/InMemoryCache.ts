@@ -1,5 +1,7 @@
 import { Query, BaseQuery } from "../../Query"
 import QueryBucket, { CacheKey } from "./QueryBucket"
+import DataNormalizer from "./DataNormalizer"
+import ObjectBucket from "./ObjectBucket"
 
 class ActiveQuery<TResult> {
   constructor(
@@ -12,6 +14,8 @@ class ActiveQuery<TResult> {
 class InMemoryCache {
   private activeQueries: ActiveQuery<any>[] = []
   private queryBucket = new QueryBucket()
+  private objectBucket = new ObjectBucket()
+  private normalizer = new DataNormalizer(this.objectBucket)
 
   /** returns true if query's data is already in cache */
   subscribe<TResult>(
@@ -39,7 +43,26 @@ class InMemoryCache {
     query: Query<TResult, TArguments, TContext>,
     fetchedData: TResult
   ): void {
-    const cacheKey = this.queryBucket.set(query, fetchedData)
+    // TODO: encapsulate queryBucket and objectBucket in CacheState class.
+    // To enable time travelling, don't mutate CacheState but return a new instance instead.
+    // Provide a mechanism to serialize and deserialize CacheState.
+
+    // TODO: put the normalizer inside the CacheState instead
+    // TODO: return the selector as part of the normalization result?
+    let cacheKey: CacheKey
+    if (query.options.shape) {
+      // prettier-ignore
+      const [normalizedQueryResult, normalizedObjects] = this.normalizer.normalize(fetchedData, query.options.shape)
+
+      for (const [type, objects] of normalizedObjects.entries()) {
+        objects.forEach(([key, value]) =>
+          this.objectBucket.set(type, key, value)
+        )
+      }
+      cacheKey = this.queryBucket.set(query, normalizedQueryResult)
+    } else {
+      cacheKey = this.queryBucket.set(query, fetchedData)
+    }
 
     // set cacheKey for those active queries that are pending for data fetching
     this.activeQueries = this.activeQueries.map((aq) =>

@@ -1,4 +1,5 @@
 import { deepEqual } from "./helpers"
+import { NormalizedShape } from "./NormalizedType"
 
 export class QueryKey {
   static of(k: any) {
@@ -33,6 +34,7 @@ export interface QueryOptions<TArguments, TContext> {
 
   arguments?: TArguments
   context?: TContext
+  shape?: NormalizedShape
 }
 
 const defaultQueryOptions: QueryOptions<any, any> = {
