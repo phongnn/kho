@@ -1,19 +1,28 @@
 import { NormalizedType } from "./NormalizedType"
 
-const UserType = NormalizedType.register("User", {
-  keyFields: ["username"],
-  shape: {
-    favoriteArticles: ["Article"],
-  },
-})
-
 it("should replace type objects by type names", () => {
+  const UserType = NormalizedType.register("User", {
+    keyFields: ["username"],
+  })
+
   const CommentType = NormalizedType.register("Comment", {
     shape: { user: UserType },
   })
 
   // type object should be replaced with string "User"
   expect(CommentType.shape!.user).toBe("User")
+})
+
+it("should replace type objects by type names at a deep level", () => {
+  const PostType = NormalizedType.register("Post")
+  const ForumType = NormalizedType.register("Forum", {
+    shape: {
+      topics: [{ posts: [PostType] }],
+    },
+  })
+
+  // type object should be replaced with string "Post"
+  expect(ForumType.shape).toStrictEqual({ topics: [{ posts: ["Post"] }] })
 })
 
 // import { NormalizedType } from "./NormalizedType"
