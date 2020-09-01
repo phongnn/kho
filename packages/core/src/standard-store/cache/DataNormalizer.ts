@@ -5,6 +5,7 @@ import {
   RecordOf,
 } from "../../NormalizedType"
 import { NormalizedObjectKey, NormalizedObjectRef } from "./ObjectBucket"
+import Selector from "./Selector"
 
 type NormalizedStructure =
   | {}
@@ -12,7 +13,6 @@ type NormalizedStructure =
   | Array<{} | NormalizedObjectRef>
 
 type NormalizedObjects = Map<NormalizedType, Array<[NormalizedObjectKey, any]>>
-type Selector = Array<string | [string, Selector]>
 
 function extractPlainKey(obj: any, type: NormalizedType) {
   const result: any = {}
@@ -83,7 +83,7 @@ class DataNormalizer {
       return {
         result: null,
         objects: new Map() as NormalizedObjects,
-        selector: [] as Selector,
+        selector: new Selector(),
       }
     }
 
@@ -103,7 +103,7 @@ class DataNormalizer {
 
     const normalizedObjRef = new NormalizedObjectRef(type, objectKey)
     const normalizedObj: any = {}
-    const selector: Selector = []
+    const selector = new Selector()
     const objects: NormalizedObjects = new Map()
 
     Object.getOwnPropertyNames(data).forEach((prop) => {
@@ -132,7 +132,7 @@ class DataNormalizer {
   private normalizeUntypedObject(data: any) {
     let result: NormalizedStructure = {}
     const objects: NormalizedObjects = new Map()
-    const selector: Selector = []
+    const selector = new Selector()
 
     return { result, objects, selector }
   }
@@ -154,13 +154,13 @@ class DataNormalizer {
       return {
         result: [],
         objects: new Map() as NormalizedObjects,
-        selector: [] as Selector,
+        selector: new Selector(),
       }
     }
 
-    let result: Array<{} | NormalizedObjectRef> = []
+    const result: Array<{} | NormalizedObjectRef> = []
     const objects: NormalizedObjects = new Map()
-    const selector: Selector = []
+    const selector = new Selector()
 
     data.forEach((dataItem) => {
       const child = this.normalizeObject(dataItem, itemType)
@@ -169,6 +169,7 @@ class DataNormalizer {
       }
       result.push(child.result)
       mergeNormalizedObjects(child.objects, objects)
+      selector.merge(child.selector)
     })
 
     return { result, objects, selector }
