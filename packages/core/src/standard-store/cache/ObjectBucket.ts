@@ -5,8 +5,16 @@ export class NormalizedObjectKey {
   constructor(private plainKey: any) {}
 
   matches(plainKey: any) {
+    // TODO: use shadowEqual for better performance?
     return deepEqual(plainKey, this.plainKey)
   }
+}
+
+export class NormalizedObjectRef {
+  constructor(
+    readonly type: NormalizedType,
+    readonly key: NormalizedObjectKey
+  ) {}
 }
 
 class ObjectBucket {
