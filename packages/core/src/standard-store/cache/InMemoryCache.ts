@@ -1,12 +1,9 @@
 import { Query, BaseQuery } from "../../Query"
-import QueryBucket, { CacheKey } from "./QueryBucket"
-import DataNormalizer from "./DataNormalizer"
-import ObjectBucket from "./ObjectBucket"
-import { NormalizedType } from "../../NormalizedType"
+import CacheContainer, { CacheKey } from "./CacheContainer"
 
 class ActiveQuery<TResult> {
   constructor(
-    readonly query: BaseQuery<TResult>,
+    readonly query: BaseQuery,
     readonly onData: (data: TResult) => void,
     readonly cacheKey?: CacheKey
   ) {}
@@ -14,24 +11,15 @@ class ActiveQuery<TResult> {
 
 class InMemoryCache {
   private activeQueries: ActiveQuery<any>[] = []
-  private queryBucket = new QueryBucket()
-  private objectBucket = new ObjectBucket()
-  private normalizer = new DataNormalizer(
-    (type: NormalizedType, plainKey: any) =>
-      this.objectBucket.findObjectKey(type, plainKey)
-  )
+  private cache = new CacheContainer()
 
   /** returns true if query's data is already in cache */
-  subscribe<TResult>(
-    query: BaseQuery<TResult>,
-    onData: (data: TResult) => void
-  ) {
-    const cacheKey = this.queryBucket.findCacheKey(query)
+  subscribe<TResult>(query: BaseQuery, onData: (data: TResult) => void) {
+    const cacheKey = this.cache.findCacheKey(query)
     if (cacheKey) {
       this.activeQueries.push(new ActiveQuery(query, onData, cacheKey))
-
-      // query's data already in cache -> callback immediately
-      onData(this.queryBucket.get(cacheKey))
+      // callback immediately
+      onData(this.cache.get(cacheKey))
       return true
     } else {
       this.activeQueries.push(new ActiveQuery(query, onData))
@@ -39,7 +27,7 @@ class InMemoryCache {
     }
   }
 
-  unsubscribe<TResult>(query: BaseQuery<TResult>) {
+  unsubscribe<TResult>(query: BaseQuery) {
     this.activeQueries = this.activeQueries.filter((aq) => aq.query !== query)
   }
 
@@ -51,28 +39,7 @@ class InMemoryCache {
       return
     }
 
-    // TODO: encapsulate queryBucket and objectBucket in CacheState class.
-    // To enable time travelling, don't mutate CacheState but return a new instance instead.
-    // Provide a mechanism to serialize and deserialize CacheState.
-
-    // TODO: put the normalizer inside the CacheState instead
-    // TODO: return the selector as part of the normalization result?
-    let cacheKey: CacheKey
-    if (
-      query.options.shape
-    ) {
-      // prettier-ignore
-      // const [normalizedQueryResult, normalizedObjects] = this.normalizer.normalize(fetchedData, query.options.shape)
-
-      // for (const [type, objects] of normalizedObjects.entries()) {
-      //   objects.forEach(([key, value]) =>
-      //     this.objectBucket.set(type, key, value)
-      //   )
-      // }
-      // cacheKey = this.queryBucket.set(query, normalizedQueryResult)
-    } else {
-      cacheKey = this.queryBucket.set(query, fetchedData)
-    }
+    const cacheKey = this.cache.save(query, fetchedData)
 
     // set cacheKey for those active queries that are pending for data fetching
     this.activeQueries = this.activeQueries.map((aq) =>
@@ -83,7 +50,7 @@ class InMemoryCache {
 
     // notify active queries of possible state change
     this.activeQueries.forEach(
-      (aq) => aq.cacheKey && aq.onData(this.queryBucket.get(aq.cacheKey))
+      (aq) => aq.cacheKey && aq.onData(this.cache.get(aq.cacheKey))
     )
   }
 }

@@ -1,28 +1,17 @@
 import { deepEqual } from "./helpers"
 import { NormalizedShape } from "./NormalizedType"
 
-export class QueryKey {
-  static of(k: any) {
-    return new QueryKey(k)
-  }
-
-  static fromString(s: string) {
-    return new QueryKey(JSON.parse(s))
-  }
-
-  private constructor(private key: any) {}
-
-  toString() {
-    return JSON.stringify(this.key)
-  }
-
-  matches(qk: QueryKey) {
-    return deepEqual(qk.key, this.key)
-  }
+export interface QueryKey {
+  matches(qk: QueryKey): boolean
 }
 
-export abstract class BaseQuery<TResult> {
-  constructor(readonly key: QueryKey) {}
+export abstract class BaseQuery {
+  constructor(
+    readonly key: QueryKey,
+    readonly options: {
+      shape?: NormalizedShape
+    }
+  ) {}
 }
 
 export interface QueryOptions<TArguments, TContext> {
@@ -41,20 +30,44 @@ const defaultQueryOptions: QueryOptions<any, any> = {
   fetchPolicy: "cache-first",
 }
 
-export class Query<TResult, TArguments, TContext> extends BaseQuery<TResult> {
+class RemoteQueryKey<TArguments> implements QueryKey {
+  constructor(private name: string, private args: TArguments) {}
+
+  matches(qk: QueryKey): boolean {
+    if (!(qk instanceof RemoteQueryKey) || qk.name !== this.name) {
+      return false
+    } else {
+      return deepEqual(qk.args, this.args)
+    }
+  }
+}
+
+export class Query<TResult, TArguments, TContext> extends BaseQuery {
   constructor(
     readonly name: string,
     readonly fetcher: (args: TArguments, ctx: TContext) => Promise<TResult>,
     readonly options: QueryOptions<TArguments, TContext> = defaultQueryOptions
   ) {
-    super(QueryKey.of({ name, arguments: options.arguments || [] }))
+    super(new RemoteQueryKey(name, options.arguments), options)
   }
 
   clone = () => new Query(this.name, this.fetcher, this.options)
 }
 
-export class LocalQuery<TResult> extends BaseQuery<TResult> {
-  constructor(readonly name: string) {
-    super(QueryKey.of({ name }))
+export interface LocalQueryOptions {
+  shape?: NormalizedShape
+}
+
+class LocalQueryKey implements QueryKey {
+  constructor(private name: string) {}
+
+  matches(qk: QueryKey): boolean {
+    return qk instanceof LocalQueryKey && qk.name === this.name
+  }
+}
+
+export class LocalQuery extends BaseQuery {
+  constructor(readonly name: string, readonly options: LocalQueryOptions = {}) {
+    super(new LocalQueryKey(name), options)
   }
 }

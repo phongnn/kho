@@ -14,53 +14,6 @@ type NormalizedStructure =
 
 type NormalizedObjects = Map<NormalizedType, Array<[NormalizedObjectKey, any]>>
 
-function extractPlainKey(obj: any, type: NormalizedType) {
-  const result: any = {}
-
-  type.keyFields.forEach((f) => {
-    if (!obj[f]) {
-      throw new Error(
-        `[FNC] Data of type "${type.name}" must contain key field "${f}".`
-      )
-    }
-    result[f] = obj[f]
-  })
-
-  return result
-}
-
-function addNormalizedObjects(
-  type: NormalizedType,
-  newObjects: [NormalizedObjectKey, any][],
-  existingObjects: NormalizedObjects
-) {
-  const existingList = existingObjects.get(type)
-  if (!existingList) {
-    existingObjects.set(type, newObjects)
-  } else {
-    newObjects.forEach(([newObjKey, newObj]) => {
-      const existingEntry = existingList.find(
-        ([existingKey]) => existingKey === newObjKey
-      )
-      if (!existingEntry) {
-        existingList.push([newObjKey, newObj])
-      } else {
-        const [key, existingObj] = existingEntry
-        Object.assign(existingObj, newObj)
-      }
-    })
-  }
-}
-
-function mergeNormalizedObjects(
-  newObjects: NormalizedObjects,
-  existingObjects: NormalizedObjects
-) {
-  for (const [type, objects] of newObjects.entries()) {
-    addNormalizedObjects(type, objects, existingObjects)
-  }
-}
-
 class DataNormalizer {
   constructor(
     private lookupObjectKey: (
@@ -227,6 +180,55 @@ class DataNormalizer {
     const newKey = new NormalizedObjectKey(plainKey)
     tempKeys.push(newKey)
     return newKey
+  }
+}
+
+function extractPlainKey(obj: any, type: NormalizedType) {
+  const { keyFields } = type
+  const keyObj: any = {}
+
+  keyFields.forEach((f) => {
+    if (!obj[f]) {
+      throw new Error(
+        `[FNC] Data of type "${type.name}" must contain key field "${f}".`
+      )
+    }
+    keyObj[f] = obj[f]
+  })
+
+  // return primitive key (if possible) for faster comparison
+  return keyFields.length === 1 ? obj[keyFields[0]] : keyObj
+}
+
+function addNormalizedObjects(
+  type: NormalizedType,
+  newObjects: [NormalizedObjectKey, any][],
+  existingObjects: NormalizedObjects
+) {
+  const existingList = existingObjects.get(type)
+  if (!existingList) {
+    existingObjects.set(type, newObjects)
+  } else {
+    newObjects.forEach(([newObjKey, newObj]) => {
+      const existingEntry = existingList.find(
+        ([existingKey]) => existingKey === newObjKey
+      )
+      if (!existingEntry) {
+        existingList.push([newObjKey, newObj])
+      } else {
+        const [key, existingObj] = existingEntry
+        Object.assign(existingObj, newObj)
+      }
+    })
+  }
+}
+
+function mergeNormalizedObjects(
+  newObjects: NormalizedObjects,
+  existingObjects: NormalizedObjects
+) {
+  for (const [type, objects] of newObjects.entries()) {
+    addNormalizedObjects(type, objects, existingObjects)
   }
 }
 

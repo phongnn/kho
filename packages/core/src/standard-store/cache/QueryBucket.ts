@@ -1,4 +1,6 @@
 import { BaseQuery, QueryKey } from "../../Query"
+import Selector from "./Selector"
+import DataNormalizer from "./DataNormalizer"
 
 // Equivalent query keys will share the same cache key
 // (a query can be used many times by rendering the same component,
@@ -8,20 +10,19 @@ import { BaseQuery, QueryKey } from "../../Query"
 export class CacheKey {
   private queryKey: QueryKey
 
-  constructor(query: BaseQuery<any>) {
+  constructor(query: BaseQuery) {
     this.queryKey = query.key
   }
 
-  matches(query: BaseQuery<any>) {
+  matches(query: BaseQuery) {
     return this.queryKey.matches(query.key)
   }
 }
 
 class QueryBucket {
-  // TODO: entry values are selectors, NOT data
-  private queryData = new Map<CacheKey, any>()
+  private queryData = new Map<CacheKey, [any, Selector | null]>()
 
-  findCacheKey(query: BaseQuery<any>) {
+  findCacheKey(query: BaseQuery) {
     for (const key of this.queryData.keys()) {
       if (key.matches(query)) {
         return key
@@ -30,15 +31,12 @@ class QueryBucket {
     return null
   }
 
-  // TODO: use the selector to collect relevant data from the ObjectBucket
-  get = (cacheKey: CacheKey) => this.queryData.get(cacheKey)
+  get(cacheKey: CacheKey) {
+    return this.queryData.get(cacheKey)
+  }
 
-  set(query: BaseQuery<any>, data: any) {
-    const cacheKey = this.findCacheKey(query) || new CacheKey(query)
-
-    // TODO: create a selector and save into map
-    this.queryData.set(cacheKey, data)
-    return cacheKey
+  set(cacheKey: CacheKey, value: [any, Selector | null]) {
+    this.queryData.set(cacheKey, value)
   }
 }
 

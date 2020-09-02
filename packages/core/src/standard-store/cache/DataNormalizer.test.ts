@@ -2,6 +2,11 @@ import DataNormalizer from "./DataNormalizer"
 import { NormalizedShape, NormalizedType } from "../../NormalizedType"
 import { NormalizedObjectRef, NormalizedObjectKey } from "./ObjectBucket"
 
+afterAll(() => {
+  // @ts-ignore
+  NormalizedType.typeRegistry = new Map()
+})
+
 const UserType = NormalizedType.register("User", { keyFields: ["username"] })
 const ArticleType = NormalizedType.register("Article", {
   keyFields: ["slug"],

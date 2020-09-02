@@ -5,8 +5,11 @@ export class NormalizedObjectKey {
   constructor(private plainKey: any) {}
 
   matches(plainKey: any) {
-    // TODO: use shadowEqual for better performance?
-    return deepEqual(plainKey, this.plainKey)
+    if (typeof plainKey === "object" && typeof this.plainKey === "object") {
+      return deepEqual(plainKey, this.plainKey)
+    } else {
+      return plainKey === this.plainKey
+    }
   }
 }
 
@@ -18,24 +21,38 @@ export class NormalizedObjectRef {
 }
 
 class ObjectBucket {
+  private objects = new Map<NormalizedType, Map<NormalizedObjectKey, any>>()
+
   findObjectKey(
     type: NormalizedType,
     plainKey: any
   ): NormalizedObjectKey | null {
-    // for (const key of this.queryData.keys()) {
-    //   if (key.matches(query)) {
-    //     return key
-    //   }
-    // }
+    const objectMap = this.objects.get(type)
+    if (!objectMap) {
+      return null
+    }
+
+    for (const key of objectMap.keys()) {
+      if (key.matches(plainKey)) {
+        return key
+      }
+    }
     return null
   }
 
-  set(type: NormalizedType, key: NormalizedObjectKey, value: any) {
-    throw new Error("Method not implemented.")
+  get(type: NormalizedType, key: NormalizedObjectKey) {
+    return this.objects.get(type)?.get(key)
   }
 
-  get(type: NormalizedType, key: NormalizedObjectKey) {
-    throw new Error("Method not implemented.")
+  add(newObjects: Map<NormalizedType, [NormalizedObjectKey, any][]>) {
+    for (const [type, entries] of newObjects) {
+      const existingMap =
+        this.objects.get(type) || new Map<NormalizedObjectKey, any>()
+      for (const [key, obj] of entries) {
+        existingMap.set(key, obj)
+      }
+      this.objects.set(type, existingMap)
+    }
   }
 }
 
