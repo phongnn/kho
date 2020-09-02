@@ -91,6 +91,56 @@ describe("Nested typed objects", () => {
   })
 })
 
+describe("Untyped object", () => {
+  it("should work", () => {
+    const input = {
+      author: { username: "x", email: "x@test.co" },
+      articles: [
+        { slug: "a1", title: "blah" },
+        { slug: "a2", title: "blah" },
+      ],
+      extra: {
+        state: {
+          ok: true,
+        },
+      },
+      extraArray: [],
+    }
+
+    const { result, objects, selector } = normalize(input, {
+      author: UserType,
+      articles: [ArticleType],
+    })
+
+    // verify normalized result
+    const { author, articles, ...rest } = result
+    expect(author.key.matches({ username: "x" })).toBe(true)
+    expect(articles[0].key.matches({ slug: "a1" })).toBe(true)
+    expect(articles[1].key.matches({ slug: "a2" })).toBe(true)
+    expect(rest).toStrictEqual({
+      extra: input.extra,
+      extraArray: input.extraArray,
+    })
+
+    // verify map of normalized objects
+    expect(objects.get(UserType)).toStrictEqual([[author.key, input.author]])
+    expect(objects.get(ArticleType)).toStrictEqual([
+      [articles[0].key, input.articles[0]],
+      [articles[1].key, input.articles[1]],
+    ])
+
+    // verify selector
+    expect(
+      selector.equals([
+        ["author", ["username", "email"]],
+        ["articles", ["slug", "title"]],
+        "extra", // no sub-selector
+        "extraArray", // no sub-selector
+      ])
+    ).toBe(true)
+  })
+})
+
 describe("Array", () => {
   it("should return array of normalized objects", () => {
     const input = [
@@ -174,5 +224,31 @@ describe("Nested arrays", () => {
   })
 })
 
-// TODO: untyped object normalization
-// TODO: same object keys
+describe("Shared object ref", () => {
+  it.only("should share the same key instance", () => {
+    const input = {
+      slug: "as",
+      author: { username: "x", avatar: "https://" },
+      comments: [
+        { id: "c0", user: { username: "y", avatar: "http://" } },
+        { id: "c1", user: { username: "x", avatar: "https://" } },
+        { id: "c2", user: { username: "y", avatar: "http://" } },
+      ],
+    }
+
+    const { result, objects } = normalize(input, ArticleType)
+
+    const userObjects = objects.get(UserType)!
+    expect(userObjects.length).toBe(2)
+
+    const [authKey, authObj] = userObjects[0]
+
+    const commentObjects = objects.get(CommentType)!
+    const [c0key, c0Obj] = commentObjects[0]
+    const [c1key, c1Obj] = commentObjects[1]
+    const [c2key, c2Obj] = commentObjects[2]
+    expect(c0Obj.key).toBe(c2Obj.key)
+    expect(c1Obj.key).toBe(authKey)
+    expect(result.author.key).toBe(authKey)
+  })
+})

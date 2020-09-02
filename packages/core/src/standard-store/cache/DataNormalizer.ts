@@ -8,9 +8,9 @@ import { NormalizedObjectKey, NormalizedObjectRef } from "./ObjectBucket"
 import Selector from "./Selector"
 
 type NormalizedStructure =
-  | {}
+  | any
   | NormalizedObjectRef
-  | Array<{} | NormalizedObjectRef>
+  | Array<any | NormalizedObjectRef>
 
 type NormalizedObjects = Map<NormalizedType, Array<[NormalizedObjectKey, any]>>
 
@@ -92,7 +92,7 @@ class DataNormalizer {
     } else if (shape instanceof NormalizedTypePlaceholder) {
       return this.normalizeTypedObject(data, shape.getType())
     } else {
-      return this.normalizeUntypedObject(data)
+      return this.normalizeUntypedObject(data, shape)
     }
   }
 
@@ -129,10 +129,27 @@ class DataNormalizer {
     }
   }
 
-  private normalizeUntypedObject(data: any) {
+  private normalizeUntypedObject(
+    data: any,
+    shape: RecordOf<NormalizedTypeShapeValue>
+  ) {
     let result: NormalizedStructure = {}
     const objects: NormalizedObjects = new Map()
     const selector = new Selector()
+
+    Object.getOwnPropertyNames(data).forEach((prop) => {
+      if (!shape[prop]) {
+        result[prop] = data[prop]
+        selector.push(prop)
+      } else {
+        const child = this.normalize(data[prop], shape[prop])
+        result[prop] = child.result
+        selector.push([prop, child.selector])
+        for (const [childObjType, childObjects] of child.objects) {
+          addNormalizedObjects(childObjType, childObjects, objects)
+        }
+      }
+    })
 
     return { result, objects, selector }
   }

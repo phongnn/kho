@@ -31,12 +31,18 @@ export default class Selector {
       const item = plainObj[i]
       if (typeof item === "string") {
         if (!this.items.has(item)) {
+          console.log(`"${item}" not found`)
           return false
         }
       } else {
         const [propName, plainSubSelector] = item
         const subSelector = this.findSubSelector(propName)
         if (!subSelector || !subSelector.equals(plainSubSelector)) {
+          console.log(
+            `SubSelector "${propName}" ${
+              !subSelector ? "not found" : "doesn't match"
+            }`
+          )
           return false
         }
       }
