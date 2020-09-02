@@ -38,7 +38,17 @@ function addNormalizedObjects(
   if (!existingList) {
     existingObjects.set(type, newObjects)
   } else {
-    newObjects.forEach((co) => existingList.push(co))
+    newObjects.forEach(([newObjKey, newObj]) => {
+      const existingEntry = existingList.find(
+        ([existingKey]) => existingKey === newObjKey
+      )
+      if (!existingEntry) {
+        existingList.push([newObjKey, newObj])
+      } else {
+        const [key, existingObj] = existingEntry
+        Object.assign(existingObj, newObj)
+      }
+    })
   }
 }
 
@@ -98,8 +108,7 @@ class DataNormalizer {
 
   private normalizeTypedObject(data: any, type: NormalizedType) {
     const plainKey = extractPlainKey(data, type)
-    const objectKey =
-      this.lookupObjectKey(type, plainKey) || new NormalizedObjectKey(plainKey)
+    const objectKey = this.lookupOrCreateObjectKey(type, plainKey)
 
     const normalizedObjRef = new NormalizedObjectRef(type, objectKey)
     const normalizedObj: any = {}
@@ -190,6 +199,34 @@ class DataNormalizer {
     })
 
     return { result, objects, selector }
+  }
+
+  /** collection of object keys created during the process of data normalization  */
+  private tempObjectKeys = new Map<NormalizedType, NormalizedObjectKey[]>()
+
+  /** makes sure all references of the same object use the exact same instance of the object's key */
+  private lookupOrCreateObjectKey(type: NormalizedType, plainKey: any) {
+    const existingKeyInCache = this.lookupObjectKey(type, plainKey)
+    if (existingKeyInCache) {
+      return existingKeyInCache
+    }
+
+    const tempKeys = this.tempObjectKeys.get(type)
+    if (!tempKeys) {
+      const newKey = new NormalizedObjectKey(plainKey)
+      this.tempObjectKeys.set(type, [newKey])
+      return newKey
+    }
+
+    for (const k of tempKeys) {
+      if (k.matches(plainKey)) {
+        return k
+      }
+    }
+
+    const newKey = new NormalizedObjectKey(plainKey)
+    tempKeys.push(newKey)
+    return newKey
   }
 }
 

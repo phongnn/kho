@@ -225,7 +225,7 @@ describe("Nested arrays", () => {
 })
 
 describe("Shared object ref", () => {
-  it.only("should share the same key instance", () => {
+  it("should share the same key instance", () => {
     const input = {
       slug: "as",
       author: { username: "x", avatar: "https://" },
@@ -236,7 +236,7 @@ describe("Shared object ref", () => {
       ],
     }
 
-    const { result, objects } = normalize(input, ArticleType)
+    const { objects } = normalize(input, ArticleType)
 
     const userObjects = objects.get(UserType)!
     expect(userObjects.length).toBe(2)
@@ -247,8 +247,41 @@ describe("Shared object ref", () => {
     const [c0key, c0Obj] = commentObjects[0]
     const [c1key, c1Obj] = commentObjects[1]
     const [c2key, c2Obj] = commentObjects[2]
-    expect(c0Obj.key).toBe(c2Obj.key)
-    expect(c1Obj.key).toBe(authKey)
-    expect(result.author.key).toBe(authKey)
+    expect(c0Obj.user.key).toBe(c2Obj.user.key)
+    expect(c1Obj.user.key).toBe(authKey)
+
+    const articleObjects = objects.get(ArticleType)!
+    const [articleKey, articleObj] = articleObjects[0]
+    expect(articleObj.author.key).toBe(authKey)
+  })
+
+  it("should merge shared object's data", () => {
+    const input = {
+      slug: "as",
+      author: { username: "x", email: "x@x.co" },
+      comments: [
+        {
+          id: "c0",
+          user: { username: "y", email: "y@y.co", avatar: "http://" },
+        },
+        { id: "c1", user: { username: "x", avatar: "https://" } },
+        { id: "c2", user: { username: "y", avatar: "///" } },
+      ],
+    }
+
+    const { objects } = normalize(input, ArticleType)
+    const userObjects = objects.get(UserType)!.map(([k, obj]) => obj)
+
+    expect(userObjects[0]).toStrictEqual({
+      username: "x",
+      email: "x@x.co",
+      avatar: "https://",
+    })
+
+    expect(userObjects[1]).toStrictEqual({
+      username: "y",
+      email: "y@y.co",
+      avatar: "///",
+    })
   })
 })
