@@ -7,7 +7,6 @@ import DataDenormalizer from "./DataDenormalizer"
 
 export { CacheKey } from "./QueryBucket"
 
-// TODO: provide a mechanism to serialize and deserialize CacheContainer.
 class CacheContainer {
   private queryBucket = new QueryBucket()
   private objectBucket = new ObjectBucket()
