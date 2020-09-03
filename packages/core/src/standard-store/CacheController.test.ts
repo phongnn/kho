@@ -1,7 +1,7 @@
-import InMemoryCache from "./InMemoryCache"
-import { Query } from "../../Query"
+import CacheController from "./CacheController"
+import { Query } from "../Query"
 
-const cache = new InMemoryCache()
+const cache = new CacheController()
 const q1 = new Query("GetData", jest.fn(), { arguments: { x: "test", y: 1 } })
 const q2 = q1.clone()
 
@@ -17,5 +17,5 @@ it("should invoke callback immediately with cached data", (done) => {
       })
     })
   })
-  cache.storeFetchedData(q1, data) // result for q1
+  cache.storeQueryData(q1, data) // result for q1
 })

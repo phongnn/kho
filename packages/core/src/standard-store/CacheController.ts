@@ -1,20 +1,20 @@
-import { Query, BaseQuery } from "../../Query"
-import CacheContainer, { CacheKey } from "./CacheContainer"
+import { BaseQuery } from "../Query"
+import CacheContainer, { CacheKey } from "./cache/CacheContainer"
 
-class ActiveQuery<TResult> {
+class ActiveQuery {
   constructor(
     readonly query: BaseQuery,
-    readonly onData: (data: TResult) => void,
+    readonly onData: (data: any) => void,
     readonly cacheKey?: CacheKey
   ) {}
 }
 
-class InMemoryCache {
-  private activeQueries: ActiveQuery<any>[] = []
+class CacheController {
+  private activeQueries: ActiveQuery[] = []
   private cache = new CacheContainer()
 
   /** returns true if query's data is already in cache */
-  subscribe<TResult>(query: BaseQuery, onData: (data: TResult) => void) {
+  subscribe(query: BaseQuery, onData: (data: any) => void) {
     const cacheKey = this.cache.findCacheKey(query)
     if (cacheKey) {
       this.activeQueries.push(new ActiveQuery(query, onData, cacheKey))
@@ -27,19 +27,12 @@ class InMemoryCache {
     }
   }
 
-  unsubscribe<TResult>(query: BaseQuery) {
+  unsubscribe(query: BaseQuery) {
     this.activeQueries = this.activeQueries.filter((aq) => aq.query !== query)
   }
 
-  storeFetchedData<TResult, TArguments, TContext>(
-    query: Query<TResult, TArguments, TContext>,
-    fetchedData: TResult
-  ): void {
-    if (!fetchedData) {
-      return
-    }
-
-    const cacheKey = this.cache.save(query, fetchedData)
+  storeQueryData(query: BaseQuery, data: any) {
+    const cacheKey = this.cache.save(query, data)
 
     // set cacheKey for those active queries that are pending for data fetching
     this.activeQueries = this.activeQueries.map((aq) =>
@@ -55,4 +48,4 @@ class InMemoryCache {
   }
 }
 
-export default InMemoryCache
+export default CacheController

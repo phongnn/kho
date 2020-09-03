@@ -1,11 +1,11 @@
 import { InternalStore } from "../Store"
 import { Query } from "../Query"
 import Fetcher from "./Fetcher"
-import InMemoryCache from "./cache/InMemoryCache"
+import CacheController from "./CacheController"
 
 class StandardStore implements InternalStore {
   private fetcher = new Fetcher()
-  private cache = new InMemoryCache()
+  private cache = new CacheController()
 
   registerQuery<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,
@@ -23,7 +23,7 @@ class StandardStore implements InternalStore {
     if (!alreadyCached) {
       this.fetcher.addRequest(uniqueQuery, {
         onStart: onRequest,
-        onComplete: (data) => this.cache.storeFetchedData(uniqueQuery, data),
+        onComplete: (data) => this.cache.storeQueryData(uniqueQuery, data),
         onError,
       })
     }

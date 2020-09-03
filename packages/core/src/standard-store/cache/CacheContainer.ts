@@ -1,8 +1,7 @@
 import { BaseQuery } from "../../Query"
 import QueryBucket, { CacheKey } from "./QueryBucket"
-import ObjectBucket, { NormalizedObjectKey } from "./ObjectBucket"
+import ObjectBucket from "./ObjectBucket"
 import DataNormalizer from "./DataNormalizer"
-import { NormalizedType } from "../../NormalizedType"
 import DataDenormalizer from "./DataDenormalizer"
 
 export { CacheKey } from "./QueryBucket"
@@ -26,9 +25,8 @@ class CacheContainer {
       return data
     }
 
-    const denormalizer = new DataDenormalizer(
-      (type: NormalizedType, key: NormalizedObjectKey) =>
-        this.objectBucket.get(type, key)
+    const denormalizer = new DataDenormalizer((type, key) =>
+      this.objectBucket.get(type, key)
     )
 
     return denormalizer.denormalize(data, selector)
@@ -41,9 +39,8 @@ class CacheContainer {
     if (!shape) {
       this.queryBucket.set(cacheKey, [data, null]) // data not normalized -> no selector
     } else {
-      const normalizer = new DataNormalizer(
-        (type: NormalizedType, plainKey: any) =>
-          this.objectBucket.findObjectKey(type, plainKey)
+      const normalizer = new DataNormalizer((type, plainKey) =>
+        this.objectBucket.findObjectKey(type, plainKey)
       )
       const { result, objects, selector } = normalizer.normalize(data, shape)
 
