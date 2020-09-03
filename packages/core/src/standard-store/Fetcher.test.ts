@@ -10,6 +10,10 @@ const query = new Query("GetData", (args: { id: string }) => fetchData(args), {
 
 let fetcher: Fetcher
 beforeEach(() => (fetcher = new Fetcher()))
+afterEach(() => {
+  // @ts-ignore
+  Query.registry = new Map()
+})
 
 it("should invoke onComplete callback", (done) => {
   fetchData = jest.fn().mockResolvedValue(testPayload)

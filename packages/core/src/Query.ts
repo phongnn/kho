@@ -43,12 +43,24 @@ class RemoteQueryKey<TArguments> implements QueryKey {
 }
 
 export class Query<TResult, TArguments, TContext> extends BaseQuery {
+  private static registry = new Map<string, (...args: any[]) => Promise<any>>()
+
   constructor(
     readonly name: string,
     readonly fetcher: (args: TArguments, ctx: TContext) => Promise<TResult>,
     readonly options: QueryOptions<TArguments, TContext> = defaultQueryOptions
   ) {
     super(new RemoteQueryKey(name, options.arguments), options)
+
+    // make sure a query name can't be registered with more than 1 fetcher function
+    const prevFetcher = Query.registry.get(name)
+    if (prevFetcher && prevFetcher !== fetcher) {
+      throw new Error(
+        `Query name "${name}" already registered with a different function.`
+      )
+    } else {
+      Query.registry.set(name, fetcher)
+    }
   }
 
   clone = () => new Query(this.name, this.fetcher, this.options)

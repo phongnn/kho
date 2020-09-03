@@ -1,6 +1,11 @@
 import CacheController from "./CacheController"
 import { Query } from "../Query"
 
+afterAll(() => {
+  // @ts-ignore
+  Query.registry = new Map()
+})
+
 const cache = new CacheController()
 const q1 = new Query("GetData", jest.fn(), { arguments: { x: "test", y: 1 } })
 const q2 = q1.clone()
