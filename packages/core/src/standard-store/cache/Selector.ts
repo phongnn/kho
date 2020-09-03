@@ -1,10 +1,28 @@
 type PlainSelector = Array<string | [string, PlainSelector]>
 
 export default class Selector {
+  static from(plainObj: PlainSelector) {
+    const s = new Selector()
+    for (let i = 0; i < plainObj.length; i++) {
+      const item = plainObj[i]
+      if (typeof item === "string") {
+        s.push(item)
+      } else {
+        const [propName, plainSubSelector] = item
+        s.push([propName, this.from(plainSubSelector)])
+      }
+    }
+    return s
+  }
+
   private items = new Set<string | [string, Selector]>()
 
   push(item: string | [string, Selector]) {
     this.items.add(item)
+  }
+
+  iterator() {
+    return this.items.values()
   }
 
   merge(another: Selector) {
@@ -25,6 +43,7 @@ export default class Selector {
     }
   }
 
+  // TODO: convert it to plain() method instead --> rewrite unit tests
   // for unit tests
   equals(plainObj: PlainSelector) {
     for (let i = 0; i < plainObj.length; i++) {
