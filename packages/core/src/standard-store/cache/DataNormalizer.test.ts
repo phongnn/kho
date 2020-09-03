@@ -38,9 +38,9 @@ describe("Single typed object", () => {
     expect(result).toBeInstanceOf(NormalizedObjectRef)
     const { type, key } = result as NormalizedObjectRef
     expect(type).toBe(UserType)
-    expect(key.matches({ username: "x" })).toBe(true)
+    expect(key.matches("x")).toBe(true)
 
-    expect(selector.equals(["username", "email", "age"])).toBe(true)
+    expect(selector.plain()).toStrictEqual(["username", "email", "age"])
     expect(objects.get(UserType)).toStrictEqual([[key, input]])
   })
 
@@ -60,7 +60,7 @@ describe("Single typed object", () => {
     const { result, selector, objects } = normalize(null, UserType)
     expect(result).toBeNull()
     expect(objects.size).toBe(0)
-    expect(selector.equals([])).toBe(true)
+    expect(selector.plain()).toStrictEqual([])
   })
 })
 
@@ -76,12 +76,14 @@ describe("Nested typed objects", () => {
     // verify normalized result
     const { type: commentType, key: commentKey } = result as NormalizedObjectRef
     expect(commentType).toBe(CommentType)
-    expect(commentKey.matches({ id: "xyz" })).toBe(true)
+    expect(commentKey.matches("xyz")).toBe(true)
 
     // verify selector
-    expect(
-      selector.equals(["id", "body", ["user", ["username", "avatar"]]])
-    ).toBe(true)
+    expect(selector.plain()).toStrictEqual([
+      "id",
+      "body",
+      ["user", ["username", "avatar"]],
+    ])
 
     // verify map of normalized objects
     const [commentKey2, commentObj] = objects.get(CommentType)![0]
@@ -119,9 +121,9 @@ describe("Untyped object", () => {
 
     // verify normalized result
     const { author, articles, ...rest } = result
-    expect(author.key.matches({ username: "x" })).toBe(true)
-    expect(articles[0].key.matches({ slug: "a1" })).toBe(true)
-    expect(articles[1].key.matches({ slug: "a2" })).toBe(true)
+    expect(author.key.matches("x")).toBe(true)
+    expect(articles[0].key.matches("a1")).toBe(true)
+    expect(articles[1].key.matches("a2")).toBe(true)
     expect(rest).toStrictEqual({
       extra: input.extra,
       extraArray: input.extraArray,
@@ -135,14 +137,12 @@ describe("Untyped object", () => {
     ])
 
     // verify selector
-    expect(
-      selector.equals([
-        ["author", ["username", "email"]],
-        ["articles", ["slug", "title"]],
-        "extra", // no sub-selector
-        "extraArray", // no sub-selector
-      ])
-    ).toBe(true)
+    expect(selector.plain()).toStrictEqual([
+      ["author", ["username", "email"]],
+      ["articles", ["slug", "title"]],
+      "extra", // no sub-selector
+      "extraArray", // no sub-selector
+    ])
   })
 })
 
@@ -155,8 +155,8 @@ describe("Array", () => {
     const { result, objects, selector } = normalize(input, [UserType])
 
     // verify normalized result
-    expect((result![0] as NormalizedObjectRef).key.matches({ username: "x" }))
-    expect((result![1] as NormalizedObjectRef).key.matches({ username: "y" }))
+    expect((result![0] as NormalizedObjectRef).key.matches("x"))
+    expect((result![1] as NormalizedObjectRef).key.matches("y"))
 
     // verify map of normalized objects
     const userObjects = objects.get(UserType)
@@ -164,7 +164,7 @@ describe("Array", () => {
     expect(userObjects).toContainEqual([result![1].key, input[1]])
 
     // verify selector
-    expect(selector.equals(["username", "email", "age"])).toBe(true)
+    expect(selector.plain()).toStrictEqual(["username", "email", "age"])
   })
 
   it("should combine selectors", () => {
@@ -173,7 +173,12 @@ describe("Array", () => {
       { username: "y", email: "y@test.co", avatar: "http://" },
     ]
     const { selector } = normalize(input, [UserType])
-    expect(selector.equals(["username", "email", "age", "avatar"])).toBe(true)
+    expect(selector.plain()).toStrictEqual([
+      "username",
+      "email",
+      "age",
+      "avatar",
+    ])
   })
 
   it("should throw error if data is not an array", () => {
@@ -190,7 +195,7 @@ describe("Array", () => {
     const { result, selector, objects } = normalize(null, [UserType])
     expect(result).toStrictEqual([])
     expect(objects.size).toBe(0)
-    expect(selector.equals([])).toBe(true)
+    expect(selector.plain()).toStrictEqual([])
   })
 })
 
@@ -218,14 +223,12 @@ describe("Nested arrays", () => {
       },
     ]
     const { selector } = normalize(input, [ArticleType])
-    expect(
-      selector.equals([
-        "slug",
-        "title",
-        ["author", ["username"]],
-        ["comments", ["id", "body", ["user", ["username", "avatar", "email"]]]],
-      ])
-    ).toBe(true)
+    expect(selector.plain()).toStrictEqual([
+      "slug",
+      "title",
+      ["comments", ["id", "body", ["user", ["username", "avatar", "email"]]]],
+      ["author", ["username"]],
+    ])
   })
 })
 

@@ -1,20 +1,6 @@
 type PlainSelector = Array<string | [string, PlainSelector]>
 
 export default class Selector {
-  static from(plainObj: PlainSelector) {
-    const s = new Selector()
-    for (let i = 0; i < plainObj.length; i++) {
-      const item = plainObj[i]
-      if (typeof item === "string") {
-        s.push(item)
-      } else {
-        const [propName, plainSubSelector] = item
-        s.push([propName, this.from(plainSubSelector)])
-      }
-    }
-    return s
-  }
-
   private items = new Set<string | [string, Selector]>()
 
   push(item: string | [string, Selector]) {
@@ -23,6 +9,19 @@ export default class Selector {
 
   iterator() {
     return this.items.values()
+  }
+
+  plain() {
+    const plainSelector: PlainSelector = []
+    for (const item of this.items) {
+      if (typeof item === "string") {
+        plainSelector.push(item)
+      } else {
+        const [propName, subSelector] = item
+        plainSelector.push([propName, subSelector.plain()])
+      }
+    }
+    return plainSelector
   }
 
   merge(another: Selector) {
@@ -43,32 +42,6 @@ export default class Selector {
     }
   }
 
-  // TODO: convert it to plain() method instead --> rewrite unit tests
-  // for unit tests
-  equals(plainObj: PlainSelector) {
-    for (let i = 0; i < plainObj.length; i++) {
-      const item = plainObj[i]
-      if (typeof item === "string") {
-        if (!this.items.has(item)) {
-          console.log(`"${item}" not found`)
-          return false
-        }
-      } else {
-        const [propName, plainSubSelector] = item
-        const subSelector = this.findSubSelector(propName)
-        if (!subSelector || !subSelector.equals(plainSubSelector)) {
-          console.log(
-            `SubSelector "${propName}" ${
-              !subSelector ? "not found" : "doesn't match"
-            }`
-          )
-          return false
-        }
-      }
-    }
-    return true
-  }
-
   private findSubSelector(propName: string) {
     for (const item of this.items) {
       if (Array.isArray(item) && item[0] === propName) {
@@ -76,5 +49,19 @@ export default class Selector {
       }
     }
     return null
+  }
+
+  static from(plainObj: PlainSelector) {
+    const s = new Selector()
+    for (let i = 0; i < plainObj.length; i++) {
+      const item = plainObj[i]
+      if (typeof item === "string") {
+        s.push(item)
+      } else {
+        const [propName, plainSubSelector] = item
+        s.push([propName, this.from(plainSubSelector)])
+      }
+    }
+    return s
   }
 }
