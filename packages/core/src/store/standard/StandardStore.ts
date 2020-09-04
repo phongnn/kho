@@ -1,6 +1,6 @@
 import { InternalStore, QueryRegistrationResult } from "../Store"
 import { Query } from "../../query/Query"
-import { CompoundQuery } from "../../query/CompoundQuery"
+import CompoundQuery from "./CompoundQuery"
 import Fetcher from "./Fetcher"
 import CacheController from "./CacheController"
 
@@ -59,7 +59,7 @@ class StandardStore implements InternalStore {
     } = {}
   ) {
     const { onRequest, onError } = callbacks
-    const mergeFn = nextQuery.options.merge || query.options.merge
+    const mergeFn = nextQuery.options.merge || query.original.options.merge
     this.fetcher.addRequest(nextQuery, {
       onRequest,
       onError,
