@@ -1,55 +1,54 @@
 import { BaseQuery } from "../Query"
 import CacheContainer, { CacheKey } from "./cache/CacheContainer"
 
-class ActiveQuery {
-  constructor(
-    readonly query: BaseQuery,
-    readonly onData: (data: any) => void,
-    readonly cacheKey?: CacheKey
-  ) {}
+interface ActiveQueryInfo {
+  readonly onData: (data: any) => void
+  cacheKey?: CacheKey
+  latestData?: any
 }
 
 class CacheController {
-  private activeQueries: ActiveQuery[] = []
+  private activeQueries = new Map<BaseQuery, ActiveQueryInfo>()
   private cache = new CacheContainer()
 
   /** returns true if query's data is already in cache */
   subscribe(query: BaseQuery, onData: (data: any) => void) {
     const cacheKey = this.cache.findCacheKey(query)
     if (cacheKey) {
-      this.activeQueries.push(new ActiveQuery(query, onData, cacheKey))
-      // callback immediately
-      onData(this.cache.get(cacheKey))
+      const latestData = this.cache.get(cacheKey)
+      this.activeQueries.set(query, { onData, cacheKey, latestData })
+      onData(latestData) // callback immediately
       return true
     } else {
-      this.activeQueries.push(new ActiveQuery(query, onData))
+      this.activeQueries.set(query, { onData })
       return false
     }
   }
 
   unsubscribe(query: BaseQuery) {
-    this.activeQueries = this.activeQueries.filter((aq) => aq.query !== query)
+    this.activeQueries.delete(query)
   }
 
   storeQueryData(query: BaseQuery, data: any) {
     const cacheKey = this.cache.save(query, data)
 
-    // set cacheKey for those active queries that are pending for data fetching
-    this.activeQueries = this.activeQueries.map((aq) =>
-      !!aq.cacheKey || !cacheKey.matches(aq.query)
-        ? aq
-        : new ActiveQuery(aq.query, aq.onData, cacheKey)
-    )
+    for (const [q, qInfo] of this.activeQueries) {
+      // set cacheKey for those active queries that are pending for data fetching
+      if (!qInfo.cacheKey && cacheKey.matches(q)) {
+        qInfo.cacheKey = cacheKey
+      }
 
-    // notify active queries of possible state change
-    this.activeQueries.forEach(
-      (aq) => aq.cacheKey && aq.onData(this.cache.get(aq.cacheKey))
-    )
+      // notify active queries of possible state change
+      if (qInfo.cacheKey) {
+        const latestData = this.cache.get(qInfo.cacheKey)
+        qInfo.latestData = latestData
+        qInfo.onData(latestData)
+      }
+    }
   }
 
   retrieveQueryData(query: BaseQuery) {
-    const cacheKey = this.cache.findCacheKey(query)
-    return !cacheKey ? null : this.cache.get(cacheKey)
+    return this.activeQueries.get(query)?.latestData
   }
 }
 
