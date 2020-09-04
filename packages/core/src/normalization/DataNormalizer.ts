@@ -3,8 +3,8 @@ import {
   NormalizedTypeShapeValue,
   NormalizedTypePlaceholder,
   RecordOf,
-} from "../../NormalizedType"
-import { NormalizedObjectKey, NormalizedObjectRef } from "./ObjectBucket"
+} from "./NormalizedType"
+import { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"
 import Selector from "./Selector"
 
 type NormalizedStructure =

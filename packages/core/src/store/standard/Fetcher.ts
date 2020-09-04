@@ -1,5 +1,5 @@
-import { Query } from "../Query"
-import { isProduction } from "../helpers"
+import { Query } from "../../query/Query"
+import { isProduction } from "../../helpers"
 
 class RequestInfo<TResult> {
   constructor(
@@ -28,13 +28,13 @@ class Fetcher {
     query: Query<TResult, TArguments, TContext>,
     callbacks: {
       onComplete: (data: TResult) => void
-      onStart?: () => void
+      onRequest?: () => void
       onError?: (err: Error) => void
     }
   ) {
-    const { onStart, onError, onComplete } = callbacks
-    if (onStart) {
-      onStart()
+    const { onRequest, onError, onComplete } = callbacks
+    if (onRequest) {
+      onRequest()
     }
 
     const [_, ongoingReqInfo] = this.getMatchedOngoingRequest(query)

@@ -1,5 +1,5 @@
-import { NormalizedObjectKey, NormalizedObjectRef } from "./ObjectBucket"
-import { NormalizedType } from "../../NormalizedType"
+import { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"
+import { NormalizedType } from "./NormalizedType"
 import Selector from "./Selector"
 
 class DataDenormalizer {

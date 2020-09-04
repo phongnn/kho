@@ -1,5 +1,5 @@
 import StandardStore from "./StandardStore"
-import { Query } from "../Query"
+import { Query } from "../../query/Query"
 
 afterEach(() => {
   // @ts-ignore

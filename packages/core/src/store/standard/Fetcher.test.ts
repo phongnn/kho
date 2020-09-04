@@ -1,5 +1,5 @@
 import Fetcher from "./Fetcher"
-import { Query } from "../Query"
+import { Query } from "../../query/Query"
 
 const testId = "testId"
 const testPayload = { payload: { message: "Hello, World!" } }
@@ -51,7 +51,7 @@ describe("request dedup", () => {
     const q2CompleteHandler = jest.fn()
 
     fetcher.addRequest(q1, {
-      onStart: q1StartHandler,
+      onRequest: q1StartHandler,
       onComplete: () => {
         expect(q1StartHandler).toBeCalledTimes(1)
         expect(q2StartHandler).toBeCalledTimes(1)
@@ -64,7 +64,7 @@ describe("request dedup", () => {
     })
 
     fetcher.addRequest(q2, {
-      onStart: q2StartHandler,
+      onRequest: q2StartHandler,
       onComplete: q2CompleteHandler,
     })
   })
@@ -79,7 +79,7 @@ describe("request dedup", () => {
     jest.spyOn(console, "error").mockImplementation(() => {})
     fetcher.addRequest(q1, {
       onComplete: jest.fn(),
-      onStart: () => {
+      onRequest: () => {
         q1ErrorHandlerInvoked = true
         if (q2ErrorHandlerInvoked) {
           done()
@@ -89,7 +89,7 @@ describe("request dedup", () => {
 
     fetcher.addRequest(q2, {
       onComplete: jest.fn(),
-      onStart: () => {
+      onRequest: () => {
         q2ErrorHandlerInvoked = true
         if (q1ErrorHandlerInvoked) {
           done()

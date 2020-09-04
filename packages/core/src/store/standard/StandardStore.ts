@@ -1,8 +1,8 @@
 import { InternalStore, QueryRegistrationResult } from "../Store"
-import { Query, BaseQuery, QueryKey } from "../Query"
+import { Query } from "../../query/Query"
+import { CompoundQuery } from "../../query/CompoundQuery"
 import Fetcher from "./Fetcher"
 import CacheController from "./CacheController"
-import { NormalizedShape } from "../NormalizedType"
 
 class StandardStore implements InternalStore {
   private fetcher = new Fetcher()
@@ -27,7 +27,7 @@ class StandardStore implements InternalStore {
     const alreadyCached = this.cache.subscribe(queryHandle, onData)
     if (!alreadyCached) {
       this.fetcher.addRequest(uniqueQuery, {
-        onStart: onRequest,
+        onRequest,
         onComplete: (data) => this.cache.storeQueryData(queryHandle, data),
         onError,
       })
@@ -42,6 +42,7 @@ class StandardStore implements InternalStore {
           )
         }
 
+        queryHandle.addNextQuery(nextQuery)
         this.fetchMore(queryHandle, nextQuery, callbacks)
       },
     }
@@ -60,7 +61,7 @@ class StandardStore implements InternalStore {
     const { onRequest, onError } = callbacks
     const mergeFn = nextQuery.options.merge || query.options.merge
     this.fetcher.addRequest(nextQuery, {
-      onStart: onRequest,
+      onRequest,
       onError,
       onComplete: (newData) => {
         const { arguments: args, context } = nextQuery.options
@@ -69,45 +70,6 @@ class StandardStore implements InternalStore {
         this.cache.storeQueryData(query, mergedData)
       },
     })
-  }
-}
-
-export interface CompoundQueryOptions<TResult, TArguments, TContext> {
-  shape?: NormalizedShape
-  merge?: (
-    existingData: TResult,
-    newData: TResult,
-    args: TArguments,
-    ctx: TContext
-  ) => TResult
-}
-
-class CompoundQueryKey implements QueryKey {
-  constructor(private name: string) {}
-
-  matches(qk: QueryKey): boolean {
-    return qk instanceof CompoundQueryKey && qk.name === this.name
-  }
-}
-
-export class CompoundQuery<TResult, TArguments, TContext>
-  extends BaseQuery
-  implements Iterable<Query<TResult, TArguments, TContext>> {
-  readonly options: CompoundQueryOptions<TResult, TArguments, TContext>
-  private queries = new Set<Query<TResult, TArguments, TContext>>()
-
-  constructor(originalQuery: Query<TResult, TArguments, TContext>) {
-    super(new CompoundQueryKey(originalQuery.name), {
-      shape: originalQuery.options.shape,
-    })
-    this.options = {
-      // shape: originalQuery.options.shape,
-      merge: originalQuery.options.merge,
-    }
-  }
-
-  [Symbol.iterator]() {
-    return this.queries.values()
   }
 }
 

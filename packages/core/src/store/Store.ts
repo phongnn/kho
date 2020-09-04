@@ -1,4 +1,4 @@
-import { Query } from "./Query"
+import { Query } from "../query/Query"
 
 /** Public interface exposed to developers */
 export interface Store {}
@@ -16,6 +16,7 @@ export interface InternalStore extends Store {
 }
 
 export interface StoreOptions {}
+
 export interface QueryRegistrationResult<TResult, TArguments, TContext> {
   unregister: () => void
   fetchMore: (

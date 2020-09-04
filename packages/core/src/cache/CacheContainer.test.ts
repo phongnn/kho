@@ -1,6 +1,6 @@
 import CacheContainer from "./CacheContainer"
-import { NormalizedType } from "../../NormalizedType"
-import { LocalQuery } from "../../Query"
+import { NormalizedType } from "../normalization/NormalizedType"
+import { LocalQuery } from "../query/LocalQuery"
 
 afterAll(() => {
   // @ts-ignore

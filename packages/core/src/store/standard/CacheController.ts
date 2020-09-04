@@ -1,5 +1,5 @@
-import { BaseQuery } from "../Query"
-import CacheContainer, { CacheKey } from "./cache/CacheContainer"
+import { BaseQuery } from "../../query/BaseQuery"
+import CacheContainer, { CacheKey } from "../../cache/CacheContainer"
 
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void

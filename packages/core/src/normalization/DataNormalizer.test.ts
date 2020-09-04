@@ -1,6 +1,6 @@
 import DataNormalizer from "./DataNormalizer"
-import { NormalizedShape, NormalizedType } from "../../NormalizedType"
-import { NormalizedObjectRef, NormalizedObjectKey } from "./ObjectBucket"
+import { NormalizedShape, NormalizedType } from "./NormalizedType"
+import { NormalizedObjectRef, NormalizedObjectKey } from "./NormalizedObject"
 
 afterAll(() => {
   // @ts-ignore

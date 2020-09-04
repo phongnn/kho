@@ -1,3 +1,3 @@
-export { Store, InternalStore, StoreOptions } from "./Store"
-export { Query, QueryOptions, LocalQuery, LocalQueryOptions } from "./Query"
-export { createStore } from "./createStore"
+export { Query, QueryOptions } from "./query/Query"
+export { Store, InternalStore, StoreOptions } from "./store/Store"
+export { createStore } from "./store/createStore"

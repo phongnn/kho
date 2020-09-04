@@ -1,6 +1,6 @@
 import DataDenormalizer from "./DataDenormalizer"
-import { NormalizedType } from "../../NormalizedType"
-import { NormalizedObjectRef, NormalizedObjectKey } from "./ObjectBucket"
+import { NormalizedType } from "./NormalizedType"
+import { NormalizedObjectRef, NormalizedObjectKey } from "./NormalizedObject"
 import Selector from "./Selector"
 
 afterAll(() => {

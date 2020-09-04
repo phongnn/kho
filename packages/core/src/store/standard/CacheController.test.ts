@@ -1,5 +1,5 @@
 import CacheController from "./CacheController"
-import { Query } from "../Query"
+import { Query } from "../../query/Query"
 
 afterAll(() => {
   // @ts-ignore

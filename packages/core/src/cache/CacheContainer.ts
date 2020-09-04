@@ -1,8 +1,8 @@
-import { BaseQuery } from "../../Query"
+import { BaseQuery } from "../query/BaseQuery"
 import QueryBucket, { CacheKey } from "./QueryBucket"
 import ObjectBucket from "./ObjectBucket"
-import DataNormalizer from "./DataNormalizer"
-import DataDenormalizer from "./DataDenormalizer"
+import DataNormalizer from "../normalization/DataNormalizer"
+import DataDenormalizer from "../normalization/DataDenormalizer"
 
 export { CacheKey } from "./QueryBucket"
 

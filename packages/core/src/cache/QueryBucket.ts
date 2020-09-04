@@ -1,14 +1,12 @@
-import { BaseQuery, QueryKey } from "../../Query"
-import Selector from "./Selector"
-import DataNormalizer from "./DataNormalizer"
+import { BaseQuery, BaseQueryKey } from "../query/BaseQuery"
+import Selector from "../normalization/Selector"
 
 // Equivalent query keys will share the same cache key
-// (a query can be used many times by rendering the same component,
-//  it can also be used by multiple components).
+// (a query can be used by multiple components or by one component but renderred several times).
 // Cache keys help us avoid deep comparison of query key against cached query keys
 // every time we need to notify active queries of possible state change.
 export class CacheKey {
-  private queryKey: QueryKey
+  private queryKey: BaseQueryKey
 
   constructor(query: BaseQuery) {
     this.queryKey = query.key
