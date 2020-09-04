@@ -46,6 +46,11 @@ class CacheController {
       (aq) => aq.cacheKey && aq.onData(this.cache.get(aq.cacheKey))
     )
   }
+
+  retrieveQueryData(query: BaseQuery) {
+    const cacheKey = this.cache.findCacheKey(query)
+    return !cacheKey ? null : this.cache.get(cacheKey)
+  }
 }
 
 export default CacheController

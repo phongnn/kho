@@ -14,7 +14,7 @@ export abstract class BaseQuery {
   ) {}
 }
 
-export interface QueryOptions<TArguments, TContext> {
+export interface QueryOptions<TResult, TArguments, TContext> {
   fetchPolicy?:
     | "cache-first"
     | "cache-and-network"
@@ -24,9 +24,15 @@ export interface QueryOptions<TArguments, TContext> {
   arguments?: TArguments
   context?: TContext
   shape?: NormalizedShape
+  merge?: (
+    existingData: TResult,
+    newData: TResult,
+    args: TArguments,
+    ctx: TContext
+  ) => TResult
 }
 
-const defaultQueryOptions: QueryOptions<any, any> = {
+const defaultQueryOptions: QueryOptions<any, any, any> = {
   fetchPolicy: "cache-first",
 }
 
@@ -48,7 +54,11 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
   constructor(
     readonly name: string,
     readonly fetcher: (args: TArguments, ctx: TContext) => Promise<TResult>,
-    readonly options: QueryOptions<TArguments, TContext> = defaultQueryOptions
+    readonly options: QueryOptions<
+      TResult,
+      TArguments,
+      TContext
+    > = defaultQueryOptions
   ) {
     super(new RemoteQueryKey(name, options.arguments), options)
 
