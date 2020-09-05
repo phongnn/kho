@@ -9,12 +9,13 @@ import userEvent from "@testing-library/user-event"
 import { useQuery } from "../useQuery"
 import { Provider } from "../Provider"
 
-const getDataForPage = (pageIndex: number) => {
+let getDataForPage = (pageIndex: number) => {
   const offset = (pageIndex - 1) * 10
   return Promise.resolve(
     [...Array(10)].map((_, i) => `item # ${offset + i + 1}`)
   )
 }
+
 const query = new Query(
   "GetPage",
   (args: { pageIndex: number }) =>
@@ -71,4 +72,19 @@ it("should fetch and show more data", async () => {
   userEvent.click(await screen.findByText("More"))
   await waitForElementToBeRemoved(screen.getByText("Fetching more..."))
   expect(screen.getAllByText("***").length).toBe(20)
+})
+
+it("should show fetchMore error", async () => {
+  render(
+    <Provider store={createStore()}>
+      <DataLoadingComponent />
+    </Provider>
+  )
+
+  jest.spyOn(console, "error").mockImplementation(() => {})
+  getDataForPage = jest.fn().mockRejectedValue("a strange error")
+
+  userEvent.click(await screen.findByText("More"))
+  await waitForElementToBeRemoved(screen.getByText("Fetching more..."))
+  expect(screen.getByText(/a strange error/)).toBeInTheDocument()
 })

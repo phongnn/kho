@@ -29,20 +29,22 @@ interface DataLoadingState<TResult, TArguments, TContext> {
 
 type DataLoadingAction<TResult, TArguments, TContext> =
   | { type: "ACTION_REQUEST" }
+  | { type: "ACTION_FAILURE"; payload: Error }
   | {
       type: "ACTION_SUCCESS"
-      payload: TResult
       internalFetchMore: (
         nextQuery: Query<TResult, TArguments, TContext>,
         callbacks?: {
           onRequest?: () => void
           onError?: (err: Error) => void
+          onComplete: () => void
         }
       ) => void
     }
-  | { type: "ACTION_FAILURE"; payload: Error }
   | { type: "ACTION_FETCH_MORE_REQUEST" }
   | { type: "ACTION_FETCH_MORE_ERROR"; payload: Error }
+  | { type: "ACTION_FETCH_MORE_SUCCESS" }
+  | { type: "ACTION_DATA"; payload: TResult }
 
 const initialState: DataLoadingState<any, any, any> = {
   loading: false,
@@ -71,11 +73,10 @@ export function useQuery<TResult, TArguments, TContext>(
       case "ACTION_FAILURE":
         return { ...state, loading: false, data: null, error: action.payload }
       case "ACTION_SUCCESS":
-        const { payload, internalFetchMore } = action
+        const { internalFetchMore } = action
         return {
           ...state,
           loading: false,
-          data: payload,
           fetchingMore: false,
           fetchMore: ({ arguments: args, context, query: anotherQuery }) => {
             const nextQuery = anotherQuery
@@ -90,10 +91,11 @@ export function useQuery<TResult, TArguments, TContext>(
                   // context: { ...anotherQuery.options.context, ...context } // TODO
                 })
 
+            // prettier-ignore
             internalFetchMore(nextQuery, {
               onRequest: () => dispatch({ type: "ACTION_FETCH_MORE_REQUEST" }),
-              onError: (err) =>
-                dispatch({ type: "ACTION_FETCH_MORE_ERROR", payload: err }),
+              onError: (err) => dispatch({ type: "ACTION_FETCH_MORE_ERROR", payload: err }),
+              onComplete: () => dispatch({ type: "ACTION_FETCH_MORE_SUCCESS" })
             })
           },
         }
@@ -101,6 +103,10 @@ export function useQuery<TResult, TArguments, TContext>(
         return { ...state, fetchingMore: true, fetchMoreError: null }
       case "ACTION_FETCH_MORE_ERROR":
         return { ...state, fetchingMore: false, fetchMoreError: action.payload }
+      case "ACTION_FETCH_MORE_SUCCESS":
+        return { ...state, fetchingMore: false }
+      case "ACTION_DATA":
+        return { ...state, data: action.payload }
       default:
         return state
     }
@@ -118,9 +124,9 @@ export function useQuery<TResult, TArguments, TContext>(
       TContext
     >(actualQuery, {
       onRequest: () => dispatch({ type: "ACTION_REQUEST" }),
-      onData: (data) =>
-        dispatch({ type: "ACTION_SUCCESS", payload: data, internalFetchMore }),
       onError: (err) => dispatch({ type: "ACTION_FAILURE", payload: err }),
+      onComplete: () => dispatch({ type: "ACTION_SUCCESS", internalFetchMore }),
+      onData: (data) => dispatch({ type: "ACTION_DATA", payload: data }),
     })
 
     return () => unregister()

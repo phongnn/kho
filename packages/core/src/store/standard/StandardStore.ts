@@ -11,12 +11,13 @@ class StandardStore implements InternalStore {
   registerQuery<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,
     callbacks: {
-      onRequest?: () => void
       onData: (data: TResult) => void
+      onRequest?: () => void
       onError?: (err: Error) => void
+      onComplete?: () => void
     }
   ) {
-    const { onRequest, onData, onError } = callbacks
+    const { onRequest, onData, onError, onComplete } = callbacks
 
     // makes sure query instance is unique, not shared among UI components
     const uniqueQuery = query.clone()
@@ -28,8 +29,9 @@ class StandardStore implements InternalStore {
     if (!alreadyCached) {
       this.fetcher.addRequest(uniqueQuery, {
         onRequest,
-        onComplete: (data) => this.cache.storeQueryData(queryHandle, data),
         onError,
+        onComplete,
+        onData: (data) => this.cache.storeQueryData(queryHandle, data),
       })
     }
 
@@ -56,14 +58,16 @@ class StandardStore implements InternalStore {
     callbacks: {
       onRequest?: () => void
       onError?: (err: Error) => void
+      onComplete?: () => void
     } = {}
   ) {
-    const { onRequest, onError } = callbacks
+    const { onRequest, onError, onComplete } = callbacks
     const mergeFn = nextQuery.options.merge || query.original.options.merge
     this.fetcher.addRequest(nextQuery, {
       onRequest,
       onError,
-      onComplete: (newData) => {
+      onComplete,
+      onData: (newData) => {
         const { arguments: args, context } = nextQuery.options
         const existingData = this.cache.retrieveQueryData(query)
         const mergedData = mergeFn!(existingData, newData, args!, context!)

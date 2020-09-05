@@ -3,12 +3,25 @@ import { isProduction } from "../../helpers"
 
 class RequestInfo<TResult> {
   constructor(
-    readonly completeCallback: (data: TResult) => void,
-    readonly errorCallbacks: Array<(err: Error) => void> = [] // multiple callbacks for "dedup"-ed requests
+    readonly dataCallback: (data: TResult) => void,
+    readonly errorCallbacks: Array<(err: Error) => void>, // multiple callbacks for "dedup"-ed requests
+    readonly completeCallbacks: Array<() => void> // multiple callbacks for "dedup"-ed requests
   ) {}
 
-  addErrorCallback(cb: (err: Error) => void) {
-    this.errorCallbacks.push(cb)
+  /** for "dedup"-ed requests */
+  addCallbacks({
+    onError,
+    onComplete,
+  }: {
+    onError?: (err: Error) => void
+    onComplete?: () => void
+  }) {
+    if (onError) {
+      this.errorCallbacks.push(onError)
+    }
+    if (onComplete) {
+      this.completeCallbacks.push(onComplete)
+    }
   }
 }
 
@@ -27,21 +40,29 @@ class Fetcher {
   addRequest<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,
     callbacks: {
-      onComplete: (data: TResult) => void
+      onData: (data: TResult) => void
+      onComplete?: () => void
       onRequest?: () => void
       onError?: (err: Error) => void
     }
   ) {
-    const { onRequest, onError, onComplete } = callbacks
+    const { onRequest, onError, onComplete, onData } = callbacks
     if (onRequest) {
       onRequest()
     }
 
+    // dedup requests
     const [_, ongoingReqInfo] = this.getMatchedOngoingRequest(query)
     if (ongoingReqInfo) {
-      onError && ongoingReqInfo.addErrorCallback(onError)
+      if (onError || onComplete) {
+        ongoingReqInfo.addCallbacks({ onError, onComplete })
+      }
     } else {
-      const info = new RequestInfo(onComplete, onError ? [onError] : [])
+      const info = new RequestInfo(
+        onData,
+        onError ? [onError] : [],
+        onComplete ? [onComplete] : []
+      )
       this.ongoingRequests.set(query, info)
       this.startFetching(query, info)
     }
@@ -63,10 +84,13 @@ class Fetcher {
     requestInfo: RequestInfo<TResult>
   ) {
     const { fetcher, options } = query
-    const { completeCallback, errorCallbacks } = requestInfo
+    const { dataCallback, completeCallbacks, errorCallbacks } = requestInfo
 
     fetcher(options.arguments!, options.context!)
-      .then(completeCallback)
+      .then((data) => {
+        completeCallbacks.forEach((cb) => cb())
+        dataCallback(data)
+      })
       .catch((e) => {
         const err = toErrorObj(e)
         if (!isProduction) {

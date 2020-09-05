@@ -15,12 +15,15 @@ afterEach(() => {
   Query.registry = new Map()
 })
 
-it("should invoke onComplete callback", (done) => {
+it("should invoke onComplete and onData callbacks", (done) => {
   fetchData = jest.fn().mockResolvedValue(testPayload)
+  const completeHandler = jest.fn()
 
   fetcher.addRequest(query, {
-    onComplete: (result) => {
+    onComplete: completeHandler,
+    onData: (result) => {
       expect(fetchData).toBeCalledWith({ id: testId })
+      expect(completeHandler).toBeCalled()
       expect(result).toBe(testPayload)
       done()
     },
@@ -33,7 +36,7 @@ it("should invoke onError callback", (done) => {
 
   jest.spyOn(console, "error").mockImplementation(() => {})
   fetcher.addRequest(query, {
-    onComplete: jest.fn(),
+    onData: jest.fn(),
     onError: (err) => {
       expect(err.message).toMatch(errMsg)
       done()
@@ -42,30 +45,36 @@ it("should invoke onError callback", (done) => {
 })
 
 describe("request dedup", () => {
-  it("should fetch data only once and invoke first onComplete callback", (done) => {
+  it("should fetch data only once and invoke first onData callback", (done) => {
     fetchData = jest.fn().mockResolvedValue(testPayload)
     const q1 = query
     const q2 = q1.clone()
-    const q1StartHandler = jest.fn()
-    const q2StartHandler = jest.fn()
+    const q1RequestHandler = jest.fn()
+    const q2RequestHandler = jest.fn()
+    const q1CompleteHandler = jest.fn()
     const q2CompleteHandler = jest.fn()
+    const q2DataHandler = jest.fn()
 
     fetcher.addRequest(q1, {
-      onRequest: q1StartHandler,
-      onComplete: () => {
-        expect(q1StartHandler).toBeCalledTimes(1)
-        expect(q2StartHandler).toBeCalledTimes(1)
+      onRequest: q1RequestHandler,
+      onComplete: q1CompleteHandler,
+      onData: () => {
+        expect(q1RequestHandler).toBeCalledTimes(1)
+        expect(q2RequestHandler).toBeCalledTimes(1)
+        expect(q1CompleteHandler).toBeCalledTimes(1)
+        expect(q2CompleteHandler).toBeCalledTimes(1)
 
         expect(fetchData).toBeCalledTimes(1)
 
-        expect(q2CompleteHandler).not.toBeCalled()
+        expect(q2DataHandler).not.toBeCalled()
         done()
       },
     })
 
     fetcher.addRequest(q2, {
-      onRequest: q2StartHandler,
+      onRequest: q2RequestHandler,
       onComplete: q2CompleteHandler,
+      onData: q2DataHandler,
     })
   })
 
@@ -78,7 +87,7 @@ describe("request dedup", () => {
 
     jest.spyOn(console, "error").mockImplementation(() => {})
     fetcher.addRequest(q1, {
-      onComplete: jest.fn(),
+      onData: jest.fn(),
       onRequest: () => {
         q1ErrorHandlerInvoked = true
         if (q2ErrorHandlerInvoked) {
@@ -88,7 +97,7 @@ describe("request dedup", () => {
     })
 
     fetcher.addRequest(q2, {
-      onComplete: jest.fn(),
+      onData: jest.fn(),
       onRequest: () => {
         q2ErrorHandlerInvoked = true
         if (q1ErrorHandlerInvoked) {
@@ -107,7 +116,7 @@ describe("request dedup", () => {
 
     expect.assertions(1)
     fetcher.addRequest(q1, {
-      onComplete: () => {
+      onData: () => {
         q1Completed = true
         if (q2Completed) {
           expect(fetchData).toBeCalledTimes(2)
@@ -117,7 +126,7 @@ describe("request dedup", () => {
     })
 
     fetcher.addRequest(q2, {
-      onComplete: () => {
+      onData: () => {
         q2Completed = true
         if (q1Completed) {
           expect(fetchData).toBeCalledTimes(2)
@@ -130,10 +139,10 @@ describe("request dedup", () => {
   it("should not mistakenly dedup subsequent request", (done) => {
     fetchData = jest.fn().mockResolvedValue("blah")
     fetcher.addRequest(query, {
-      onComplete: () => {
+      onData: () => {
         setTimeout(() => {
           fetcher.addRequest(query, {
-            onComplete: () => {
+            onData: () => {
               expect(fetchData).toBeCalledTimes(2)
               done()
             },

@@ -8,9 +8,10 @@ export interface InternalStore extends Store {
   registerQuery<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,
     callbacks: {
-      onRequest: () => void
+      onRequest?: () => void
+      onError?: (err: Error) => void
+      onComplete?: () => void
       onData: (data: TResult) => void
-      onError: (err: Error) => void
     }
   ): QueryRegistrationResult<TResult, TArguments, TContext>
 }
@@ -24,6 +25,7 @@ export interface QueryRegistrationResult<TResult, TArguments, TContext> {
     callbacks?: {
       onRequest?: () => void
       onError?: (err: Error) => void
+      onComplete?: () => void
     }
   ) => void
 }
