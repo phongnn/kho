@@ -62,4 +62,16 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
   }
 
   clone = () => new Query(this.name, this.fetcher, this.options)
+
+  withOptions(options: Partial<QueryOptions<TResult, TArguments, TContext>>) {
+    const { context = {}, ...otherOpts } = this.options
+    const { context: additionalContext = {}, ...overridingOpts } = options
+    const newOptions = {
+      ...otherOpts,
+      ...overridingOpts,
+      context: { ...context, ...additionalContext }, // merge, don't override, context values
+    } as QueryOptions<TResult, TArguments, TContext>
+
+    return new Query(this.name, this.fetcher, newOptions)
+  }
 }

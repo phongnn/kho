@@ -77,19 +77,11 @@ export function useQuery<TResult, TArguments, TContext>(
         return {
           ...state,
           loading: false,
-          fetchingMore: false,
           fetchMore: ({ arguments: args, context, query: anotherQuery }) => {
-            const nextQuery = anotherQuery
-              ? new Query(anotherQuery.name, anotherQuery.fetcher, {
-                  ...anotherQuery.options,
-                  arguments: args || anotherQuery.options.arguments,
-                  // context: { ...anotherQuery.options.context, ...context } // TODO
-                })
-              : new Query(query.name, query.fetcher, {
-                  ...query.options,
-                  arguments: args || query.options.arguments,
-                  // context: { ...anotherQuery.options.context, ...context } // TODO
-                })
+            const nextQuery = (anotherQuery || query).withOptions({
+              arguments: args,
+              context,
+            })
 
             // prettier-ignore
             internalFetchMore(nextQuery, {
@@ -113,10 +105,7 @@ export function useQuery<TResult, TArguments, TContext>(
   }, initialState)
 
   useDeepCompareEffect(() => {
-    const { name, fetcher, options: defaultOpts } = query
-    const actualQuery = !options
-      ? query
-      : new Query(name, fetcher, { ...defaultOpts, ...options }) // TODO: merge context objects
+    const actualQuery = !options ? query : query.withOptions(options)
 
     const { fetchMore: internalFetchMore, unregister } = store.registerQuery<
       TResult,
