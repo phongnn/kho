@@ -69,7 +69,7 @@ class StandardStore implements InternalStore {
       onComplete,
       onData: (newData) => {
         const { arguments: args, context } = nextQuery.options
-        const existingData = this.cache.retrieveQueryData(query)
+        const existingData = this.cache.retrieveActiveQueryData(query)
         const mergedData = mergeFn!(existingData, newData, args!, context!)
         this.cache.storeQueryData(query, mergedData)
       },

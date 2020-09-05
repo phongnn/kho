@@ -4,7 +4,7 @@ import CacheContainer, { CacheKey } from "../../cache/CacheContainer"
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void
   cacheKey?: CacheKey
-  latestData?: any
+  latestData?: any // used when we need to merge query's data (fetchMore)
 }
 
 class CacheController {
@@ -47,7 +47,7 @@ class CacheController {
     }
   }
 
-  retrieveQueryData(query: BaseQuery) {
+  retrieveActiveQueryData(query: BaseQuery) {
     return this.activeQueries.get(query)?.latestData
   }
 }
