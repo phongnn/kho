@@ -12,6 +12,12 @@ interface FetchMoreFn<TResult, TArguments, TContext> {
   }): void
 }
 
+const defaultRefetch = () => {
+  throw new Error(
+    `[react-fnc] refetch() can only be called after successful data loading.`
+  )
+}
+
 const defaultFetchMore = () => {
   throw new Error(
     `[react-fnc] fetchMore() can only be called after successful data loading.`
@@ -25,6 +31,9 @@ interface DataLoadingState<TResult, TArguments, TContext> {
   fetchMore: FetchMoreFn<TResult, TArguments, TContext>
   fetchingMore: boolean
   fetchMoreError: Error | null
+  refetch: () => void
+  refetching: boolean
+  refetchError: Error | null
 }
 
 type DataLoadingAction<TResult, TArguments, TContext> =
@@ -32,6 +41,13 @@ type DataLoadingAction<TResult, TArguments, TContext> =
   | { type: "ACTION_FAILURE"; payload: Error }
   | {
       type: "ACTION_SUCCESS"
+
+      internalRefetch: (callbacks?: {
+        onRequest?: () => void
+        onError?: (err: Error) => void
+        onComplete?: () => void
+      }) => void
+
       internalFetchMore: (
         nextQuery: Query<TResult, TArguments, TContext>,
         callbacks?: {
@@ -42,8 +58,11 @@ type DataLoadingAction<TResult, TArguments, TContext> =
       ) => void
     }
   | { type: "ACTION_FETCH_MORE_REQUEST" }
-  | { type: "ACTION_FETCH_MORE_ERROR"; payload: Error }
+  | { type: "ACTION_FETCH_MORE_FAILURE"; payload: Error }
   | { type: "ACTION_FETCH_MORE_SUCCESS" }
+  | { type: "ACTION_REFETCH_REQUEST" }
+  | { type: "ACTION_REFETCH_FAILURE"; payload: Error }
+  | { type: "ACTION_REFETCH_SUCCESS" }
   | { type: "ACTION_DATA"; payload: TResult }
 
 const initialState: DataLoadingState<any, any, any> = {
@@ -53,6 +72,9 @@ const initialState: DataLoadingState<any, any, any> = {
   fetchMore: defaultFetchMore,
   fetchingMore: false,
   fetchMoreError: null,
+  refetch: defaultRefetch,
+  refetching: false,
+  refetchError: null,
 }
 
 export function useQuery<TResult, TArguments, TContext>(
@@ -73,10 +95,17 @@ export function useQuery<TResult, TArguments, TContext>(
       case "ACTION_FAILURE":
         return { ...state, loading: false, data: null, error: action.payload }
       case "ACTION_SUCCESS":
-        const { internalFetchMore } = action
+        const { internalFetchMore, internalRefetch } = action
         return {
           ...state,
           loading: false,
+          refetch: () =>
+            internalRefetch({
+              onRequest: () => dispatch({ type: "ACTION_REFETCH_REQUEST" }),
+              onError: (err) =>
+                dispatch({ type: "ACTION_REFETCH_FAILURE", payload: err }),
+              onComplete: () => dispatch({ type: "ACTION_REFETCH_SUCCESS" }),
+            }),
           fetchMore: ({ arguments: args, context, query: anotherQuery }) => {
             const nextQuery = (anotherQuery || query).withOptions({
               arguments: args,
@@ -86,17 +115,23 @@ export function useQuery<TResult, TArguments, TContext>(
             // prettier-ignore
             internalFetchMore(nextQuery, {
               onRequest: () => dispatch({ type: "ACTION_FETCH_MORE_REQUEST" }),
-              onError: (err) => dispatch({ type: "ACTION_FETCH_MORE_ERROR", payload: err }),
+              onError: (err) => dispatch({ type: "ACTION_FETCH_MORE_FAILURE", payload: err }),
               onComplete: () => dispatch({ type: "ACTION_FETCH_MORE_SUCCESS" })
             })
           },
         }
       case "ACTION_FETCH_MORE_REQUEST":
         return { ...state, fetchingMore: true, fetchMoreError: null }
-      case "ACTION_FETCH_MORE_ERROR":
+      case "ACTION_FETCH_MORE_FAILURE":
         return { ...state, fetchingMore: false, fetchMoreError: action.payload }
       case "ACTION_FETCH_MORE_SUCCESS":
         return { ...state, fetchingMore: false }
+      case "ACTION_REFETCH_REQUEST":
+        return { ...state, refetching: true, refetchError: null }
+      case "ACTION_REFETCH_FAILURE":
+        return { ...state, refetching: false, refetchError: action.payload }
+      case "ACTION_REFETCH_SUCCESS":
+        return { ...state, refetching: false }
       case "ACTION_DATA":
         return { ...state, data: action.payload }
       default:
@@ -107,14 +142,19 @@ export function useQuery<TResult, TArguments, TContext>(
   useDeepCompareEffect(() => {
     const actualQuery = !options ? query : query.withOptions(options)
 
-    const { fetchMore: internalFetchMore, unregister } = store.registerQuery<
-      TResult,
-      TArguments,
-      TContext
-    >(actualQuery, {
+    const {
+      unregister,
+      fetchMore: internalFetchMore,
+      refetch: internalRefetch,
+    } = store.registerQuery<TResult, TArguments, TContext>(actualQuery, {
       onRequest: () => dispatch({ type: "ACTION_REQUEST" }),
       onError: (err) => dispatch({ type: "ACTION_FAILURE", payload: err }),
-      onComplete: () => dispatch({ type: "ACTION_SUCCESS", internalFetchMore }),
+      onComplete: () =>
+        dispatch({
+          type: "ACTION_SUCCESS",
+          internalFetchMore,
+          internalRefetch,
+        }),
       onData: (data) => dispatch({ type: "ACTION_DATA", payload: data }),
     })
 
