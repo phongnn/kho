@@ -13,3 +13,14 @@ export const isProduction = env === "production"
 //     Math.random().toString(36).substring(2, 15)
 //   )
 // }
+
+export function override(existingObj: any, newObj: any) {
+  const result: any = {}
+  Object.getOwnPropertyNames(existingObj).forEach(
+    (prop) => (result[prop] = newObj[prop] || existingObj[prop])
+  )
+  Object.getOwnPropertyNames(newObj).forEach(
+    (prop) => (result[prop] = newObj[prop] || existingObj[prop])
+  )
+  return result
+}

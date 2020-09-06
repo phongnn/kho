@@ -1,4 +1,4 @@
-import { deepEqual } from "../helpers"
+import { deepEqual, override } from "../helpers"
 import { NormalizedShape } from "../normalization/NormalizedType"
 import { BaseQueryKey, BaseQuery } from "./BaseQuery"
 
@@ -42,11 +42,8 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
   constructor(
     readonly name: string,
     readonly fetcher: (args: TArguments, ctx: TContext) => Promise<TResult>,
-    readonly options: QueryOptions<
-      TResult,
-      TArguments,
-      TContext
-    > = defaultQueryOptions
+    // prettier-ignore
+    readonly options: QueryOptions<TResult, TArguments, Partial<TContext>> = defaultQueryOptions
   ) {
     super(new QueryKey(name, options.arguments), options)
 
@@ -63,15 +60,11 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
 
   clone = () => new Query(this.name, this.fetcher, this.options)
 
-  withOptions(options: Partial<QueryOptions<TResult, TArguments, TContext>>) {
+  withOptions(options: QueryOptions<TResult, TArguments, Partial<TContext>>) {
     const { context = {}, ...otherOpts } = this.options
     const { context: additionalContext = {}, ...overridingOpts } = options
-    const newOptions = {
-      ...otherOpts,
-      ...overridingOpts,
-      context: { ...context, ...additionalContext }, // merge, don't override, context values
-    } as QueryOptions<TResult, TArguments, TContext>
-
+    const newOptions = override(otherOpts, overridingOpts)
+    newOptions.context = { ...context, ...additionalContext }
     return new Query(this.name, this.fetcher, newOptions)
   }
 }
