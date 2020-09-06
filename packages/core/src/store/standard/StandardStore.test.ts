@@ -35,9 +35,7 @@ describe("fetchMore", () => {
     const { fetchMore } = store.registerQuery(query, {
       onData: (data) => {
         if (data === "*1*") {
-          setTimeout(() => {
-            fetchMore(query)
-          })
+          setTimeout(() => fetchMore(query))
         } else {
           expect(data).toBe("*1**2*")
           done()
@@ -63,11 +61,80 @@ describe("fetchMore", () => {
     const { fetchMore } = store.registerQuery(query, {
       onData: (data) => {
         if (data === "*1*") {
-          setTimeout(() => {
-            fetchMore(nextQuery)
-          })
+          setTimeout(() => fetchMore(nextQuery))
         } else {
           expect(data).toBe("*1*2*")
+          done()
+        }
+      },
+    })
+  })
+})
+
+describe("refetch", () => {
+  it("should callback with updated data", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(`*${++count}*`))
+    const store = new StandardStore()
+    const { refetch } = store.registerQuery(query, {
+      onData: (data) => {
+        if (data === "*1*") {
+          setTimeout(refetch)
+        } else {
+          expect(data).toBe("*2*")
+          done()
+        }
+      },
+    })
+  })
+
+  it("should refetch compound query", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      (args: { x: number }) => Promise.resolve(`*${++count}*`),
+      {
+        arguments: { x: 1 },
+        merge: (existingData, newData) =>
+          `${existingData}${newData}`.replace("**", "*"),
+      }
+    )
+    const store = new StandardStore()
+    const onRequest = jest.fn()
+    const onComplete = jest.fn()
+    const { fetchMore, refetch } = store.registerQuery(query, {
+      onRequest,
+      onComplete,
+      onData: (data) => {
+        if (data === "*1*") {
+          setTimeout(() =>
+            fetchMore(query.withOptions({ arguments: { x: 2 } }))
+          )
+        } else if (data === "*1*2*") {
+          setTimeout(refetch)
+        } else {
+          expect(onRequest).toBeCalled()
+          expect(onComplete).toBeCalled()
+          expect(data).toBe("*3*4*")
+          done()
+        }
+      },
+    })
+  })
+
+  it("should refetch single-child compound query", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(`*${++count}*`), {
+      merge: (existingData, newData) =>
+        `${existingData}${newData}`.replace("**", "*"),
+    })
+    const store = new StandardStore()
+    const { refetch } = store.registerQuery(query, {
+      onData: (data) => {
+        if (data === "*1*") {
+          setTimeout(refetch)
+        } else {
+          expect(data).toBe("*2*")
           done()
         }
       },

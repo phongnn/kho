@@ -20,6 +20,7 @@ class CompoundQuery<TResult, TArguments, TContext>
 
   constructor(readonly original: Query<TResult, TArguments, TContext>) {
     super(new CompoundQueryKey(original.name), original.options)
+    this.queries.add(original)
   }
 
   addNextQuery(query: Query<TResult, TArguments, TContext>) {
@@ -28,6 +29,10 @@ class CompoundQuery<TResult, TArguments, TContext>
 
   [Symbol.iterator]() {
     return this.queries.values()
+  }
+
+  get size() {
+    return this.queries.size
   }
 }
 

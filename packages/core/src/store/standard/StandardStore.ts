@@ -37,6 +37,7 @@ class StandardStore implements InternalStore {
 
     const result: QueryRegistrationResult<TResult, TArguments, TContext> = {
       unregister: () => this.cache.unsubscribe(queryHandle),
+      refetch: (callbacks) => this.refetch(queryHandle, callbacks),
       fetchMore: (nextQuery, callbacks) => {
         if (!(queryHandle instanceof CompoundQuery)) {
           throw new Error(
@@ -44,12 +45,32 @@ class StandardStore implements InternalStore {
           )
         }
 
-        queryHandle.addNextQuery(nextQuery)
-        this.fetchMore(queryHandle, nextQuery, callbacks)
+        const uniqueNextQuery = nextQuery.clone() // for safety reason
+        queryHandle.addNextQuery(uniqueNextQuery)
+        this.fetchMore(queryHandle, uniqueNextQuery, callbacks)
       },
     }
 
     return result
+  }
+
+  private refetch<TResult, TArguments, TContext>(
+    query:
+      | Query<TResult, TArguments, TContext>
+      | CompoundQuery<TResult, TArguments, TContext>,
+    callbacks: {
+      onRequest?: () => void
+      onError?: (err: Error) => void
+      onComplete?: () => void
+    } = {}
+  ) {
+    const { onRequest, onError, onComplete } = callbacks
+    this.fetcher.addRequest(query, {
+      onRequest,
+      onError,
+      onComplete,
+      onData: (newData) => this.cache.storeQueryData(query, newData),
+    })
   }
 
   private fetchMore<TResult, TArguments, TContext>(

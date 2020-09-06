@@ -20,6 +20,13 @@ export interface StoreOptions {}
 
 export interface QueryRegistrationResult<TResult, TArguments, TContext> {
   unregister: () => void
+
+  refetch: (callbacks?: {
+    onRequest?: () => void
+    onError?: (err: Error) => void
+    onComplete?: () => void
+  }) => void
+
   fetchMore: (
     query: Query<TResult, TArguments, TContext>,
     callbacks?: {
