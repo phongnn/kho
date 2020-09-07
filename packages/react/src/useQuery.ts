@@ -1,8 +1,8 @@
-import { useReducer, Reducer } from "react"
-import { QueryOptions, Query } from "@fnc/core"
+import { useReducer, Reducer, useRef, useEffect } from "react"
+import { QueryOptions, Query, InternalStore } from "@fnc/core"
 
 import { useStore } from "./Provider"
-import { useDeepCompareEffect } from "./helpers"
+import { deepEqual } from "./helpers"
 
 interface FetchMoreFn<TResult, TArguments, TContext> {
   (options: {
@@ -77,27 +77,29 @@ const initialState: DataLoadingState<any, any, any> = {
   refetchError: null,
 }
 
-export function useQuery<TResult, TArguments, TContext>(
-  query: Query<TResult, TArguments, TContext>,
-  options?: Omit<QueryOptions<TResult, TArguments, TContext>, "shape">
+function useCustomState<TResult, TArguments, TContext>(
+  query: Query<TResult, TArguments, TContext>
 ) {
-  const store = useStore()
-
   const [state, dispatch] = useReducer<
     Reducer<
       DataLoadingState<TResult, TArguments, TContext>,
       DataLoadingAction<TResult, TArguments, TContext>
     >
-  >((state, action) => {
+  >((currentState, action) => {
     switch (action.type) {
       case "ACTION_REQUEST":
-        return { ...state, loading: true, error: null, data: null }
+        return { ...currentState, loading: true, error: null, data: null }
       case "ACTION_FAILURE":
-        return { ...state, loading: false, data: null, error: action.payload }
+        return {
+          ...currentState,
+          loading: false,
+          data: null,
+          error: action.payload,
+        }
       case "ACTION_SUCCESS":
         const { internalFetchMore, internalRefetch } = action
         return {
-          ...state,
+          ...currentState,
           loading: false,
           refetch: () =>
             internalRefetch({
@@ -121,43 +123,89 @@ export function useQuery<TResult, TArguments, TContext>(
           },
         }
       case "ACTION_FETCH_MORE_REQUEST":
-        return { ...state, fetchingMore: true, fetchMoreError: null }
+        return { ...currentState, fetchingMore: true, fetchMoreError: null }
       case "ACTION_FETCH_MORE_FAILURE":
-        return { ...state, fetchingMore: false, fetchMoreError: action.payload }
+        return {
+          ...currentState,
+          fetchingMore: false,
+          fetchMoreError: action.payload,
+        }
       case "ACTION_FETCH_MORE_SUCCESS":
-        return { ...state, fetchingMore: false }
+        return { ...currentState, fetchingMore: false }
       case "ACTION_REFETCH_REQUEST":
-        return { ...state, refetching: true, refetchError: null }
+        return { ...currentState, refetching: true, refetchError: null }
       case "ACTION_REFETCH_FAILURE":
-        return { ...state, refetching: false, refetchError: action.payload }
+        return {
+          ...currentState,
+          refetching: false,
+          refetchError: action.payload,
+        }
       case "ACTION_REFETCH_SUCCESS":
-        return { ...state, refetching: false }
+        return { ...currentState, refetching: false }
       case "ACTION_DATA":
-        return { ...state, data: action.payload }
+        return { ...currentState, data: action.payload }
       default:
-        return state
+        return currentState
     }
   }, initialState)
 
-  useDeepCompareEffect(() => {
+  return { state, dispatch }
+}
+
+//----------- useCustomEffect ---------------
+type QueryDependencyList = [
+  InternalStore,
+  Query<any, any, any>,
+  QueryOptions<any, any, any> | undefined
+]
+
+function useCustomEffect(fn: () => void, dependencies: QueryDependencyList) {
+  const depRef = useRef(dependencies)
+  if (hasChanges(depRef.current, dependencies)) {
+    depRef.current = dependencies
+  }
+
+  useEffect(fn, depRef.current)
+}
+
+function hasChanges(
+  currentDeps: QueryDependencyList,
+  newDeps: QueryDependencyList
+) {
+  const [cStore, cQuery, cOptions = {}] = currentDeps
+  const [nStore, nQuery, nOptions = {}] = newDeps
+  return (
+    nStore !== cStore ||
+    nQuery !== cQuery ||
+    !deepEqual(nOptions.arguments, cOptions.arguments) // TODO: write compareQueryArguments
+  )
+}
+
+//----------- useQuery ---------------
+export function useQuery<TResult, TArguments, TContext>(
+  query: Query<TResult, TArguments, TContext>,
+  options?: Omit<QueryOptions<TResult, TArguments, TContext>, "shape" | "merge">
+) {
+  const store = useStore()
+  const { state, dispatch } = useCustomState(query)
+
+  useCustomEffect(() => {
     const actualQuery = !options ? query : query.withOptions(options)
-
-    const {
-      unregister,
-      fetchMore: internalFetchMore,
-      refetch: internalRefetch,
-    } = store.registerQuery<TResult, TArguments, TContext>(actualQuery, {
-      onRequest: () => dispatch({ type: "ACTION_REQUEST" }),
-      onError: (err) => dispatch({ type: "ACTION_FAILURE", payload: err }),
-      onComplete: () =>
-        dispatch({
-          type: "ACTION_SUCCESS",
-          internalFetchMore,
-          internalRefetch,
-        }),
-      onData: (data) => dispatch({ type: "ACTION_DATA", payload: data }),
-    })
-
+    // prettier-ignore
+    const { unregister, fetchMore, refetch } = store.registerQuery<TResult, TArguments, TContext>(
+      actualQuery, 
+      {
+        onRequest: () => dispatch({ type: "ACTION_REQUEST" }),
+        onError: (err) => dispatch({ type: "ACTION_FAILURE", payload: err }),
+        onComplete: () =>
+          dispatch({
+            type: "ACTION_SUCCESS",
+            internalFetchMore: fetchMore,
+            internalRefetch: refetch,
+          }),
+        onData: (data) => dispatch({ type: "ACTION_DATA", payload: data }),
+      }
+    )
     return () => unregister()
   }, [store, query, options])
 
