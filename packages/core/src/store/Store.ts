@@ -35,4 +35,7 @@ export interface QueryRegistrationResult<TResult, TArguments, TContext> {
       onComplete?: () => void
     }
   ) => void
+
+  startPolling: (interval?: number) => void
+  stopPolling: () => void
 }

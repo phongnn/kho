@@ -141,3 +141,56 @@ describe("refetch", () => {
     })
   })
 })
+
+describe("polling", () => {
+  const intervalMs = 5 * 60 * 1000
+
+  afterEach(() => jest.useRealTimers())
+
+  it("should work", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(`*${++count}*`), {
+      pollInterval: intervalMs,
+    })
+    const store = new StandardStore()
+
+    jest.useFakeTimers()
+    const { stopPolling } = store.registerQuery(query, {
+      onData: (data) => {
+        if (data === "*1*" || data === "*2*") {
+          process.nextTick(() => jest.advanceTimersByTime(intervalMs))
+        } else {
+          expect(data).toBe("*3*")
+          stopPolling()
+          done()
+        }
+      },
+    })
+  })
+
+  it("should stop polling", (done) => {
+    const query = new Query("GetData", () => Promise.resolve(), {
+      pollInterval: intervalMs,
+    })
+    const store = new StandardStore()
+
+    let counter = 0
+    jest.useFakeTimers()
+    const { stopPolling } = store.registerQuery(query, {
+      onData: () => {
+        counter++
+        if (counter === 1) {
+          process.nextTick(() => jest.advanceTimersByTime(intervalMs))
+        } else if (counter === 2) {
+          process.nextTick(() => {
+            stopPolling()
+            setTimeout(done, intervalMs * 5)
+            jest.advanceTimersByTime(intervalMs * 5)
+          })
+        } else if (counter === 3) {
+          throw new Error("Polling should have stopped and never call this.")
+        }
+      },
+    })
+  })
+})

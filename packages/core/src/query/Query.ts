@@ -12,6 +12,7 @@ export interface QueryOptions<TResult, TArguments, TContext> {
   arguments?: TArguments
   context?: TContext
   shape?: NormalizedShape
+  pollInterval?: number
   merge?: (
     existingData: TResult,
     newData: TResult,
@@ -22,6 +23,7 @@ export interface QueryOptions<TResult, TArguments, TContext> {
 
 const defaultQueryOptions: QueryOptions<any, any, any> = {
   fetchPolicy: "cache-first",
+  pollInterval: 0,
 }
 
 class QueryKey<TArguments> implements BaseQueryKey {

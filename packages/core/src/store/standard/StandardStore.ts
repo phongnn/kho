@@ -21,7 +21,7 @@ class StandardStore implements InternalStore {
 
     // makes sure query instance is unique, not shared among UI components
     const uniqueQuery = query.clone()
-    const queryHandle = !query.options.merge
+    const queryHandle = !uniqueQuery.options.merge
       ? uniqueQuery
       : new CompoundQuery(uniqueQuery)
 
@@ -35,8 +35,15 @@ class StandardStore implements InternalStore {
       })
     }
 
+    const { pollInterval = 0 } = uniqueQuery.options
+    let stopPollingFn =
+      pollInterval > 0 ? this.startPolling(queryHandle, pollInterval) : () => {}
+
     const result: QueryRegistrationResult<TResult, TArguments, TContext> = {
-      unregister: () => this.cache.unsubscribe(queryHandle),
+      unregister: () => {
+        stopPollingFn()
+        this.cache.unsubscribe(queryHandle)
+      },
       refetch: (callbacks) => this.refetch(queryHandle, callbacks),
       fetchMore: (nextQuery, callbacks) => {
         if (!(queryHandle instanceof CompoundQuery)) {
@@ -49,6 +56,11 @@ class StandardStore implements InternalStore {
         queryHandle.addNextQuery(uniqueNextQuery)
         this.fetchMore(queryHandle, uniqueNextQuery, callbacks)
       },
+      startPolling: (interval?: number) => {
+        stopPollingFn() // clear the previous interval
+        stopPollingFn = this.startPolling(queryHandle, interval || pollInterval)
+      },
+      stopPolling: () => stopPollingFn(),
     }
 
     return result
@@ -95,6 +107,21 @@ class StandardStore implements InternalStore {
         this.cache.storeQueryData(query, mergedData)
       },
     })
+  }
+
+  private startPolling<TResult, TArguments, TContext>(
+    queryHandle:
+      | Query<TResult, TArguments, TContext>
+      | CompoundQuery<TResult, TArguments, TContext>,
+    pollInterval: number
+  ) {
+    const interval = setInterval(() => {
+      this.fetcher.addRequest(queryHandle, {
+        onData: (data) => this.cache.storeQueryData(queryHandle, data),
+      })
+    }, pollInterval)
+
+    return () => clearInterval(interval)
   }
 }
 
