@@ -103,9 +103,9 @@ class QueryHandler {
       onComplete,
       onData: (newData) => {
         const { arguments: args, context } = nextQuery.options
-        const existingData = this.cache.retrieveActiveQueryData(query)
-        const mergedData = mergeFn!(existingData, newData, args!, context!)
-        this.cache.storeQueryData(query, mergedData)
+        this.cache.mergeQueryData(query, newData, (edata, ndata) =>
+          mergeFn!(edata, ndata, args!, context!)
+        )
       },
     })
   }

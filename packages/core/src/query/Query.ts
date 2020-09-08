@@ -14,11 +14,11 @@ export interface QueryOptions<TResult, TArguments, TContext> {
   shape?: NormalizedShape
   pollInterval?: number
   merge?: (
-    existingData: TResult,
-    newData: TResult,
+    existingData: any,
+    newData: any,
     args: TArguments,
     ctx: Partial<TContext>
-  ) => TResult
+  ) => any
 }
 
 const defaultQueryOptions: QueryOptions<any, any, any> = {

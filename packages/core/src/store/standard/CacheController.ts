@@ -1,11 +1,11 @@
 import { BaseQuery } from "../../query/BaseQuery"
 import CacheContainer, { CacheKey } from "../../cache/CacheContainer"
 import { Mutation } from "../../query/Mutation"
+import CompoundQuery from "../../fetcher/CompoundQuery"
 
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void
   cacheKey?: CacheKey
-  latestData?: any // used when we need to merge query's data (fetchMore)
 }
 
 class CacheController {
@@ -16,9 +16,8 @@ class CacheController {
   subscribe(query: BaseQuery, onData: (data: any) => void) {
     const cacheKey = this.cache.findCacheKey(query)
     if (cacheKey) {
-      const latestData = this.cache.get(cacheKey)
-      this.activeQueries.set(query, { onData, cacheKey, latestData })
-      onData(latestData) // callback immediately
+      this.activeQueries.set(query, { onData, cacheKey })
+      onData(this.cache.get(cacheKey)) // callback immediately
       return true
     } else {
       this.activeQueries.set(query, { onData })
@@ -43,28 +42,36 @@ class CacheController {
     this.notifyActiveQueries()
   }
 
+  mergeQueryData<TResult, TArguments, TContext>(
+    query: CompoundQuery<TResult, TArguments, TContext>,
+    newData: any,
+    mergeFn: (existingData: any, newData: any) => any
+  ) {
+    const cacheKey = this.activeQueries.get(query)?.cacheKey
+    if (!cacheKey) {
+      throw new Error(`[FNC] Unable to find cache key to merge data.`)
+    }
+
+    const { shape } = query.original.options
+    this.cache.saveAdditionalQueryData(cacheKey, newData, shape, mergeFn)
+    this.notifyActiveQueries()
+  }
+
   storeMutationResult<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
     data: any
   ) {
-    this.cache.saveMutationResult(mutation, data)
+    const { shape, update: updateFn } = mutation.options
+    this.cache.saveMutationResult(data, shape, updateFn)
     this.notifyActiveQueries()
-  }
-
-  retrieveActiveQueryData(query: BaseQuery) {
-    return this.activeQueries.get(query)?.latestData
   }
 
   // notify active queries of possible state change
   private notifyActiveQueries() {
     for (const [q, qInfo] of this.activeQueries) {
-      if (!qInfo.cacheKey) {
-        continue
+      if (qInfo.cacheKey) {
+        qInfo.onData(this.cache.get(qInfo.cacheKey))
       }
-
-      const latestData = this.cache.get(qInfo.cacheKey)
-      qInfo.latestData = latestData
-      qInfo.onData(latestData)
     }
   }
 }

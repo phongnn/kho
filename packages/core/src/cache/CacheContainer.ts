@@ -1,10 +1,13 @@
 import { BaseQuery } from "../query/BaseQuery"
 import QueryBucket, { CacheKey } from "./QueryBucket"
-import { Mutation, FNCCache } from "../query/Mutation"
+import { FNCCache } from "../query/Mutation"
 import ObjectBucket from "./ObjectBucket"
+import {
+  NormalizedType,
+  NormalizedShape,
+} from "../normalization/NormalizedType"
 import DataNormalizer from "../normalization/DataNormalizer"
 import DataDenormalizer from "../normalization/DataDenormalizer"
-import { NormalizedType } from "../normalization/NormalizedType"
 import { extractPlainKey } from "../helpers"
 
 export { CacheKey } from "./QueryBucket"
@@ -37,40 +40,56 @@ class CacheContainer implements FNCCache {
 
   saveQueryData(query: BaseQuery, data: any) {
     const cacheKey = this.findCacheKey(query) || new CacheKey(query)
-
     const { shape } = query.options
     if (!shape) {
       this.queryBucket.set(cacheKey, [data, null]) // data not normalized -> no selector
     } else {
-      const normalizer = new DataNormalizer((type, plainKey) =>
-        this.objectBucket.findObjectKey(type, plainKey)
-      )
+      const normalizer = this.createNormalizer()
       const { result, objects, selector } = normalizer.normalize(data, shape)
 
       this.queryBucket.set(cacheKey, [result, selector])
       this.objectBucket.add(objects)
     }
-
     return cacheKey
   }
 
-  saveMutationResult<TResult, TArguments, TContext>(
-    mutation: Mutation<TResult, TArguments, TContext>,
-    data: any
+  saveAdditionalQueryData(
+    cacheKey: CacheKey,
+    newData: any,
+    shape: NormalizedShape | undefined,
+    mergeFn: (existingData: any, newData: any) => any
+  ) {
+    const [existingData, existingSelector] = this.queryBucket.get(cacheKey)!
+    if (!shape) {
+      const data = mergeFn(existingData, newData)
+      this.queryBucket.set(cacheKey, [data, existingSelector])
+    } else {
+      const normalizer = this.createNormalizer()
+      // prettier-ignore
+      const { result, objects, selector: newSelector } = normalizer.normalize(newData, shape)
+
+      this.objectBucket.add(objects)
+
+      const data = mergeFn(existingData, result)
+      existingSelector!.merge(newSelector)
+      this.queryBucket.set(cacheKey, [data, existingSelector])
+    }
+  }
+
+  saveMutationResult(
+    data: any,
+    shape: NormalizedShape | undefined,
+    updateFn?: (cache: FNCCache, context: { data: any }) => void
   ) {
     let normalizedData: any = null
-    const { shape } = mutation.options
     if (shape) {
-      const normalizer = new DataNormalizer((type, plainKey) =>
-        this.objectBucket.findObjectKey(type, plainKey)
-      )
+      const normalizer = this.createNormalizer()
       const { result, objects } = normalizer.normalize(data, shape)
 
       this.objectBucket.add(objects)
       normalizedData = result
     }
 
-    const updateFn = mutation.options.update
     if (updateFn) {
       updateFn(this, { data: normalizedData || data })
     }
@@ -97,6 +116,13 @@ class CacheContainer implements FNCCache {
     if (objectKey) {
       this.objectBucket.delete(type, objectKey)
     }
+  }
+
+  //============= private methods =========
+  private createNormalizer() {
+    return new DataNormalizer((type, plainKey) =>
+      this.objectBucket.findObjectKey(type, plainKey)
+    )
   }
 }
 
