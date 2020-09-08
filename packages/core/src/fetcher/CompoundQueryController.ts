@@ -1,7 +1,7 @@
 import CompoundQuery from "./CompoundQuery"
-import { Query } from "../../query/Query"
+import { Query } from "../query/Query"
 
-class CompoundQueryHandler<TResult, TArguments, TContext> {
+class CompoundQueryController<TResult, TArguments, TContext> {
   private compoundQuery: CompoundQuery<TResult, TArguments, TContext>
   private onError: ((err: Error) => void) | undefined
   private onComplete: (() => void) | undefined
@@ -58,4 +58,4 @@ class CompoundQueryHandler<TResult, TArguments, TContext> {
   }
 }
 
-export default CompoundQueryHandler
+export default CompoundQueryController

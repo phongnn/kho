@@ -1,6 +1,6 @@
-import { Query } from "../../query/Query"
+import { Query } from "../query/Query"
 import CompoundQuery from "./CompoundQuery"
-import CompoundQueryHandler from "./CompoundQueryHandler"
+import CompoundQueryController from "./CompoundQueryController"
 
 const q1 = new Query("GetData", () => Promise.resolve("arbitrary-string"), {
   merge: (existingData, newData) =>
@@ -15,7 +15,7 @@ compoundQuery.addNextQuery(q3)
 
 it("should invoke onData with latest merged data", (done) => {
   const onComplete = jest.fn()
-  const handler = new CompoundQueryHandler(compoundQuery, {
+  const handler = new CompoundQueryController(compoundQuery, {
     onComplete,
     onData: (data) => {
       expect(data).toBe("*1*2*3*")
@@ -32,7 +32,7 @@ it("should invoke onError", (done) => {
   const err = new Error("strange error")
   const onComplete = jest.fn()
   const onData = jest.fn()
-  const handler = new CompoundQueryHandler(compoundQuery, {
+  const handler = new CompoundQueryController(compoundQuery, {
     onComplete,
     onData,
     onError: (e) => {

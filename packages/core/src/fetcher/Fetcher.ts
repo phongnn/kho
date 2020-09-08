@@ -1,7 +1,7 @@
-import { Query } from "../../query/Query"
-import { isProduction } from "../../helpers"
+import { Query } from "../query/Query"
 import CompoundQuery from "./CompoundQuery"
-import CompoundQueryHandler from "./CompoundQueryHandler"
+import CompoundQueryController from "./CompoundQueryController"
+import { isProduction } from "../helpers"
 
 class Fetcher {
   private ongoingRequests = new Map<Query<any, any, any>, RequestInfo<any>>()
@@ -26,7 +26,7 @@ class Fetcher {
       this.handleRequest(query, { onError, onComplete, onData })
     } else {
       // prettier-ignore
-      const handler = new CompoundQueryHandler(query, { onData, onError, onComplete })
+      const handler = new CompoundQueryController(query, { onData, onError, onComplete })
       for (const childQuery of query) {
         this.handleRequest(childQuery, {
           onData: (data) => handler.handleData(childQuery, data),

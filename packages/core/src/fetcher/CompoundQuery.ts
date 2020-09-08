@@ -1,5 +1,5 @@
-import { BaseQueryKey, BaseQuery } from "../../query/BaseQuery"
-import { Query } from "../../query/Query"
+import { BaseQueryKey, BaseQuery } from "../query/BaseQuery"
+import { Query } from "../query/Query"
 
 class CompoundQueryKey implements BaseQueryKey {
   constructor(private name: string) {}
