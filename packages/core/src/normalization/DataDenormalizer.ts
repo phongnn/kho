@@ -12,12 +12,12 @@ class DataDenormalizer {
 
   denormalize(normalizedData: any, selector: Selector): any {
     if (Array.isArray(normalizedData)) {
-      return normalizedData.map((dataItem) =>
-        this.denormalize(dataItem, selector)
-      )
+      return normalizedData
+        .map((dataItem) => this.denormalize(dataItem, selector))
+        .filter((dataItem) => !!dataItem)
     } else if (normalizedData instanceof NormalizedObjectRef) {
       const obj = this.lookupObject(normalizedData.type, normalizedData.key)
-      return this.denormalizeObject(obj, selector)
+      return !obj ? null : this.denormalizeObject(obj, selector)
     } else if (typeof normalizedData === "object") {
       return this.denormalizeObject(normalizedData, selector)
     } else {

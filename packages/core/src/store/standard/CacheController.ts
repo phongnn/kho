@@ -1,5 +1,6 @@
 import { BaseQuery } from "../../query/BaseQuery"
 import CacheContainer, { CacheKey } from "../../cache/CacheContainer"
+import { Mutation } from "../../query/Mutation"
 
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void
@@ -30,25 +31,47 @@ class CacheController {
   }
 
   storeQueryData(query: BaseQuery, data: any) {
-    const cacheKey = this.cache.save(query, data)
+    const cacheKey = this.cache.saveQueryData(query, data)
 
+    // set cacheKey for those active queries that are pending for data fetching
     for (const [q, qInfo] of this.activeQueries) {
-      // set cacheKey for those active queries that are pending for data fetching
       if (!qInfo.cacheKey && cacheKey.matches(q)) {
         qInfo.cacheKey = cacheKey
       }
-
-      // notify active queries of possible state change
-      if (qInfo.cacheKey) {
-        const latestData = this.cache.get(qInfo.cacheKey)
-        qInfo.latestData = latestData
-        qInfo.onData(latestData)
-      }
     }
+
+    this.notifyActiveQueries()
+  }
+
+  storeMutationResult<TResult, TArguments, TContext>(
+    mutation: Mutation<TResult, TArguments, TContext>,
+    data: any
+  ) {
+    const normalizedData = this.cache.saveMutationResult(mutation, data)
+
+    const updateFn = mutation.options.update
+    if (updateFn) {
+      updateFn(this.cache, { data: normalizedData })
+    }
+
+    this.notifyActiveQueries()
   }
 
   retrieveActiveQueryData(query: BaseQuery) {
     return this.activeQueries.get(query)?.latestData
+  }
+
+  // notify active queries of possible state change
+  private notifyActiveQueries() {
+    for (const [q, qInfo] of this.activeQueries) {
+      if (!qInfo.cacheKey) {
+        continue
+      }
+
+      const latestData = this.cache.get(qInfo.cacheKey)
+      qInfo.latestData = latestData
+      qInfo.onData(latestData)
+    }
   }
 }
 

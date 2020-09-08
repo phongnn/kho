@@ -1,12 +1,15 @@
 import { BaseQuery } from "../query/BaseQuery"
 import QueryBucket, { CacheKey } from "./QueryBucket"
+import { Mutation, FNCCache } from "../query/Mutation"
 import ObjectBucket from "./ObjectBucket"
 import DataNormalizer from "../normalization/DataNormalizer"
 import DataDenormalizer from "../normalization/DataDenormalizer"
+import { NormalizedType } from "../normalization/NormalizedType"
+import { extractPlainKey } from "../helpers"
 
 export { CacheKey } from "./QueryBucket"
 
-class CacheContainer {
+class CacheContainer implements FNCCache {
   private queryBucket = new QueryBucket()
   private objectBucket = new ObjectBucket()
 
@@ -32,7 +35,7 @@ class CacheContainer {
     return denormalizer.denormalize(data, selector)
   }
 
-  save(query: BaseQuery, data: any) {
+  saveQueryData(query: BaseQuery, data: any) {
     const cacheKey = this.findCacheKey(query) || new CacheKey(query)
 
     const { shape } = query.options
@@ -49,6 +52,47 @@ class CacheContainer {
     }
 
     return cacheKey
+  }
+
+  saveMutationResult<TResult, TArguments, TContext>(
+    mutation: Mutation<TResult, TArguments, TContext>,
+    data: any
+  ) {
+    const { shape } = mutation.options
+    if (!shape) {
+      return data
+    }
+
+    const normalizer = new DataNormalizer((type, plainKey) =>
+      this.objectBucket.findObjectKey(type, plainKey)
+    )
+    const { result, objects } = normalizer.normalize(data, shape)
+
+    this.objectBucket.add(objects)
+    return result
+  }
+
+  /** implements FNCCache methods which can only be called from within mutation's update() function */
+  updateQueryResult(query: BaseQuery, fn: (existingData: any) => any) {
+    const cacheKey = this.findCacheKey(query)
+    if (!cacheKey) {
+      this.queryBucket.set(new CacheKey(query), fn(undefined))
+    } else {
+      const [existingData, selector] = this.queryBucket.get(cacheKey)!
+      const updatedData = fn(existingData)
+      this.queryBucket.set(cacheKey, [updatedData, selector])
+    }
+  }
+
+  evictObject(type: NormalizedType, key: any) {
+    const objectKey = this.objectBucket.findObjectKey(
+      type,
+      extractPlainKey(key, type)
+    )
+
+    if (objectKey) {
+      this.objectBucket.delete(type, objectKey)
+    }
   }
 }
 

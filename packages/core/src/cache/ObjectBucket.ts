@@ -23,13 +23,23 @@ class ObjectBucket {
 
   add(newObjects: Map<NormalizedType, [NormalizedObjectKey, any][]>) {
     for (const [type, entries] of newObjects) {
-      const existingMap =
-        this.objects.get(type) || new Map<NormalizedObjectKey, any>()
-      for (const [key, obj] of entries) {
-        existingMap.set(key, obj)
+      const existingMap = this.objects.get(type)
+      if (!existingMap) {
+        this.objects.set(type, new Map<NormalizedObjectKey, any>(entries))
+      } else {
+        entries.forEach(([key, obj]) => {
+          const existingObj = existingMap.get(key)
+          existingMap.set(
+            key,
+            !existingObj ? obj : Object.assign({}, existingObj, obj)
+          )
+        })
       }
-      this.objects.set(type, existingMap)
     }
+  }
+
+  delete(type: NormalizedType, key: NormalizedObjectKey) {
+    this.objects.get(type)?.delete(key)
   }
 }
 

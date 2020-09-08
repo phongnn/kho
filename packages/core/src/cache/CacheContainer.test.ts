@@ -42,7 +42,7 @@ const userX = {
 
 it("should read what it wrote", () => {
   const cache = new CacheContainer()
-  const cacheKey = cache.save(queryComments, comments)
+  const cacheKey = cache.saveQueryData(queryComments, comments)
   const output = cache.get(cacheKey)
   expect(output).toStrictEqual(comments)
 })
@@ -50,8 +50,8 @@ it("should read what it wrote", () => {
 it("should return latest data", () => {
   const cache = new CacheContainer()
 
-  const queryCommentsCacheKey = cache.save(queryComments, comments)
-  cache.save(queryUser, userX)
+  const queryCommentsCacheKey = cache.saveQueryData(queryComments, comments)
+  cache.saveQueryData(queryUser, userX)
 
   const output = cache.get(queryCommentsCacheKey)
   expect(output).toStrictEqual([

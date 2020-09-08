@@ -1,9 +1,13 @@
 import StandardStore from "./StandardStore"
 import { Query } from "../../query/Query"
+import { Mutation } from "../../query/Mutation"
+import { NormalizedType } from "../../normalization/NormalizedType"
 
 afterEach(() => {
   // @ts-ignore
   Query.registry = new Map()
+  // @ts-ignore
+  NormalizedType.typeRegistry = new Map()
 })
 
 describe("fetchMore", () => {
@@ -192,5 +196,153 @@ describe("polling", () => {
         }
       },
     })
+  })
+})
+
+describe("processMutation", () => {
+  it("should execute mutate function and invoke callbacks", (done) => {
+    const result = { value: { x: "y" } }
+    const fn = jest.fn().mockResolvedValue(result)
+
+    const args = { test: { message: "blah" } }
+    const context = { token: "xyz", extra: { test: true } }
+    const mutation = new Mutation(fn, { arguments: args, context })
+
+    const onRequest = jest.fn()
+
+    const store = new StandardStore()
+    store.processMutation(mutation, {
+      onRequest,
+      onComplete: (data) => {
+        expect(onRequest).toBeCalled()
+        expect(fn).toBeCalledWith(args, context)
+        expect(data).toBe(result)
+        done()
+      },
+    })
+  })
+
+  it("should invoke error callback", (done) => {
+    const errMsg = "a strang error"
+    const fn = jest.fn().mockRejectedValue(errMsg)
+    const mutation = new Mutation(fn)
+
+    jest.spyOn(console, "error").mockImplementation(() => {})
+    const store = new StandardStore()
+    store.processMutation(mutation, {
+      onComplete: () => {
+        throw new Error("It should not have invoked onComplete callback.")
+      },
+      onError: (err) => {
+        expect(err.message).toMatch(errMsg)
+        done()
+      },
+    })
+  })
+
+  it("should update cache and notify active query", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve([
+          { username: "x", email: "x@test.com" },
+          { username: "y", email: "y@test.com", avatar: "http://" },
+        ]),
+      { shape: [UserType] }
+    )
+
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        const y = data.find((u) => u.username === "y")
+        if (y?.email === "new-y@test.com") {
+          expect(y).toStrictEqual({
+            username: "y",
+            email: "new-y@test.com",
+            avatar: "http://",
+          })
+          done()
+        }
+      },
+    })
+
+    const mutation = new Mutation(
+      () =>
+        Promise.resolve([
+          { username: "z", email: "z@test.com" },
+          { username: "y", email: "new-y@test.com" },
+        ]),
+      { shape: [UserType] }
+    )
+    store.processMutation(mutation)
+  })
+
+  it("should update query result", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve([
+          { username: "x", email: "x@test.com" },
+          { username: "y", email: "y@test.com", avatar: "http://" },
+        ]),
+      { shape: [UserType] }
+    )
+
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data.length === 3) {
+          expect(data[2]).toStrictEqual({ username: "z", email: "z@test.com" })
+          done()
+        }
+      },
+    })
+
+    const mutation = new Mutation(
+      () => Promise.resolve({ username: "z", email: "z@test.com" }),
+      {
+        shape: UserType,
+        update: (cache, { data }) => {
+          cache.updateQueryResult(query, (existingData = []) => [
+            ...existingData,
+            data,
+          ])
+        },
+      }
+    )
+    store.processMutation(mutation)
+  })
+
+  it("should evict normalized object", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve([
+          { username: "x", email: "x@test.com" },
+          { username: "y", email: "y@test.com", avatar: "http://" },
+        ]),
+      { shape: [UserType] }
+    )
+
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data.length === 1) {
+          expect(data[0].username).toBe("y")
+          done()
+        }
+      },
+    })
+
+    const mutation = new Mutation(() => Promise.resolve(), {
+      update: (cache) => cache.evictObject(UserType, { username: "x" }),
+    })
+    store.processMutation(mutation)
   })
 })

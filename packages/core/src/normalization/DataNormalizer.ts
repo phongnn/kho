@@ -6,6 +6,7 @@ import {
 } from "./NormalizedType"
 import { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"
 import Selector from "./Selector"
+import { extractPlainKey } from "../helpers"
 
 type NormalizedStructure =
   | any
@@ -181,23 +182,6 @@ class DataNormalizer {
     tempKeys.push(newKey)
     return newKey
   }
-}
-
-function extractPlainKey(obj: any, type: NormalizedType) {
-  const { keyFields } = type
-  const keyObj: any = {}
-
-  keyFields.forEach((f) => {
-    if (!obj[f]) {
-      throw new Error(
-        `[FNC] Data of type "${type.name}" must contain key field "${f}".`
-      )
-    }
-    keyObj[f] = obj[f]
-  })
-
-  // return primitive key (if possible) for faster comparison
-  return keyFields.length === 1 ? obj[keyFields[0]] : keyObj
 }
 
 function addNormalizedObjects(

@@ -1,4 +1,7 @@
 import { Query } from "../query/Query"
+import { Mutation } from "../query/Mutation"
+
+export interface StoreOptions {}
 
 /** Public interface exposed to developers */
 export interface Store {}
@@ -14,9 +17,16 @@ export interface InternalStore extends Store {
       onData: (data: TResult) => void
     }
   ): QueryRegistrationResult<TResult, TArguments, TContext>
-}
 
-export interface StoreOptions {}
+  processMutation<TResult, TArguments, TContext>(
+    mutation: Mutation<TResult, TArguments, TContext>,
+    callbacks?: {
+      onRequest?: () => void
+      onError?: (err: Error) => void
+      onComplete?: (data: TResult) => void
+    }
+  ): void
+}
 
 export interface QueryRegistrationResult<TResult, TArguments, TContext> {
   unregister: () => void

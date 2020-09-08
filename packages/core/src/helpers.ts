@@ -1,3 +1,5 @@
+import { NormalizedType } from "./normalization/NormalizedType"
+
 export { equal as deepEqual } from "@wry/equality"
 
 export const env = process.env.NODE_ENV
@@ -23,4 +25,21 @@ export function override(existingObj: any, newObj: any) {
     (prop) => (result[prop] = newObj[prop] || existingObj[prop])
   )
   return result
+}
+
+export function extractPlainKey(obj: any, type: NormalizedType) {
+  const { keyFields } = type
+  const keyObj: any = {}
+
+  keyFields.forEach((f) => {
+    if (!obj[f]) {
+      throw new Error(
+        `[FNC] Data of type "${type.name}" must contain key field "${f}".`
+      )
+    }
+    keyObj[f] = obj[f]
+  })
+
+  // return primitive key (if possible) for faster comparison
+  return keyFields.length === 1 ? obj[keyFields[0]] : keyObj
 }

@@ -81,7 +81,7 @@ class Fetcher {
     const { fetcher, options } = query
     const { dataCallback, completeCallbacks, errorCallbacks } = requestInfo
 
-    fetcher(options.arguments!, options.context!)
+    fetcher(options.arguments!, options.context as TContext)
       .then((data) => {
         completeCallbacks.forEach((cb) => cb())
         dataCallback(data)

@@ -10,14 +10,14 @@ export interface QueryOptions<TResult, TArguments, TContext> {
     | "cache-only"
 
   arguments?: TArguments
-  context?: TContext
+  context?: Partial<TContext>
   shape?: NormalizedShape
   pollInterval?: number
   merge?: (
     existingData: TResult,
     newData: TResult,
     args: TArguments,
-    ctx: TContext
+    ctx: Partial<TContext>
   ) => TResult
 }
 
@@ -45,7 +45,7 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
     readonly name: string,
     readonly fetcher: (args: TArguments, ctx: TContext) => Promise<TResult>,
     // prettier-ignore
-    readonly options: QueryOptions<TResult, TArguments, Partial<TContext>> = defaultQueryOptions
+    readonly options: QueryOptions<TResult, TArguments, TContext> = defaultQueryOptions
   ) {
     super(new QueryKey(name, options.arguments), options)
 
@@ -62,7 +62,7 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
 
   clone = () => new Query(this.name, this.fetcher, this.options)
 
-  withOptions(options: QueryOptions<TResult, TArguments, Partial<TContext>>) {
+  withOptions(options: QueryOptions<TResult, TArguments, TContext>) {
     const { context = {}, ...otherOpts } = this.options
     const { context: additionalContext = {}, ...overridingOpts } = options
     const newOptions = override(otherOpts, overridingOpts)
