@@ -58,18 +58,22 @@ class CacheContainer implements FNCCache {
     mutation: Mutation<TResult, TArguments, TContext>,
     data: any
   ) {
+    let normalizedData: any = null
     const { shape } = mutation.options
-    if (!shape) {
-      return data
+    if (shape) {
+      const normalizer = new DataNormalizer((type, plainKey) =>
+        this.objectBucket.findObjectKey(type, plainKey)
+      )
+      const { result, objects } = normalizer.normalize(data, shape)
+
+      this.objectBucket.add(objects)
+      normalizedData = result
     }
 
-    const normalizer = new DataNormalizer((type, plainKey) =>
-      this.objectBucket.findObjectKey(type, plainKey)
-    )
-    const { result, objects } = normalizer.normalize(data, shape)
-
-    this.objectBucket.add(objects)
-    return result
+    const updateFn = mutation.options.update
+    if (updateFn) {
+      updateFn(this, { data: normalizedData || data })
+    }
   }
 
   /** implements FNCCache methods which can only be called from within mutation's update() function */

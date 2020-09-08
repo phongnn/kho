@@ -47,13 +47,7 @@ class CacheController {
     mutation: Mutation<TResult, TArguments, TContext>,
     data: any
   ) {
-    const normalizedData = this.cache.saveMutationResult(mutation, data)
-
-    const updateFn = mutation.options.update
-    if (updateFn) {
-      updateFn(this.cache, { data: normalizedData })
-    }
-
+    this.cache.saveMutationResult(mutation, data)
     this.notifyActiveQueries()
   }
 
