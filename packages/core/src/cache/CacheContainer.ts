@@ -1,6 +1,6 @@
 import { BaseQuery } from "../query/BaseQuery"
 import QueryBucket, { CacheKey } from "./QueryBucket"
-import { FNCCache } from "../query/Mutation"
+import { FNCCache, MutationUpdateFn } from "../query/Mutation"
 import ObjectBucket from "./ObjectBucket"
 import {
   NormalizedType,
@@ -79,7 +79,8 @@ class CacheContainer implements FNCCache {
   saveMutationResult(
     data: any,
     shape: NormalizedShape | undefined,
-    updateFn?: (cache: FNCCache, context: { data: any }) => void
+    updateFn: MutationUpdateFn | undefined,
+    optimistic: boolean = false
   ) {
     let normalizedData: any = null
     if (shape) {
@@ -91,7 +92,7 @@ class CacheContainer implements FNCCache {
     }
 
     if (updateFn) {
-      updateFn(this, { data: normalizedData || data })
+      updateFn(this, { data: normalizedData || data, optimistic })
     }
   }
 

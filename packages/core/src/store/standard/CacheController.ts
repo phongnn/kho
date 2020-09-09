@@ -59,10 +59,11 @@ class CacheController {
 
   storeMutationResult<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
-    data: any
+    data: any,
+    optimistic: boolean = false
   ) {
     const { shape, update: updateFn } = mutation.options
-    this.cache.saveMutationResult(data, shape, updateFn)
+    this.cache.saveMutationResult(data, shape, updateFn, optimistic)
     this.notifyActiveQueries()
   }
 

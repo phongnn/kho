@@ -20,6 +20,16 @@ class MutationHandler {
       onRequest()
     }
 
+    if (options.optimisticResponse) {
+      setTimeout(() =>
+        this.cache.storeMutationResult(
+          mutation,
+          options.optimisticResponse,
+          true
+        )
+      )
+    }
+
     fn(options.arguments!, options.context as TContext)
       .then((data) => {
         if (onComplete) {

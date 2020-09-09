@@ -10,11 +10,16 @@ export interface FNCCache {
   evictObject(type: NormalizedType, key: any): void
 }
 
+export interface MutationUpdateFn {
+  (cache: FNCCache, context: { data: any; optimistic: boolean }): void
+}
+
 export interface MutationOptions<TResult, TArguments, TContext> {
   arguments?: TArguments
   context?: Partial<TContext>
   shape?: NormalizedShape
-  update?: (cache: FNCCache, context: { data: any }) => void
+  update?: MutationUpdateFn
+  optimisticResponse?: any
 }
 
 export class Mutation<TResult, TArguments, TContext> {

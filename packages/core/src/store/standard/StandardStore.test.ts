@@ -345,4 +345,65 @@ describe("processMutation", () => {
     })
     store.processMutation(mutation)
   })
+
+  it("should callback with an optimistic response, then with the real one", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve([
+          { username: "x", email: "x@test.com", __optimistic__: false },
+          // prettier-ignore
+          { username: "y", email: "y@test.com", avatar: "http://", __optimistic__: false },
+        ]),
+      { shape: [UserType] }
+    )
+
+    expect.assertions(2)
+
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data.length > 2) {
+          const newUser = data[2]
+          expect(newUser.username).toBe("z")
+          if (!newUser.__optimistic__) {
+            done()
+          }
+        }
+      },
+    })
+
+    const mutation = new Mutation(
+      () =>
+        new Promise((r) =>
+          setTimeout(() =>
+            r({
+              username: "z",
+              email: "z@test.com",
+              __optimistic__: false,
+            })
+          )
+        ),
+      {
+        shape: UserType,
+        update: (cache, { data, optimistic }) => {
+          // update() is called twice, but we should add to list only once
+          if (optimistic) {
+            cache.updateQueryResult(query, (existingData = []) => [
+              ...existingData,
+              data,
+            ])
+          }
+        },
+        optimisticResponse: {
+          username: "z",
+          email: "z@test.com",
+          __optimistic__: true,
+        },
+      }
+    )
+    store.processMutation(mutation)
+  })
 })
