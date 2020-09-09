@@ -67,7 +67,7 @@ class QueryHandler {
     return result
   }
 
-  private refetch<TResult, TArguments, TContext>(
+  refetch<TResult, TArguments, TContext>(
     query:
       | Query<TResult, TArguments, TContext>
       | CompoundQuery<TResult, TArguments, TContext>,

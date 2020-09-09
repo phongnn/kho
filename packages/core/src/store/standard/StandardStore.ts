@@ -24,13 +24,29 @@ class StandardStore implements InternalStore {
 
   processMutation<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
-    callbacks?: {
+    callbacks: {
       onRequest?: () => void
       onError?: (err: Error) => void
       onComplete?: (data: TResult) => void
-    }
+    } = {}
   ) {
-    this.mutationHandler.processMutation(mutation, callbacks)
+    const { onRequest, onError, onComplete } = callbacks
+    this.mutationHandler.processMutation(mutation, {
+      onRequest,
+      onError,
+      onComplete: (data: TResult) => {
+        const { refetchQueries } = mutation.options
+        if (refetchQueries) {
+          setTimeout(() =>
+            refetchQueries.forEach((query) => this.queryHandler.refetch(query))
+          )
+        }
+
+        if (onComplete) {
+          onComplete(data)
+        }
+      },
+    })
   }
 }
 

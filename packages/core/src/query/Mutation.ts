@@ -4,6 +4,7 @@ import {
 } from "../normalization/NormalizedType"
 import { BaseQuery } from "./BaseQuery"
 import { mergeOptions } from "../helpers"
+import { Query } from "./Query"
 
 export interface FNCCache {
   updateQueryResult(query: BaseQuery, fn: (existingData: any) => any): void
@@ -20,6 +21,7 @@ export interface MutationOptions<TResult, TArguments, TContext> {
   shape?: NormalizedShape
   update?: MutationUpdateFn
   optimisticResponse?: any
+  refetchQueries?: Query<any, any, any>[]
 }
 
 export class Mutation<TResult, TArguments, TContext> {

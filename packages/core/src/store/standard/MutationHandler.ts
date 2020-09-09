@@ -32,10 +32,10 @@ class MutationHandler {
 
     fn(options.arguments!, options.context as TContext)
       .then((data) => {
+        this.cache.storeMutationResult(mutation, data)
         if (onComplete) {
           onComplete(data)
         }
-        this.cache.storeMutationResult(mutation, data)
       })
       .catch((e) => {
         const err = toErrorObj(e)
