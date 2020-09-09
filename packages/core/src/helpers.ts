@@ -16,7 +16,15 @@ export const isProduction = env === "production"
 //   )
 // }
 
-export function override(existingObj: any, newObj: any) {
+export function mergeOptions(opts: any, newOpts: any) {
+  const { context = {}, ...otherOpts } = opts
+  const { context: additionalContext = {}, ...overridingOpts } = newOpts
+  const result = override(otherOpts, overridingOpts)
+  result.context = { ...context, ...additionalContext }
+  return result
+}
+
+function override(existingObj: any, newObj: any) {
   const result: any = {}
   Object.getOwnPropertyNames(existingObj).forEach(
     (prop) => (result[prop] = newObj[prop] || existingObj[prop])

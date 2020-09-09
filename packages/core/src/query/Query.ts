@@ -1,4 +1,4 @@
-import { deepEqual, override } from "../helpers"
+import { deepEqual, mergeOptions } from "../helpers"
 import { NormalizedShape } from "../normalization/NormalizedType"
 import { BaseQueryKey, BaseQuery } from "./BaseQuery"
 
@@ -63,10 +63,10 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
   clone = () => new Query(this.name, this.fetcher, this.options)
 
   withOptions(options: QueryOptions<TResult, TArguments, TContext>) {
-    const { context = {}, ...otherOpts } = this.options
-    const { context: additionalContext = {}, ...overridingOpts } = options
-    const newOptions = override(otherOpts, overridingOpts)
-    newOptions.context = { ...context, ...additionalContext }
-    return new Query(this.name, this.fetcher, newOptions)
+    return new Query(
+      this.name,
+      this.fetcher,
+      mergeOptions(this.options, options)
+    )
   }
 }
