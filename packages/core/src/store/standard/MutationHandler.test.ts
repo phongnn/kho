@@ -254,4 +254,22 @@ describe("refetchQueries", () => {
 
     store.processMutation(mutation)
   })
+
+  it("should work in sync mode", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(++count))
+    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
+      refetchQueriesSync: [query],
+    })
+
+    const store = new StandardStore()
+    store.registerQuery(query, { onData: jest.fn() })
+
+    store.processMutation(mutation, {
+      onComplete: () => {
+        expect(count).toBe(2) // query already refetched
+        done()
+      },
+    })
+  })
 })

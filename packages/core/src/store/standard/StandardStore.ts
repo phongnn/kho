@@ -35,18 +35,53 @@ class StandardStore implements InternalStore {
       onRequest,
       onError,
       onComplete: (data: TResult) => {
-        const { refetchQueries } = mutation.options
+        // prettier-ignore
+        const { refetchQueries, refetchQueriesSync: syncQueries } = mutation.options
         if (refetchQueries) {
           setTimeout(() =>
             refetchQueries.forEach((query) => this.queryHandler.refetch(query))
           )
         }
 
-        if (onComplete) {
+        if (syncQueries) {
+          setTimeout(() =>
+            this.refetchQueriesSync(
+              syncQueries,
+              () => onComplete && onComplete(data),
+              onError
+            )
+          )
+        } else if (onComplete) {
           onComplete(data)
         }
       },
     })
+  }
+
+  private refetchQueriesSync(
+    queries: Query<any, any, any>[],
+    onComplete: () => void,
+    onError?: (err: Error) => void
+  ) {
+    let hasError = false
+    let count = 0
+    queries.forEach((query) =>
+      this.queryHandler.refetch(query, {
+        onComplete: () => {
+          if (++count === queries.length) {
+            onComplete()
+          }
+        },
+        onError: (err) => {
+          if (!hasError) {
+            hasError = true
+            if (onError) {
+              onError(err)
+            }
+          }
+        },
+      })
+    )
   }
 }
 

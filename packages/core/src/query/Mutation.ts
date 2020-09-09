@@ -22,6 +22,7 @@ export interface MutationOptions<TResult, TArguments, TContext> {
   update?: MutationUpdateFn
   optimisticResponse?: any
   refetchQueries?: Query<any, any, any>[]
+  refetchQueriesSync?: Query<any, any, any>[]
 }
 
 export class Mutation<TResult, TArguments, TContext> {
