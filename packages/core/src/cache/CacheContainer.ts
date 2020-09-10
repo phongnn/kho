@@ -53,6 +53,13 @@ class CacheContainer implements FNCCache {
     return cacheKey
   }
 
+  removeQueryData(q: BaseQuery): void {
+    const cacheKey = this.findCacheKey(q)
+    if (cacheKey) {
+      this.queryBucket.delete(cacheKey)
+    }
+  }
+
   saveAdditionalQueryData(
     cacheKey: CacheKey,
     newData: any,

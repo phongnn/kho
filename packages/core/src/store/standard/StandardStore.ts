@@ -5,6 +5,7 @@ import CacheController from "./CacheController"
 import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
 import CompoundQuery from "../../fetcher/CompoundQuery"
+import { BaseQuery } from "../../query/BaseQuery"
 
 class StandardStore implements InternalStore {
   private cache = new CacheController()
@@ -39,22 +40,33 @@ class StandardStore implements InternalStore {
         // prettier-ignore
         const { refetchQueries, refetchQueriesSync: syncQueries } = mutation.options
         if (refetchQueries) {
-          // TODO: refetch relevant compound queries that are currently in cache (not only the active ones)
-          setTimeout(() =>
-            refetchQueries.forEach((query) => this.queryHandler.refetch(query))
-          )
+          // prettier-ignore
+          const [activeQueries, inactiveQueries] = this.separateInactiveQueries(refetchQueries)
+          this.cache.removeInactiveQueries(inactiveQueries)
+          setTimeout(() => {
+            // @ts-ignore
+            activeQueries.forEach((q) => this.queryHandler.refetch(q))
+          })
         }
 
         if (syncQueries) {
-          // TODO: refetch relevant compound queries that are currently in cache (not only the active ones)
-          setTimeout(() =>
-            this.refetchQueriesSync(
-              syncQueries,
-              () => onComplete && onComplete(data),
-              onError
-            )
-          )
-        } else if (onComplete) {
+          // prettier-ignore
+          const [activeQueries, inactiveQueries] = this.separateInactiveQueries(syncQueries)
+          this.cache.removeInactiveQueries(inactiveQueries)
+          if (activeQueries.length > 0) {
+            setTimeout(() => {
+              this.refetchQueriesSync(
+                // @ts-ignore
+                activeQueries,
+                () => onComplete && onComplete(data),
+                onError
+              )
+            })
+            return
+          }
+        }
+
+        if (onComplete) {
           onComplete(data)
         }
       },
@@ -88,8 +100,25 @@ class StandardStore implements InternalStore {
   //   this.cache.clear()
   // }
 
+  private separateInactiveQueries(queries: Array<Query<any, any, any>>) {
+    const activeQueries: BaseQuery[] = []
+    const inactiveQueries: BaseQuery[] = []
+    queries.forEach((query) => {
+      // prettier-ignore
+      const actualQuery = !query.options.merge ? query : new CompoundQuery(query)
+      const activeQuery = this.cache.findActiveQuery(actualQuery)
+      if (activeQuery) {
+        activeQueries.push(activeQuery)
+      } else {
+        inactiveQueries.push(actualQuery)
+      }
+    })
+
+    return [activeQueries, inactiveQueries]
+  }
+
   private refetchQueriesSync(
-    queries: Query<any, any, any>[],
+    queries: Array<Query<any, any, any> | CompoundQuery<any, any, any>>,
     onComplete: () => void,
     onError?: (err: Error) => void
   ) {

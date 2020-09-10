@@ -29,6 +29,15 @@ class CacheController {
     this.activeQueries.delete(query)
   }
 
+  findActiveQuery(query: BaseQuery) {
+    for (const q of this.activeQueries.keys()) {
+      if (q.key.matches(query.key)) {
+        return q
+      }
+    }
+    return null
+  }
+
   storeQueryData(query: BaseQuery, data: any) {
     const cacheKey = this.cache.saveQueryData(query, data)
 
@@ -63,8 +72,14 @@ class CacheController {
     optimistic: boolean = false
   ) {
     const { shape, update: updateFn } = mutation.options
-    this.cache.saveMutationResult(data, shape, updateFn, optimistic)
-    this.notifyActiveQueries()
+    if (data || updateFn) {
+      this.cache.saveMutationResult(data, shape, updateFn, optimistic)
+      this.notifyActiveQueries()
+    }
+  }
+
+  removeInactiveQueries(inactiveQueries: BaseQuery[]) {
+    inactiveQueries.forEach((q) => this.cache.removeQueryData(q))
   }
 
   /** resets cache then refetches active queries */

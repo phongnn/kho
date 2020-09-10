@@ -272,4 +272,128 @@ describe("refetchQueries", () => {
       },
     })
   })
+
+  it("should refetch active compound query", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      (args: { x: number }) => Promise.resolve([`${args.x}-${++count}`]),
+      {
+        merge: (existingData, newData) => [...existingData, ...newData],
+      }
+    )
+    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
+      refetchQueries: [query],
+    })
+
+    let mutationProcessed = false
+    const store = new StandardStore()
+    const { fetchMore } = store.registerQuery(
+      query.withOptions({ arguments: { x: 1 } }),
+      {
+        onData: (data) => {
+          if (data.length === 1) {
+            setTimeout(() =>
+              fetchMore(query.withOptions({ arguments: { x: 2 } }))
+            )
+          } else if (!mutationProcessed) {
+            mutationProcessed = true
+            store.processMutation(mutation)
+          } else {
+            expect(data).toStrictEqual(["1-3", "2-4"]) // refetched values
+            done()
+          }
+        },
+      }
+    )
+  })
+
+  it("should remove inactive queries' data", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(++count))
+    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
+      refetchQueries: [query],
+    })
+
+    const store = new StandardStore()
+    const { unregister } = store.registerQuery(query, {
+      onData: () =>
+        setTimeout(() => {
+          unregister() // make the query inactive
+          store.processMutation(mutation, {
+            onComplete: () =>
+              store.registerQuery(query, {
+                onData: (data) => {
+                  // refetched value as previous value was already removed from cache
+                  expect(data).toBe(2)
+                  done()
+                },
+              }),
+          })
+        }),
+    })
+  })
+
+  /** same code as async case but uses "refetchQueriesSync" instead of "refetchQueries" */
+  it("should refetch active compound query [sync mode]", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      (args: { x: number }) => Promise.resolve([`${args.x}-${++count}`]),
+      {
+        merge: (existingData, newData) => [...existingData, ...newData],
+      }
+    )
+    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
+      refetchQueriesSync: [query],
+    })
+
+    let mutationProcessed = false
+    const store = new StandardStore()
+    const { fetchMore } = store.registerQuery(
+      query.withOptions({ arguments: { x: 1 } }),
+      {
+        onData: (data) => {
+          if (data.length === 1) {
+            setTimeout(() =>
+              fetchMore(query.withOptions({ arguments: { x: 2 } }))
+            )
+          } else if (!mutationProcessed) {
+            mutationProcessed = true
+            store.processMutation(mutation)
+          } else {
+            expect(data).toStrictEqual(["1-3", "2-4"]) // refetched values
+            done()
+          }
+        },
+      }
+    )
+  })
+
+  /** same code as async case but uses "refetchQueriesSync" instead of "refetchQueries" */
+  it("should remove inactive queries' data [sync mode]", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(++count))
+    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
+      refetchQueriesSync: [query],
+    })
+
+    const store = new StandardStore()
+    const { unregister } = store.registerQuery(query, {
+      onData: () =>
+        setTimeout(() => {
+          unregister() // make the query inactive
+          store.processMutation(mutation, {
+            onComplete: () =>
+              store.registerQuery(query, {
+                onData: (data) => {
+                  // refetched value as previous value was already removed from cache
+                  expect(data).toBe(2)
+                  done()
+                },
+              }),
+          })
+        }),
+    })
+  })
 })

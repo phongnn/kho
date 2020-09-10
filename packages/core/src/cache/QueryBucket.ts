@@ -37,6 +37,10 @@ class QueryBucket {
     this.queryData.set(cacheKey, value)
   }
 
+  delete(cacheKey: CacheKey) {
+    this.queryData.delete(cacheKey)
+  }
+
   clear() {
     this.queryData.clear()
   }
