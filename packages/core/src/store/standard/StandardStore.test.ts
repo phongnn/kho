@@ -2,7 +2,7 @@ import { Query } from "../../query/Query"
 import { LocalQuery } from "../../query/LocalQuery"
 import StandardStore from "./StandardStore"
 
-test.only("LocalQuery should work", (done) => {
+test("LocalQuery should work", (done) => {
   const testPayload = { msg: "Hello, World" }
   const query = new LocalQuery("SomeLocalState")
   const store = new StandardStore()

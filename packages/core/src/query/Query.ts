@@ -3,11 +3,7 @@ import { NormalizedShape } from "../normalization/NormalizedType"
 import { BaseQueryKey, BaseQuery } from "./BaseQuery"
 
 export interface QueryOptions<TResult, TArguments, TContext> {
-  fetchPolicy?:
-    | "cache-first"
-    | "cache-and-network"
-    | "network-only"
-    | "cache-only"
+  fetchPolicy?: "cache-first" | "cache-and-network" | "network-only"
 
   arguments?: TArguments
   context?: Partial<TContext>

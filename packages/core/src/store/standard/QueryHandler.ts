@@ -19,35 +19,55 @@ class QueryHandler {
     }
   ) {
     const { onRequest, onData, onError, onComplete } = callbacks
+    const { fetchPolicy, pollInterval = 0, merge } = query.options
+    const networkOnly = fetchPolicy === "network-only"
+    const cacheAndNetwork = fetchPolicy === "cache-and-network"
 
     // makes sure query instance is unique, not shared among UI components
     const uniqueQuery = query.clone()
-    const queryHandle = !uniqueQuery.options.merge
-      ? uniqueQuery
-      : new CompoundQuery(uniqueQuery)
+    const queryHandle = !merge ? uniqueQuery : new CompoundQuery(uniqueQuery)
+    const onDataCallback = networkOnly
+      ? onData
+      : (data: TResult) => this.cache.storeQueryData(queryHandle, data)
 
-    const alreadyCached = this.cache.subscribe(queryHandle, onData)
-    if (!alreadyCached) {
+    let alreadyCached = false
+    if (!networkOnly) {
+      alreadyCached = this.cache.subscribe(queryHandle, onData)
+    }
+
+    if (!alreadyCached || cacheAndNetwork) {
       this.fetcher.addRequest(uniqueQuery, {
         onRequest,
         onError,
         onComplete,
-        onData: (data) => this.cache.storeQueryData(queryHandle, data),
+        onData: onDataCallback,
       })
     }
 
-    const { pollInterval = 0 } = uniqueQuery.options
-    let stopPollingFn =
-      pollInterval > 0 ? this.startPolling(queryHandle, pollInterval) : () => {}
+    let stopPollingFn = () => {} // no-op
+    if (pollInterval > 0) {
+      // prettier-ignore
+      stopPollingFn = this.startPolling(queryHandle, pollInterval, onDataCallback)
+    }
 
     const result: QueryRegistrationResult<TResult, TArguments, TContext> = {
       unregister: () => {
         stopPollingFn()
-        this.cache.unsubscribe(queryHandle)
+        if (!networkOnly) {
+          this.cache.unsubscribe(queryHandle)
+        }
       },
-      refetch: (callbacks) => this.refetch(queryHandle, callbacks),
+      refetch: (callbacks = {}) =>
+        this.refetch(queryHandle, {
+          ...callbacks,
+          onData: onDataCallback,
+        }),
       fetchMore: (nextQuery, callbacks) => {
-        if (!(queryHandle instanceof CompoundQuery)) {
+        if (networkOnly) {
+          throw new Error(
+            `[FNC] query ${query.name} is network-only and doesn't support fetchMore.`
+          )
+        } else if (!(queryHandle instanceof CompoundQuery)) {
           throw new Error(
             `[FNC] fetchMore: merge() function not defined for query ${query.name}`
           )
@@ -59,7 +79,8 @@ class QueryHandler {
       },
       startPolling: (interval?: number) => {
         stopPollingFn() // clear the previous interval
-        stopPollingFn = this.startPolling(queryHandle, interval || pollInterval)
+        // prettier-ignore
+        stopPollingFn = this.startPolling(queryHandle, interval || pollInterval, onDataCallback)
       },
       stopPolling: () => stopPollingFn(),
     }
@@ -75,14 +96,15 @@ class QueryHandler {
       onRequest?: () => void
       onError?: (err: Error) => void
       onComplete?: () => void
+      onData?: (data: TResult) => void
     } = {}
   ) {
-    const { onRequest, onError, onComplete } = callbacks
+    const { onRequest, onError, onComplete, onData } = callbacks
     this.fetcher.addRequest(query, {
       onRequest,
       onError,
       onComplete,
-      onData: (newData) => this.cache.storeQueryData(query, newData),
+      onData: onData || ((data) => this.cache.storeQueryData(query, data)),
     })
   }
 
@@ -114,13 +136,13 @@ class QueryHandler {
     queryHandle:
       | Query<TResult, TArguments, TContext>
       | CompoundQuery<TResult, TArguments, TContext>,
-    pollInterval: number
+    pollInterval: number,
+    onData: (data: TResult) => void
   ) {
-    const interval = setInterval(() => {
-      this.fetcher.addRequest(queryHandle, {
-        onData: (data) => this.cache.storeQueryData(queryHandle, data),
-      })
-    }, pollInterval)
+    const interval = setInterval(
+      () => this.fetcher.addRequest(queryHandle, { onData }),
+      pollInterval
+    )
 
     return () => clearInterval(interval)
   }
