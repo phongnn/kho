@@ -4,6 +4,7 @@ import { Mutation } from "../../query/Mutation"
 import CacheController from "./CacheController"
 import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
+import CompoundQuery from "../../fetcher/CompoundQuery"
 
 class StandardStore implements InternalStore {
   private cache = new CacheController()
@@ -38,12 +39,14 @@ class StandardStore implements InternalStore {
         // prettier-ignore
         const { refetchQueries, refetchQueriesSync: syncQueries } = mutation.options
         if (refetchQueries) {
+          // TODO: refetch relevant compound queries that are currently in cache (not only the active ones)
           setTimeout(() =>
             refetchQueries.forEach((query) => this.queryHandler.refetch(query))
           )
         }
 
         if (syncQueries) {
+          // TODO: refetch relevant compound queries that are currently in cache (not only the active ones)
           setTimeout(() =>
             this.refetchQueriesSync(
               syncQueries,
@@ -57,6 +60,33 @@ class StandardStore implements InternalStore {
       },
     })
   }
+
+  resetStore() {
+    return new Promise((resolve) => {
+      this.cache.reset((activeQueries) => {
+        let doneCount = 0
+        const cbHandler = () => {
+          doneCount++
+          if (doneCount === activeQueries.length) {
+            resolve()
+          }
+        }
+
+        for (const query of activeQueries) {
+          if (query instanceof Query || query instanceof CompoundQuery) {
+            this.queryHandler.refetch(query, {
+              onComplete: cbHandler,
+              onError: cbHandler,
+            })
+          }
+        }
+      })
+    })
+  }
+
+  // clearStore() {
+  //   this.cache.clear()
+  // }
 
   private refetchQueriesSync(
     queries: Query<any, any, any>[],

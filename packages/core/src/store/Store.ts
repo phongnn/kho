@@ -4,7 +4,10 @@ import { Mutation } from "../query/Mutation"
 export interface StoreOptions {}
 
 /** Public interface exposed to developers */
-export interface Store {}
+export interface Store {
+  resetStore(): Promise<unknown>
+  // clearStore(): void
+}
 
 /** Interface exposed to view connectors (e.g., React hooks) */
 export interface InternalStore extends Store {

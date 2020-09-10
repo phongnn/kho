@@ -96,6 +96,11 @@ class CacheContainer implements FNCCache {
     }
   }
 
+  clear() {
+    this.objectBucket.clear()
+    this.queryBucket.clear()
+  }
+
   /** implements FNCCache methods which can only be called from within mutation's update() function */
   updateQueryResult(query: BaseQuery, fn: (existingData: any) => any) {
     const cacheKey = this.findCacheKey(query)

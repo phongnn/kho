@@ -41,6 +41,10 @@ class ObjectBucket {
   delete(type: NormalizedType, key: NormalizedObjectKey) {
     this.objects.get(type)?.delete(key)
   }
+
+  clear() {
+    this.objects.clear()
+  }
 }
 
 export default ObjectBucket

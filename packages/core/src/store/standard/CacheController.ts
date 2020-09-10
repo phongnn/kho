@@ -67,6 +67,24 @@ class CacheController {
     this.notifyActiveQueries()
   }
 
+  /** resets cache then refetches active queries */
+  reset(cb: (activeQueries: BaseQuery[]) => void) {
+    this.cache.clear()
+
+    const queries: BaseQuery[] = []
+    for (const [q, qInfo] of this.activeQueries) {
+      qInfo.cacheKey = undefined
+      queries.push(q)
+    }
+
+    cb(queries)
+  }
+
+  clear() {
+    this.cache.clear()
+    this.activeQueries.clear()
+  }
+
   // notify active queries of possible state change
   private notifyActiveQueries() {
     for (const [q, qInfo] of this.activeQueries) {

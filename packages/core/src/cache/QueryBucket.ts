@@ -36,6 +36,10 @@ class QueryBucket {
   set(cacheKey: CacheKey, value: [any, Selector | null]) {
     this.queryData.set(cacheKey, value)
   }
+
+  clear() {
+    this.queryData.clear()
+  }
 }
 
 export default QueryBucket
