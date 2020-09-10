@@ -13,8 +13,12 @@ class LocalQueryKey implements BaseQueryKey {
   }
 }
 
-export class LocalQuery extends BaseQuery {
+export class LocalQuery<TResult> extends BaseQuery {
   constructor(readonly name: string, readonly options: LocalQueryOptions = {}) {
     super(new LocalQueryKey(name), options)
+  }
+
+  clone() {
+    return new LocalQuery<TResult>(this.name, this.options)
   }
 }

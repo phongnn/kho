@@ -1,5 +1,19 @@
 import { Query } from "../../query/Query"
+import { LocalQuery } from "../../query/LocalQuery"
 import StandardStore from "./StandardStore"
+
+test.only("LocalQuery should work", (done) => {
+  const testPayload = { msg: "Hello, World" }
+  const query = new LocalQuery("SomeLocalState")
+  const store = new StandardStore()
+  store.registerLocalQuery(query, {
+    onData: (data) => {
+      expect(data).toBe(testPayload)
+      done()
+    },
+  })
+  store.setQueryData(query, testPayload)
+})
 
 it("should reset cache and refetch active query", (done) => {
   let count = 0

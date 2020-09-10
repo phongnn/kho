@@ -6,6 +6,7 @@ import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
 import CompoundQuery from "../../fetcher/CompoundQuery"
 import { BaseQuery } from "../../query/BaseQuery"
+import { LocalQuery } from "../../query/LocalQuery"
 
 class StandardStore implements InternalStore {
   private cache = new CacheController()
@@ -22,6 +23,20 @@ class StandardStore implements InternalStore {
     }
   ) {
     return this.queryHandler.registerQuery(query, callbacks)
+  }
+
+  registerLocalQuery<TResult>(
+    query: LocalQuery<TResult>,
+    callbacks: {
+      onData: (data: TResult) => void
+    }
+  ) {
+    // makes sure query instance is unique, not shared among UI components
+    const uniqueQuery = query.clone()
+    this.cache.subscribe(uniqueQuery, callbacks.onData)
+    return {
+      unregister: () => this.cache.unsubscribe(uniqueQuery),
+    }
   }
 
   processMutation<TResult, TArguments, TContext>(
@@ -71,6 +86,10 @@ class StandardStore implements InternalStore {
         }
       },
     })
+  }
+
+  setQueryData(query: BaseQuery, data: any) {
+    this.cache.storeQueryData(query, data)
   }
 
   resetStore() {

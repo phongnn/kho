@@ -1,10 +1,13 @@
 import { Query } from "../query/Query"
 import { Mutation } from "../query/Mutation"
+import { BaseQuery } from "../query/BaseQuery"
+import { LocalQuery } from "../query/LocalQuery"
 
 export interface StoreOptions {}
 
 /** Public interface exposed to developers */
 export interface Store {
+  setQueryData(query: BaseQuery, data: any): void
   resetStore(): Promise<unknown>
   // clearStore(): void
 }
@@ -20,6 +23,13 @@ export interface InternalStore extends Store {
       onData: (data: TResult) => void
     }
   ): QueryRegistrationResult<TResult, TArguments, TContext>
+
+  registerLocalQuery<TResult>(
+    query: LocalQuery<TResult>,
+    callbacks: {
+      onData: (data: TResult) => void
+    }
+  ): LocalQueryRegistrationResult
 
   processMutation<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
@@ -51,4 +61,8 @@ export interface QueryRegistrationResult<TResult, TArguments, TContext> {
 
   startPolling: (interval?: number) => void
   stopPolling: () => void
+}
+
+export interface LocalQueryRegistrationResult {
+  unregister: () => void
 }
