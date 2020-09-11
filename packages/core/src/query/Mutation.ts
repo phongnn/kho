@@ -9,7 +9,7 @@ import { Query } from "./Query"
 export interface FNCCache {
   // note: if the 2nd param can be either data for function,
   // developers won't get auto-suggestion when defining the function
-  writeQuery(query: BaseQuery, fn: (params: { existingData: any }) => any): void
+  updateQueryResult(query: BaseQuery, fn: (existingData: any) => any): void
 
   evictObject(type: NormalizedType, key: any): void
 }

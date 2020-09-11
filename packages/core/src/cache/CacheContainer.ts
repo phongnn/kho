@@ -9,6 +9,7 @@ import {
 import DataNormalizer from "../normalization/DataNormalizer"
 import DataDenormalizer from "../normalization/DataDenormalizer"
 import { extractPlainKey } from "../helpers"
+import { LocalQuery } from "../query/LocalQuery"
 
 export { CacheKey } from "./QueryBucket"
 
@@ -111,16 +112,16 @@ class CacheContainer implements FNCCache {
   //============= FNCCache methods (called only from mutation's update()) =========
 
   // Note: unlike saveQueryData(), this function expects data already in normalized format.
-  writeQuery(query: BaseQuery, fn: (params: { existingData: any }) => any) {
+  updateQueryResult(query: BaseQuery, fn: (existingData: any) => any) {
     const cacheKey = this.findCacheKey(query)
     if (!cacheKey) {
-      this.queryBucket.set(new CacheKey(query), [
-        fn({ existingData: null }),
-        null,
-      ])
+      // prettier-ignore
+      const data = fn(query instanceof LocalQuery ? query.options.initialValue : null)
+      this.queryBucket.set(new CacheKey(query), [data, null])
     } else {
       const [existingData, selector] = this.queryBucket.get(cacheKey)!
-      this.queryBucket.set(cacheKey, [fn({ existingData }), selector])
+      const updatedData = fn(existingData)
+      this.queryBucket.set(cacheKey, [updatedData, selector])
     }
   }
 
