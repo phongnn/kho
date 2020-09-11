@@ -108,15 +108,19 @@ class CacheContainer implements FNCCache {
     this.queryBucket.clear()
   }
 
-  /** implements FNCCache methods which can only be called from within mutation's update() function */
-  updateQueryResult(query: BaseQuery, fn: (existingData: any) => any) {
+  //============= FNCCache methods (called only from mutation's update()) =========
+
+  // Note: unlike saveQueryData(), this function expects data already in normalized format.
+  writeQuery(query: BaseQuery, fn: (params: { existingData: any }) => any) {
     const cacheKey = this.findCacheKey(query)
     if (!cacheKey) {
-      this.queryBucket.set(new CacheKey(query), fn(undefined))
+      this.queryBucket.set(new CacheKey(query), [
+        fn({ existingData: null }),
+        null,
+      ])
     } else {
       const [existingData, selector] = this.queryBucket.get(cacheKey)!
-      const updatedData = fn(existingData)
-      this.queryBucket.set(cacheKey, [updatedData, selector])
+      this.queryBucket.set(cacheKey, [fn({ existingData }), selector])
     }
   }
 

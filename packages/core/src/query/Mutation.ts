@@ -7,7 +7,10 @@ import { mergeOptions } from "../helpers"
 import { Query } from "./Query"
 
 export interface FNCCache {
-  updateQueryResult(query: BaseQuery, fn: (existingData: any) => any): void
+  // note: if the 2nd param can be either data for function,
+  // developers won't get auto-suggestion when defining the function
+  writeQuery(query: BaseQuery, fn: (params: { existingData: any }) => any): void
+
   evictObject(type: NormalizedType, key: any): void
 }
 

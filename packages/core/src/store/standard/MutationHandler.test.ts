@@ -120,7 +120,7 @@ describe("update()", () => {
       {
         shape: UserType,
         update: (cache, { data }) => {
-          cache.updateQueryResult(query, (existingData = []) => [
+          cache.writeQuery(query, ({ existingData = [] }) => [
             ...existingData,
             data,
           ])
@@ -206,7 +206,7 @@ describe("optimistic response", () => {
         update: (cache, { data, optimistic }) => {
           // update() is called twice, but we should add to list only once
           if (optimistic) {
-            cache.updateQueryResult(query, (existingData = []) => [
+            cache.writeQuery(query, ({ existingData = [] }) => [
               ...existingData,
               data,
             ])
