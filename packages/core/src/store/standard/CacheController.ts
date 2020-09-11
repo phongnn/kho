@@ -45,12 +45,13 @@ class CacheController {
   }
 
   storeQueryData(query: BaseQuery, data: any) {
-    const cacheKey = this.cache.saveQueryData(query, data)
-
-    // set cacheKey for those active queries that are pending for data fetching
-    for (const [q, qInfo] of this.activeQueries) {
-      if (!qInfo.cacheKey && cacheKey.matches(q)) {
-        qInfo.cacheKey = cacheKey
+    const newCacheKey = this.cache.saveQueryData(query, data)
+    if (newCacheKey) {
+      // set cacheKey for those active queries that are pending for data fetching
+      for (const [q, qInfo] of this.activeQueries) {
+        if (!qInfo.cacheKey && newCacheKey.matches(q)) {
+          qInfo.cacheKey = newCacheKey
+        }
       }
     }
 
@@ -79,7 +80,23 @@ class CacheController {
   ) {
     const { shape, update: updateFn } = mutation.options
     if (data || updateFn) {
-      this.cache.saveMutationResult(data, shape, updateFn, optimistic)
+      this.cache.saveMutationResult(
+        data,
+        shape,
+        updateFn,
+        optimistic,
+        (newCacheKeys) => {
+          // set cacheKey for those active queries that are pending for data fetching
+          for (const [q, qInfo] of this.activeQueries) {
+            if (!qInfo.cacheKey) {
+              const cacheKey = newCacheKeys.find((k) => k.matches(q))
+              if (cacheKey) {
+                qInfo.cacheKey = cacheKey
+              }
+            }
+          }
+        }
+      )
       this.notifyActiveQueries()
     }
   }

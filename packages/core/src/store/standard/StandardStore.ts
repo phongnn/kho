@@ -88,10 +88,6 @@ class StandardStore implements InternalStore {
     })
   }
 
-  setQueryData(query: BaseQuery, data: any) {
-    this.cache.storeQueryData(query, data)
-  }
-
   resetStore() {
     return new Promise((resolve) => {
       this.cache.reset((queriesToRefetch) => {
