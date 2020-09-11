@@ -1,8 +1,9 @@
 import { BaseQueryKey, BaseQuery } from "./BaseQuery"
 import { NormalizedShape } from "../normalization/NormalizedType"
 
-export interface LocalQueryOptions {
+export interface LocalQueryOptions<TData> {
   shape?: NormalizedShape
+  initialValue?: TData
 }
 
 class LocalQueryKey implements BaseQueryKey {
@@ -13,12 +14,15 @@ class LocalQueryKey implements BaseQueryKey {
   }
 }
 
-export class LocalQuery<TResult> extends BaseQuery {
-  constructor(readonly name: string, readonly options: LocalQueryOptions = {}) {
+export class LocalQuery<TData> extends BaseQuery {
+  constructor(
+    readonly name: string,
+    readonly options: LocalQueryOptions<TData> = {}
+  ) {
     super(new LocalQueryKey(name), options)
   }
 
   clone() {
-    return new LocalQuery<TResult>(this.name, this.options)
+    return new LocalQuery<TData>(this.name, this.options)
   }
 }

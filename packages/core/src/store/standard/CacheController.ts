@@ -1,7 +1,9 @@
-import { BaseQuery } from "../../query/BaseQuery"
 import CacheContainer, { CacheKey } from "../../cache/CacheContainer"
-import { Mutation } from "../../query/Mutation"
+import { BaseQuery } from "../../query/BaseQuery"
+import { Query } from "../../query/Query"
+import { LocalQuery } from "../../query/LocalQuery"
 import CompoundQuery from "../../fetcher/CompoundQuery"
+import { Mutation } from "../../query/Mutation"
 
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void
@@ -21,6 +23,10 @@ class CacheController {
       return true
     } else {
       this.activeQueries.set(query, { onData })
+      // prettier-ignore
+      if (query instanceof LocalQuery && query.options.initialValue !== undefined) { 
+        onData(query.options.initialValue)
+      }
       return false
     }
   }
@@ -83,16 +89,24 @@ class CacheController {
   }
 
   /** resets cache then refetches active queries */
-  reset(cb: (activeQueries: BaseQuery[]) => void) {
+  reset(
+    // prettier-ignore
+    cb: (queries: Array<Query<any, any, any> | CompoundQuery<any, any, any>>) => void
+  ) {
     this.cache.clear()
 
-    const queries: BaseQuery[] = []
+    // prettier-ignore
+    const queriesToRefetch: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
     for (const [q, qInfo] of this.activeQueries) {
       qInfo.cacheKey = undefined
-      queries.push(q)
+      if (q instanceof LocalQuery) {
+        qInfo.onData(q.options.initialValue ?? null)
+      } else if (q instanceof Query || q instanceof CompoundQuery) {
+        queriesToRefetch.push(q)
+      }
     }
 
-    cb(queries)
+    cb(queriesToRefetch)
   }
 
   clear() {

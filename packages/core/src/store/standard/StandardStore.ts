@@ -94,22 +94,20 @@ class StandardStore implements InternalStore {
 
   resetStore() {
     return new Promise((resolve) => {
-      this.cache.reset((activeQueries) => {
+      this.cache.reset((queriesToRefetch) => {
         let doneCount = 0
         const cbHandler = () => {
           doneCount++
-          if (doneCount === activeQueries.length) {
+          if (doneCount === queriesToRefetch.length) {
             resolve()
           }
         }
 
-        for (const query of activeQueries) {
-          if (query instanceof Query || query instanceof CompoundQuery) {
-            this.queryHandler.refetch(query, {
-              onComplete: cbHandler,
-              onError: cbHandler,
-            })
-          }
+        for (const query of queriesToRefetch) {
+          this.queryHandler.refetch(query, {
+            onComplete: cbHandler,
+            onError: cbHandler,
+          })
         }
       })
     })
