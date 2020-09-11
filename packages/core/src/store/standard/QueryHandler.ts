@@ -3,6 +3,7 @@ import { Query } from "../../query/Query"
 import CompoundQuery from "../../fetcher/CompoundQuery"
 import Fetcher from "../../fetcher/Fetcher"
 import CacheController from "./CacheController"
+import { getActualQuery } from "../../helpers"
 
 class QueryHandler {
   private fetcher = new Fetcher()
@@ -25,7 +26,7 @@ class QueryHandler {
 
     // makes sure query instance is unique, not shared among UI components
     const uniqueQuery = query.clone()
-    const queryHandle = !merge ? uniqueQuery : new CompoundQuery(uniqueQuery)
+    const queryHandle = getActualQuery(uniqueQuery) // convert to compound query if necessary
     const onDataCallback = networkOnly
       ? onData
       : (data: TResult) => this.cache.storeQueryData(queryHandle, data)

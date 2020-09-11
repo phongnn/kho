@@ -7,6 +7,7 @@ import MutationHandler from "./MutationHandler"
 import CompoundQuery from "../../fetcher/CompoundQuery"
 import { BaseQuery } from "../../query/BaseQuery"
 import { LocalQuery } from "../../query/LocalQuery"
+import { getActualQuery } from "../../helpers"
 
 class StandardStore implements InternalStore {
   private cache = new CacheController()
@@ -118,7 +119,7 @@ class StandardStore implements InternalStore {
     const inactiveQueries: BaseQuery[] = []
     queries.forEach((query) => {
       // prettier-ignore
-      const actualQuery = !query.options.merge ? query : new CompoundQuery(query)
+      const actualQuery = getActualQuery(query)
       const activeQuery = this.cache.findActiveQuery(actualQuery)
       if (activeQuery) {
         activeQueries.push(activeQuery)

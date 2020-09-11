@@ -1,12 +1,7 @@
-import { Query } from "./Query"
+import { mergeOptions } from "./helpers"
 
-const originalQuery = new Query(
-  "GetX",
-  (
-    args: { name: string; age: number },
-    ctx: { token: string; cors: string; extra?: any }
-  ) => Promise.resolve(`${args.name} (${args.age})`),
-  {
+describe("mergeOptions", () => {
+  const originalOptions = {
     fetchPolicy: "cache-and-network",
     arguments: { name: "Nguyen", age: 20 },
     context: {
@@ -17,20 +12,18 @@ const originalQuery = new Query(
       },
     },
   }
-)
 
-describe("withOptions", () => {
   it("should override arguments only", () => {
     const args = { name: "Tran", age: 19 }
-    const query = originalQuery.withOptions({ arguments: args })
-    expect(query.options).toStrictEqual({
-      ...originalQuery.options,
+    const result = mergeOptions(originalOptions, { arguments: args })
+    expect(result).toStrictEqual({
+      ...originalOptions,
       arguments: args,
     })
   })
 
   it("should shallow merge context", () => {
-    const query = originalQuery.withOptions({
+    const result = mergeOptions(originalOptions, {
       context: {
         token: "aaa",
         extra: {
@@ -39,8 +32,8 @@ describe("withOptions", () => {
       },
     })
 
-    expect(query.options).toStrictEqual({
-      ...originalQuery.options,
+    expect(result).toStrictEqual({
+      ...originalOptions,
       context: {
         token: "aaa",
         cors: "*",
@@ -52,10 +45,10 @@ describe("withOptions", () => {
   })
 
   it("should not override with undefined values", () => {
-    const query = originalQuery.withOptions({
+    const result = mergeOptions(originalOptions, {
       arguments: undefined,
       context: undefined,
     })
-    expect(query.options).toStrictEqual(originalQuery.options)
+    expect(result).toStrictEqual(originalOptions)
   })
 })

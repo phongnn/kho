@@ -1,3 +1,5 @@
+import { Query } from "./query/Query"
+import CompoundQuery from "./fetcher/CompoundQuery"
 import { NormalizedType } from "./normalization/NormalizedType"
 
 export { equal as deepEqual } from "@wry/equality"
@@ -16,23 +18,9 @@ export const isProduction = env === "production"
 //   )
 // }
 
-export function mergeOptions(opts: any, newOpts: any) {
-  const { context = {}, ...otherOpts } = opts
-  const { context: additionalContext = {}, ...overridingOpts } = newOpts
-  const result = override(otherOpts, overridingOpts)
-  result.context = { ...context, ...additionalContext }
-  return result
-}
-
-function override(existingObj: any, newObj: any) {
-  const result: any = {}
-  Object.getOwnPropertyNames(existingObj).forEach(
-    (prop) => (result[prop] = newObj[prop] || existingObj[prop])
-  )
-  Object.getOwnPropertyNames(newObj).forEach(
-    (prop) => (result[prop] = newObj[prop] || existingObj[prop])
-  )
-  return result
+/** converts to CompoundQuery if necessary */
+export function getActualQuery(query: Query<any, any, any>) {
+  return !query.options.merge ? query : new CompoundQuery(query)
 }
 
 export function extractPlainKey(obj: any, type: NormalizedType) {
@@ -50,4 +38,23 @@ export function extractPlainKey(obj: any, type: NormalizedType) {
 
   // return primitive key (if possible) for faster comparison
   return keyFields.length === 1 ? obj[keyFields[0]] : keyObj
+}
+
+export function mergeOptions(opts: any, newOpts: any) {
+  const { context = {}, ...otherOpts } = opts
+  const { context: additionalContext = {}, ...overridingOpts } = newOpts
+  const result = override(otherOpts, overridingOpts)
+  result.context = { ...context, ...additionalContext }
+  return result
+}
+
+function override(existingObj: any, newObj: any) {
+  const result: any = {}
+  Object.getOwnPropertyNames(existingObj).forEach(
+    (prop) => (result[prop] = newObj[prop] || existingObj[prop])
+  )
+  Object.getOwnPropertyNames(newObj).forEach(
+    (prop) => (result[prop] = newObj[prop] || existingObj[prop])
+  )
+  return result
 }
