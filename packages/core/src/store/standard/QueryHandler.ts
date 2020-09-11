@@ -126,7 +126,7 @@ class QueryHandler {
       onData: (newData) => {
         const { arguments: args, context } = nextQuery.options
         this.cache.mergeQueryData(query, newData, (edata, ndata) =>
-          mergeFn!(edata, ndata, args!, context!)
+          mergeFn!(edata, ndata, { arguments: args!, context: context! })
         )
       },
     })

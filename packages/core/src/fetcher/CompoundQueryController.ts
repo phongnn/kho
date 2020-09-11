@@ -50,7 +50,7 @@ class CompoundQueryController<TResult, TArguments, TContext> {
       const { merge, arguments: args, context } = child.options
       const mergeFn = (merge || originalMerge)!
       result = result
-        ? mergeFn(result, childResult, args!, context!)
+        ? mergeFn(result, childResult, { arguments: args!, context: context! })
         : childResult
     }
 

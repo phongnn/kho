@@ -12,8 +12,10 @@ export interface QueryOptions<TResult, TArguments, TContext> {
   merge?: (
     existingData: any,
     newData: any,
-    args: TArguments,
-    ctx: Partial<TContext>
+    info: {
+      arguments: TArguments
+      context: Partial<TContext>
+    }
   ) => any
 }
 

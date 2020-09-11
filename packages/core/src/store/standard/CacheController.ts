@@ -126,10 +126,10 @@ class CacheController {
     cb(queriesToRefetch)
   }
 
-  clear() {
-    this.cache.clear()
-    this.activeQueries.clear()
-  }
+  // clear() {
+  //   this.cache.clear()
+  //   this.activeQueries.clear()
+  // }
 
   // notify active queries of possible state change
   private notifyActiveQueries() {
