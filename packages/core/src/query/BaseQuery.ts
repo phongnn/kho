@@ -9,6 +9,6 @@ export abstract class BaseQuery {
     readonly key: BaseQueryKey,
     readonly options: {
       shape?: NormalizedShape
-    }
+    } = {}
   ) {}
 }

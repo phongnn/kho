@@ -1,6 +1,6 @@
 import CacheContainer from "./CacheContainer"
 import { NormalizedType } from "../normalization/NormalizedType"
-import { LocalQuery } from "../query/LocalQuery"
+import { Query } from "../query/Query"
 
 afterAll(() => {
   // @ts-ignore
@@ -21,8 +21,8 @@ const CommentType = NormalizedType.register("Comment", {
   },
 })
 
-const queryComments = new LocalQuery("comments", { shape: [CommentType] })
-const queryUser = new LocalQuery("user", { shape: UserType })
+const queryComments = new Query("comments", jest.fn(), { shape: [CommentType] })
+const queryUser = new Query("user", jest.fn(), { shape: UserType })
 const comments = [
   {
     id: "c1",
@@ -51,7 +51,7 @@ it("should return latest data", () => {
   const cache = new CacheContainer()
 
   const queryCommentsCacheKey = cache.saveQueryData(queryComments, comments)
-  cache.saveQueryData(queryUser, userX)
+  cache.saveQueryData(queryUser, userX) // update one of the commenters' info
 
   const output = cache.get(queryCommentsCacheKey!)
   expect(output).toStrictEqual([
