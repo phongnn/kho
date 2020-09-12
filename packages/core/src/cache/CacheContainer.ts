@@ -9,6 +9,10 @@ import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
 import { extractPlainKey, getActualQuery } from "../helpers"
 import { Query } from "../query/Query"
+import {
+  NormalizedObjectKey,
+  NormalizedObjectRef,
+} from "../normalization/NormalizedObject"
 
 export { CacheKey } from "./QueryBucket"
 
@@ -49,7 +53,7 @@ class CacheContainer implements FNCCache {
       const { result, objects, selector } = normalizer.normalize(data, shape)
 
       this.queryBucket.set(cacheKey, [result, selector])
-      this.objectBucket.add(objects)
+      this.objectBucket.addObjects(objects)
     }
     return existingCacheKey ? null : cacheKey // returns new cache key only
   }
@@ -76,7 +80,7 @@ class CacheContainer implements FNCCache {
       // prettier-ignore
       const { result, objects, selector: newSelector } = normalizer.normalize(newData, shape)
 
-      this.objectBucket.add(objects)
+      this.objectBucket.addObjects(objects)
 
       const data = mergeFn(existingData, result)
       existingSelector!.merge(newSelector)
@@ -95,7 +99,7 @@ class CacheContainer implements FNCCache {
       const normalizer = this.createNormalizer()
       const { result, objects } = normalizer.normalize(data, shape)
 
-      this.objectBucket.add(objects)
+      this.objectBucket.addObjects(objects)
       normalizedData = result
     }
 
@@ -132,15 +136,33 @@ class CacheContainer implements FNCCache {
     }
   }
 
-  evictObject(type: NormalizedType, key: any) {
-    const objectKey = this.objectBucket.findObjectKey(
-      type,
-      extractPlainKey(key, type)
-    )
+  addObject(type: NormalizedType, data: any) {
+    const plainKey = extractPlainKey(data, type)
+    const key =
+      this.objectBucket.findObjectKey(type, plainKey) ||
+      new NormalizedObjectKey(plainKey)
 
-    if (objectKey) {
-      this.objectBucket.delete(type, objectKey)
-    }
+    this.objectBucket.set(type, key, data)
+
+    return new NormalizedObjectRef(type, key)
+  }
+
+  findObjectRef(type: NormalizedType, key: any) {
+    const plainKey = extractPlainKey(key, type)
+    const objectKey = this.objectBucket.findObjectKey(type, plainKey)
+    return objectKey ? new NormalizedObjectRef(type, objectKey) : null
+  }
+
+  readObject(ref: NormalizedObjectRef) {
+    return this.objectBucket.get(ref.type, ref.key)
+  }
+
+  updateObject(ref: NormalizedObjectRef, data: any) {
+    this.objectBucket.set(ref.type, ref.key, data)
+  }
+
+  deleteObject(ref: NormalizedObjectRef) {
+    this.objectBucket.delete(ref.type, ref.key)
   }
 
   //============= private methods =========

@@ -21,7 +21,19 @@ class ObjectBucket {
     return this.objects.get(type)?.get(key)
   }
 
-  add(newObjects: Map<NormalizedType, [NormalizedObjectKey, any][]>) {
+  set(type: NormalizedType, key: NormalizedObjectKey, value: any) {
+    const existingMap = this.objects.get(type)
+    if (!existingMap) {
+      this.objects.set(
+        type,
+        new Map<NormalizedObjectKey, any>([[key, value]])
+      )
+    } else {
+      existingMap.set(key, value)
+    }
+  }
+
+  addObjects(newObjects: Map<NormalizedType, [NormalizedObjectKey, any][]>) {
     for (const [type, entries] of newObjects) {
       const existingMap = this.objects.get(type)
       if (!existingMap) {

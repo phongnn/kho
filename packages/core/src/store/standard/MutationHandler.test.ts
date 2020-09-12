@@ -429,7 +429,70 @@ describe("update()", () => {
     })
   })
 
-  it("should evict normalized object", (done) => {
+  it("should add normalized object", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () => Promise.resolve([{ username: "x", email: "x@test.com" }]),
+      { shape: [UserType] }
+    )
+    const mutation = new Mutation(() => Promise.resolve(), {
+      update: (cache) => {
+        // prettier-ignore
+        const ref = cache.addObject(UserType, { username: "y", email: "y@t.s", avatar: "http" })
+        cache.updateQuery(query, [...cache.readQuery(query), ref])
+      },
+    })
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data.length === 1) {
+          setTimeout(() => store.processMutation(mutation))
+        } else {
+          expect(data[1]).toStrictEqual({ username: "y", email: "y@t.s" })
+          done()
+        }
+      },
+    })
+  })
+
+  it("should update normalized object", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve({ username: "x", email: "x@test.com", avatar: "http" }),
+      { shape: UserType }
+    )
+    const mutation = new Mutation(() => Promise.resolve(), {
+      update: (cache) => {
+        const ref = cache.findObjectRef(UserType, { username: "x" })!
+        cache.updateObject(ref, {
+          ...cache.readObject(ref),
+          email: "new-x@t.s",
+        })
+      },
+    })
+
+    let updated = false
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (!updated) {
+          updated = true
+          setTimeout(() => store.processMutation(mutation))
+        } else {
+          // prettier-ignore
+          expect(data).toStrictEqual({ username: "x", email: "new-x@t.s", avatar: "http" })
+          done()
+        }
+      },
+    })
+  })
+
+  it("should delete normalized object", (done) => {
     // prettier-ignore
     const UserType = NormalizedType.register("User", { keyFields: ["username"] })
     const query = new Query(
@@ -453,7 +516,8 @@ describe("update()", () => {
     })
 
     const mutation = new Mutation(() => Promise.resolve(), {
-      update: (cache) => cache.evictObject(UserType, { username: "x" }),
+      update: (cache) =>
+        cache.deleteObject(cache.findObjectRef(UserType, { username: "x" })),
     })
     store.processMutation(mutation)
   })
