@@ -18,15 +18,20 @@ class CacheController {
   subscribe(query: BaseQuery, onData: (data: any) => void) {
     const cacheKey = this.cache.findCacheKey(query)
     if (cacheKey) {
+      // already cached
       this.activeQueries.set(query, { onData, cacheKey })
       onData(this.cache.get(cacheKey)) // callback immediately
       return true
+    } else if (query instanceof LocalQuery) {
+      const { initialValue = null } = query.options
+      const newCacheKey = this.cache.saveQueryData(query, initialValue)
+      this.activeQueries.set(query, { onData, cacheKey: newCacheKey! })
+      if (initialValue) {
+        onData(initialValue)
+      }
+      return true
     } else {
       this.activeQueries.set(query, { onData })
-      // prettier-ignore
-      if (query instanceof LocalQuery && query.options.initialValue !== undefined) { 
-        onData(query.options.initialValue)
-      }
       return false
     }
   }
@@ -80,23 +85,7 @@ class CacheController {
   ) {
     const { shape, update: updateFn } = mutation.options
     if (data || updateFn) {
-      this.cache.saveMutationResult(
-        data,
-        shape,
-        updateFn,
-        optimistic,
-        (newCacheKeys) => {
-          // set cacheKey for those active queries that are pending for data fetching
-          for (const [q, qInfo] of this.activeQueries) {
-            if (!qInfo.cacheKey) {
-              const cacheKey = newCacheKeys.find((k) => k.matches(q))
-              if (cacheKey) {
-                qInfo.cacheKey = cacheKey
-              }
-            }
-          }
-        }
-      )
+      this.cache.saveMutationResult(data, shape, updateFn, optimistic)
       this.notifyActiveQueries()
     }
   }
@@ -115,15 +104,17 @@ class CacheController {
     // prettier-ignore
     const queriesToRefetch: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
     for (const [q, qInfo] of this.activeQueries) {
-      qInfo.cacheKey = undefined
       if (q instanceof LocalQuery) {
-        qInfo.onData(q.options.initialValue ?? null)
+        // prettier-ignore
+        qInfo.cacheKey = this.cache.saveQueryData(q, q.options.initialValue ?? null)!
       } else if (q instanceof Query || q instanceof CompoundQuery) {
+        qInfo.cacheKey = undefined
         queriesToRefetch.push(q)
       }
     }
 
     cb(queriesToRefetch)
+    this.notifyActiveQueries()
   }
 
   // clear() {

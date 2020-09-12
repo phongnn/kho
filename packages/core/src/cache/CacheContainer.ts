@@ -7,11 +7,12 @@ import DataNormalizer from "../normalization/DataNormalizer"
 import DataDenormalizer from "../normalization/DataDenormalizer"
 import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
-import { extractPlainKey } from "../helpers"
+import { extractPlainKey, getActualQuery } from "../helpers"
+import { Query } from "../query/Query"
 
 export { CacheKey } from "./QueryBucket"
 
-class CacheContainer {
+class CacheContainer implements FNCCache {
   private queryBucket = new QueryBucket()
   private objectBucket = new ObjectBucket()
 
@@ -87,8 +88,7 @@ class CacheContainer {
     data: any,
     shape: NormalizedShape | undefined,
     updateFn: MutationUpdateFn | undefined,
-    optimistic: boolean,
-    callback: (newCacheKeys: CacheKey[]) => void
+    optimistic: boolean
   ) {
     let normalizedData: any = null
     if (shape) {
@@ -100,11 +100,7 @@ class CacheContainer {
     }
 
     if (updateFn) {
-      const cacheProxy = new FNCCacheProxy(this) // to keep track of cache keys added when executing update()
-      updateFn(cacheProxy, { data: normalizedData || data, optimistic })
-      if (cacheProxy.newCacheKeys.length > 0) {
-        callback(cacheProxy.newCacheKeys) // to update cache key of queries pending for data
-      }
+      updateFn(this, { data: normalizedData || data, optimistic })
     }
   }
 
@@ -117,17 +113,18 @@ class CacheContainer {
 
   // Note: unlike saveQueryData(), this function expects data already in normalized format.
   updateQueryResult(query: BaseQuery, fn: (existingData: any) => any) {
-    const cacheKey = this.findCacheKey(query)
-    if (!cacheKey) {
-      const newCacheKey = new CacheKey(query)
-      // prettier-ignore
-      const data = fn(query instanceof LocalQuery ? query.options.initialValue : null)
-      this.queryBucket.set(newCacheKey, [data, null])
-      return newCacheKey
-    } else {
+    const actualQuery = query instanceof Query ? getActualQuery(query) : query
+    const cacheKey = this.findCacheKey(actualQuery)
+    if (cacheKey) {
       const [existingData, selector] = this.queryBucket.get(cacheKey)!
       const updatedData = fn(existingData)
       this.queryBucket.set(cacheKey, [updatedData, selector])
+    } else if (query instanceof LocalQuery) {
+      const data = fn(query.options.initialValue || null)
+      this.queryBucket.set(new CacheKey(query), [data, null])
+    } else {
+      // prettier-ignore
+      throw Error(`[FNC] updateQueryResult() requires data to be already in cache.`)
     }
   }
 
@@ -147,25 +144,6 @@ class CacheContainer {
     return new DataNormalizer((type, plainKey) =>
       this.objectBucket.findObjectKey(type, plainKey)
     )
-  }
-}
-
-/** Used only for storing cache keys newly added when handling Mutation's update() function */
-class FNCCacheProxy implements FNCCache {
-  constructor(
-    private cache: CacheContainer,
-    readonly newCacheKeys: CacheKey[] = []
-  ) {}
-
-  updateQueryResult(query: BaseQuery, fn: (existingData: any) => any) {
-    const newCacheKey = this.cache.updateQueryResult(query, fn)
-    if (newCacheKey) {
-      this.newCacheKeys.push(newCacheKey)
-    }
-  }
-
-  evictObject(type: NormalizedType, key: any) {
-    this.cache.evictObject(type, key)
   }
 }
 
