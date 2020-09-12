@@ -9,7 +9,7 @@ describe("LocalQuery", () => {
     const testPayload = { msg: "Hello, World" }
     const query = new LocalQuery("SomeLocalState", { initialValue })
     const mutation = new Mutation(() => Promise.resolve(), {
-      update: (cache) => cache.updateQueryResult(query, () => testPayload),
+      update: (cache) => cache.updateQuery(query, testPayload),
     })
     const store = new StandardStore()
     store.registerLocalQuery(query, {
@@ -45,7 +45,7 @@ describe("resetStore", () => {
   it("should reset active local query's value", (done) => {
     const query = new LocalQuery("Profile", { initialValue: "nothing" })
     const mutation = new Mutation(() => Promise.resolve(), {
-      update: (cache) => cache.updateQueryResult(query, () => "something"),
+      update: (cache) => cache.updateQuery(query, "something"),
     })
 
     const store = new StandardStore()

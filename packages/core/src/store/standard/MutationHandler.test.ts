@@ -2,6 +2,7 @@ import StandardStore from "./StandardStore"
 import { Query } from "../../query/Query"
 import { Mutation } from "../../query/Mutation"
 import { NormalizedType } from "../../normalization/NormalizedType"
+import { LocalQuery } from "../../query/LocalQuery"
 
 afterEach(() => {
   // @ts-ignore
@@ -91,75 +92,6 @@ describe("callbacks", () => {
   })
 })
 
-describe("update()", () => {
-  it("should update query result", (done) => {
-    // prettier-ignore
-    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
-    const query = new Query(
-      "GetUsers",
-      () =>
-        Promise.resolve([
-          { username: "x", email: "x@test.com" },
-          { username: "y", email: "y@test.com", avatar: "http://" },
-        ]),
-      { shape: [UserType] }
-    )
-
-    const store = new StandardStore()
-    store.registerQuery(query, {
-      onData: (data) => {
-        if (data.length === 3) {
-          expect(data[2]).toStrictEqual({ username: "z", email: "z@test.com" })
-          done()
-        }
-      },
-    })
-
-    const mutation = new Mutation(
-      () => Promise.resolve({ username: "z", email: "z@test.com" }),
-      {
-        shape: UserType,
-        update: (cache, { data }) => {
-          cache.updateQueryResult(query, (existingData = []) => [
-            ...existingData,
-            data,
-          ])
-        },
-      }
-    )
-    store.processMutation(mutation)
-  })
-
-  it("should evict normalized object", (done) => {
-    // prettier-ignore
-    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
-    const query = new Query(
-      "GetUsers",
-      () =>
-        Promise.resolve([
-          { username: "x", email: "x@test.com" },
-          { username: "y", email: "y@test.com", avatar: "http://" },
-        ]),
-      { shape: [UserType] }
-    )
-
-    const store = new StandardStore()
-    store.registerQuery(query, {
-      onData: (data) => {
-        if (data.length === 1) {
-          expect(data[0].username).toBe("y")
-          done()
-        }
-      },
-    })
-
-    const mutation = new Mutation(() => Promise.resolve(), {
-      update: (cache) => cache.evictObject(UserType, { username: "x" }),
-    })
-    store.processMutation(mutation)
-  })
-})
-
 describe("optimistic response", () => {
   it("should callback with an optimistic response, then with the real one", (done) => {
     // prettier-ignore
@@ -206,10 +138,8 @@ describe("optimistic response", () => {
         update: (cache, { data, optimistic }) => {
           // update() is called twice, but we should add to list only once
           if (optimistic) {
-            cache.updateQueryResult(query, (existingData = []) => [
-              ...existingData,
-              data,
-            ])
+            const existingData = cache.readQuery(query) || []
+            cache.updateQuery(query, [...existingData, data])
           }
         },
         optimisticResponse: {
@@ -395,5 +325,114 @@ describe("refetchQueries", () => {
           })
         }),
     })
+  })
+})
+
+describe("update()", () => {
+  describe("updateQuery()", () => {
+    it("should throw error if query not in cache", (done) => {
+      const query = new Query("GetData", jest.fn())
+      const mutation = new Mutation(() => Promise.resolve(), {
+        update: (cache) => cache.updateQuery(query, null),
+      })
+
+      jest.spyOn(console, "error").mockImplementation(() => {})
+      const store = new StandardStore()
+      store.processMutation(mutation, {
+        onError: (e) => {
+          expect(e.message).toMatch("requires data to be already in cache")
+          done()
+        },
+      })
+    })
+
+    it("should set local query data which was not found in cache", (done) => {
+      const query = new LocalQuery<string>("UserId")
+      const mutation = new Mutation(() => Promise.resolve(), {
+        update: (cache) => cache.updateQuery(query, "nguyen"),
+      })
+
+      const store = new StandardStore()
+      store.processMutation(mutation, {
+        onComplete: () => {
+          setTimeout(() =>
+            store.registerLocalQuery(query, {
+              onData: (data) => {
+                expect(data).toBe("nguyen")
+                done()
+              },
+            })
+          )
+        },
+      })
+    })
+
+    it("should update query result", (done) => {
+      // prettier-ignore
+      const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+      const query = new Query(
+        "GetUsers",
+        () =>
+          Promise.resolve([
+            { username: "x", email: "x@test.com" },
+            { username: "y", email: "y@test.com", avatar: "http://" },
+          ]),
+        { shape: [UserType] }
+      )
+
+      const store = new StandardStore()
+      store.registerQuery(query, {
+        onData: (data) => {
+          if (data.length === 3) {
+            expect(data[2]).toStrictEqual({
+              username: "z",
+              email: "z@test.com",
+            })
+            done()
+          }
+        },
+      })
+
+      const mutation = new Mutation(
+        () => Promise.resolve({ username: "z", email: "z@test.com" }),
+        {
+          shape: UserType,
+          update: (cache, { data }) => {
+            const existingData = cache.readQuery(query) || []
+            cache.updateQuery(query, [...existingData, data])
+          },
+        }
+      )
+      store.processMutation(mutation)
+    })
+  })
+
+  it("should evict normalized object", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve([
+          { username: "x", email: "x@test.com" },
+          { username: "y", email: "y@test.com", avatar: "http://" },
+        ]),
+      { shape: [UserType] }
+    )
+
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data.length === 1) {
+          expect(data[0].username).toBe("y")
+          done()
+        }
+      },
+    })
+
+    const mutation = new Mutation(() => Promise.resolve(), {
+      update: (cache) => cache.evictObject(UserType, { username: "x" }),
+    })
+    store.processMutation(mutation)
   })
 })

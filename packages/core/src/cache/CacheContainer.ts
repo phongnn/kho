@@ -111,20 +111,24 @@ class CacheContainer implements FNCCache {
 
   //============= FNCCache methods (called only from mutation's update()) =========
 
+  readQuery(query: BaseQuery) {
+    const actualQuery = query instanceof Query ? getActualQuery(query) : query
+    const cacheKey = this.findCacheKey(actualQuery)
+    return cacheKey ? this.queryBucket.get(cacheKey)![0] : null
+  }
+
   // Note: unlike saveQueryData(), this function expects data already in normalized format.
-  updateQueryResult(query: BaseQuery, fn: (existingData: any) => any) {
+  updateQuery(query: BaseQuery, data: any) {
     const actualQuery = query instanceof Query ? getActualQuery(query) : query
     const cacheKey = this.findCacheKey(actualQuery)
     if (cacheKey) {
-      const [existingData, selector] = this.queryBucket.get(cacheKey)!
-      const updatedData = fn(existingData)
-      this.queryBucket.set(cacheKey, [updatedData, selector])
+      const [_, selector] = this.queryBucket.get(cacheKey)!
+      this.queryBucket.set(cacheKey, [data, selector])
     } else if (query instanceof LocalQuery) {
-      const data = fn(query.options.initialValue || null)
       this.queryBucket.set(new CacheKey(query), [data, null])
     } else {
       // prettier-ignore
-      throw Error(`[FNC] updateQueryResult() requires data to be already in cache.`)
+      throw Error(`[FNC] updateQuery() requires data to be already in cache.`)
     }
   }
 
