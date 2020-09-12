@@ -405,6 +405,28 @@ describe("update()", () => {
       )
       store.processMutation(mutation)
     })
+
+    it("should update compound query result", (done) => {
+      const query = new Query("GetData", () => Promise.resolve(1), {
+        merge: (e, n) => e + n,
+      })
+      const mutation = new Mutation(() => Promise.resolve(), {
+        update: (cache) => cache.updateQuery(query, 1000),
+      })
+      const store = new StandardStore()
+      const { fetchMore } = store.registerQuery(query, {
+        onData: (data) => {
+          if (data === 1) {
+            setTimeout(() => fetchMore(query))
+          } else if (data === 2) {
+            setTimeout(() => store.processMutation(mutation))
+          } else {
+            expect(data).toBe(1000)
+            done()
+          }
+        },
+      })
+    })
   })
 
   it("should evict normalized object", (done) => {
