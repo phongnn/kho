@@ -89,6 +89,10 @@ class StandardStore implements InternalStore {
     })
   }
 
+  setQueryData(query: BaseQuery, data: any): void {
+    this.cache.storeQueryData(query, data)
+  }
+
   resetStore() {
     return new Promise((resolve) => {
       this.cache.reset((queriesToRefetch) => {
@@ -109,10 +113,6 @@ class StandardStore implements InternalStore {
       })
     })
   }
-
-  // clearStore() {
-  //   this.cache.clear()
-  // }
 
   private separateInactiveQueries(queries: Array<Query<any, any, any>>) {
     const activeQueries: BaseQuery[] = []

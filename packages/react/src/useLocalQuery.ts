@@ -5,7 +5,7 @@ import { useStore } from "./Provider"
 
 export function useLocalQuery<TResult>(query: LocalQuery<TResult>) {
   const store = useStore()
-  const [data, setData] = useState(null)
+  const [data, setData] = useState<TResult | null>(null)
 
   useEffect(() => {
     const { unregister } = store.registerLocalQuery(query, {
@@ -15,5 +15,5 @@ export function useLocalQuery<TResult>(query: LocalQuery<TResult>) {
     return unregister
   }, [store, query])
 
-  return { data: data as TResult | null }
+  return { data }
 }

@@ -1,12 +1,14 @@
 import { Query } from "../query/Query"
 import { Mutation } from "../query/Mutation"
 import { LocalQuery } from "../query/LocalQuery"
+import { BaseQuery } from "../query/BaseQuery"
 
 export interface StoreOptions {}
 
 /** Public interface exposed to developers */
 export interface Store {
   resetStore(): Promise<unknown>
+  setQueryData(query: BaseQuery, data: any): void
 }
 
 /** Interface exposed to view connectors (e.g., React hooks) */
