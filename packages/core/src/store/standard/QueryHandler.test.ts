@@ -35,8 +35,11 @@ describe("fetchPolicy", () => {
 
   test("cache-and-network should callback with cached data then latest data", (done) => {
     let count = 0
-    // prettier-ignore
-    const q1 = new Query("GetData", () => Promise.resolve(++count), { fetchPolicy: "cache-and-network" })
+    const q1 = new Query(
+      "GetData",
+      () => new Promise((r) => setTimeout(() => r(++count))),
+      { fetchPolicy: "cache-and-network" }
+    )
     const q2 = q1.clone()
 
     let times = 0
@@ -215,6 +218,25 @@ describe("refetch", () => {
           setTimeout(refetch)
         } else {
           expect(data).toBe("*2*")
+          done()
+        }
+      },
+    })
+  })
+
+  it("should work with multiple instances of the query", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(++count))
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          // @ts-ignore
+          const sub = store.registerQuery(query, {
+            onData: () => sub.refetch(),
+          })
+        } else {
+          expect(data).toBe(2)
           done()
         }
       },

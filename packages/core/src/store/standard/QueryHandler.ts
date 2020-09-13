@@ -34,6 +34,9 @@ class QueryHandler {
     let alreadyCached = false
     if (!networkOnly) {
       alreadyCached = this.cache.subscribe(queryHandle, onData)
+      if (alreadyCached && onComplete) {
+        setTimeout(onComplete)
+      }
     }
 
     if (!alreadyCached || cacheAndNetwork) {

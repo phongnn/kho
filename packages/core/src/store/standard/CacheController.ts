@@ -20,14 +20,15 @@ class CacheController {
     if (cacheKey) {
       // already cached
       this.activeQueries.set(query, { onData, cacheKey })
-      onData(this.cache.get(cacheKey)) // callback immediately
+      const existingData = this.cache.get(cacheKey)
+      setTimeout(() => onData(existingData)) // callback right after subscription
       return true
     } else if (query instanceof LocalQuery) {
       const { initialValue = null } = query.options
       const newCacheKey = this.cache.saveQueryData(query, initialValue)
       this.activeQueries.set(query, { onData, cacheKey: newCacheKey! })
       if (initialValue) {
-        onData(initialValue)
+        setTimeout(() => onData(initialValue))
       }
       return true
     } else {
