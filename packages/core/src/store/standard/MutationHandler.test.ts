@@ -329,6 +329,21 @@ describe("refetchQueries", () => {
 })
 
 describe("update()", () => {
+  it("should be passed mutation arguments and context", (done) => {
+    const args = { x: { y: "z" }, t: "t" }
+    const context = { token: "aaa", extra: { smth: true } }
+
+    const mutation = new Mutation(() => Promise.resolve(), {
+      update: (_, info) => {
+        expect(info.arguments).toStrictEqual(args)
+        expect(info.context).toStrictEqual(context)
+        done()
+      },
+    })
+    const store = new StandardStore()
+    store.processMutation(mutation.withOptions({ arguments: args, context }))
+  })
+
   describe("updateQuery()", () => {
     it("should throw error if query not in cache", (done) => {
       const query = new Query("GetData", jest.fn())
@@ -517,7 +532,7 @@ describe("update()", () => {
 
     const mutation = new Mutation(() => Promise.resolve(), {
       update: (cache) =>
-        cache.deleteObject(cache.findObjectRef(UserType, { username: "x" })),
+        cache.deleteObject(cache.findObjectRef(UserType, { username: "x" })!),
     })
     store.processMutation(mutation)
   })

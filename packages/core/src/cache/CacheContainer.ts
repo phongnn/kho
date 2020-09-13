@@ -1,18 +1,16 @@
+import { Query } from "../query/Query"
 import { BaseQuery } from "../query/BaseQuery"
 import { LocalQuery } from "../query/LocalQuery"
-import { FNCCache, MutationUpdateFn } from "../query/Mutation"
+import { FNCCache } from "../query/Mutation"
 // prettier-ignore
 import { NormalizedType, NormalizedShape } from "../normalization/NormalizedType"
+// prettier-ignore
+import { NormalizedObjectKey, NormalizedObjectRef } from "../normalization/NormalizedObject"
 import DataNormalizer from "../normalization/DataNormalizer"
 import DataDenormalizer from "../normalization/DataDenormalizer"
 import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
 import { extractPlainKey, getActualQuery } from "../helpers"
-import { Query } from "../query/Query"
-import {
-  NormalizedObjectKey,
-  NormalizedObjectRef,
-} from "../normalization/NormalizedObject"
 
 export { CacheKey } from "./QueryBucket"
 
@@ -55,7 +53,7 @@ class CacheContainer implements FNCCache {
       this.queryBucket.set(cacheKey, [result, selector])
       this.objectBucket.addObjects(objects)
     }
-    return existingCacheKey ? null : cacheKey // returns new cache key only
+    return existingCacheKey ? null : cacheKey // return new cache key only
   }
 
   removeQueryData(q: BaseQuery): void {
@@ -88,24 +86,11 @@ class CacheContainer implements FNCCache {
     }
   }
 
-  saveMutationResult(
-    data: any,
-    shape: NormalizedShape | undefined,
-    updateFn: MutationUpdateFn | undefined,
-    optimistic: boolean
-  ) {
-    let normalizedData: any = null
-    if (shape) {
-      const normalizer = this.createNormalizer()
-      const { result, objects } = normalizer.normalize(data, shape)
-
-      this.objectBucket.addObjects(objects)
-      normalizedData = result
-    }
-
-    if (updateFn) {
-      updateFn(this, { data: normalizedData || data, optimistic })
-    }
+  saveMutationResult(data: any, shape: NormalizedShape) {
+    const normalizer = this.createNormalizer()
+    const { result, objects } = normalizer.normalize(data, shape)
+    this.objectBucket.addObjects(objects)
+    return result // normalized data
   }
 
   clear() {

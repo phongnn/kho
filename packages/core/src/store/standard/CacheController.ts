@@ -84,10 +84,23 @@ class CacheController {
     optimistic: boolean = false
   ) {
     const { shape, update: updateFn } = mutation.options
-    if (data || updateFn) {
-      this.cache.saveMutationResult(data, shape, updateFn, optimistic)
-      this.notifyActiveQueries()
+    if (!data && !updateFn) {
+      return // no further processing required
     }
+
+    const normalizedData = shape
+      ? this.cache.saveMutationResult(data, shape)
+      : null
+    if (updateFn) {
+      updateFn(this.cache, {
+        data: normalizedData ?? data,
+        optimistic,
+        arguments: mutation.options.arguments,
+        context: mutation.options.context,
+      })
+    }
+
+    this.notifyActiveQueries()
   }
 
   removeInactiveQueries(inactiveQueries: BaseQuery[]) {
@@ -116,11 +129,6 @@ class CacheController {
     cb(queriesToRefetch)
     this.notifyActiveQueries()
   }
-
-  // clear() {
-  //   this.cache.clear()
-  //   this.activeQueries.clear()
-  // }
 
   // notify active queries of possible state change
   private notifyActiveQueries() {
