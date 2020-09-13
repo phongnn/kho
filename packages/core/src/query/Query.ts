@@ -60,11 +60,11 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
 
   clone = () => new Query(this.name, this.fetcher, this.options)
 
-  withOptions(options: QueryOptions<TResult, TArguments, TContext>) {
+  withOptions(...args: Array<QueryOptions<TResult, TArguments, TContext>>) {
     return new Query(
       this.name,
       this.fetcher,
-      mergeOptions(this.options, options)
+      args.reduce((tmp, opts) => mergeOptions(tmp, opts || {}), this.options)
     )
   }
 }
