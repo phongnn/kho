@@ -83,17 +83,18 @@ class Fetcher {
 
     fetcher(options.arguments!, options.context as TContext)
       .then((data) => {
+        this.ongoingRequests.delete(query) // clean up before callbacks (can't use finally for this)
         completeCallbacks.forEach((cb) => cb())
         dataCallback(data)
       })
       .catch((e) => {
+        this.ongoingRequests.delete(query) // clean up before callbacks (can't use finally for this)
         const err = toErrorObj(e)
         if (!isProduction) {
           console.error(err)
         }
         errorCallbacks.forEach((cb) => cb(err))
       })
-      .finally(() => this.ongoingRequests.delete(query))
   }
 }
 

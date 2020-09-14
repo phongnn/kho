@@ -226,7 +226,10 @@ describe("refetch", () => {
 
   it("should work with multiple instances of the query", (done) => {
     let count = 0
-    const query = new Query("GetData", () => Promise.resolve(++count))
+    const query = new Query(
+      "GetData",
+      () => new Promise((r) => setTimeout(() => r(++count)))
+    )
     const store = new StandardStore()
     store.registerQuery(query, {
       onData: (data) => {
