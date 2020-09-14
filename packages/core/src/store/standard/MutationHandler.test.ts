@@ -14,7 +14,9 @@ afterEach(() => {
 describe("callbacks", () => {
   it("should execute mutate function and invoke callbacks", (done) => {
     const result = { value: { x: "y" } }
-    const fn = jest.fn().mockResolvedValue(result)
+    const fn = jest
+      .fn()
+      .mockImplementation(() => new Promise((r) => setTimeout(() => r(result))))
 
     const args = { test: { message: "blah" } }
     const context = { token: "xyz", extra: { test: true } }
@@ -149,6 +151,23 @@ describe("optimistic response", () => {
         },
       }
     )
+    store.processMutation(mutation)
+  })
+
+  it("should ignore optimistic value when real res. is immediately available", (done) => {
+    const mutation = new Mutation(() => Promise.resolve(2), {
+      optimisticResponse: 1,
+      update: (_, { data }) => {
+        if (data === 1) {
+          throw new Error(`Unexpected callback with response: ${data}.`)
+        } else {
+          expect(data).toBe(2)
+          done()
+        }
+      },
+    })
+
+    const store = new StandardStore()
     store.processMutation(mutation)
   })
 })

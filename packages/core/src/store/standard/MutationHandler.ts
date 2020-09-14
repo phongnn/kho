@@ -15,23 +15,29 @@ class MutationHandler {
   ) {
     const { fn, options } = mutation
     const { onRequest, onError, onComplete } = callbacks
+    let done = false
 
     if (onRequest) {
-      onRequest()
+      setTimeout(onRequest)
     }
 
     if (options.optimisticResponse) {
-      setTimeout(() =>
-        this.cache.storeMutationResult(
-          mutation,
-          options.optimisticResponse,
-          true
-        )
+      // ignore the optimistic response if the real response is immediately available
+      // (because of setTimeout(), optimistic response could be processed AFTER the real response)
+      setTimeout(
+        () =>
+          !done &&
+          this.cache.storeMutationResult(
+            mutation,
+            options.optimisticResponse,
+            true
+          )
       )
     }
 
     fn(options.arguments!, options.context as TContext)
       .then((data) => {
+        done = true
         this.cache.storeMutationResult(mutation, data)
         if (onComplete) {
           onComplete(data)
