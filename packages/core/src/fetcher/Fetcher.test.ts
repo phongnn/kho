@@ -46,7 +46,9 @@ it("should invoke onError callback", (done) => {
 
 describe("request dedup", () => {
   it("should fetch data only once and invoke first onData callback", (done) => {
-    fetchData = jest.fn().mockResolvedValue(testPayload)
+    fetchData = jest
+      .fn()
+      .mockImplementation(() => new Promise((r) => setTimeout(r)))
     const q1 = query
     const q2 = q1.clone()
     const q1RequestHandler = jest.fn()
@@ -59,15 +61,17 @@ describe("request dedup", () => {
       onRequest: q1RequestHandler,
       onComplete: q1CompleteHandler,
       onData: () => {
-        expect(q1RequestHandler).toBeCalledTimes(1)
-        expect(q2RequestHandler).toBeCalledTimes(1)
-        expect(q1CompleteHandler).toBeCalledTimes(1)
-        expect(q2CompleteHandler).toBeCalledTimes(1)
+        setTimeout(() => {
+          expect(q1RequestHandler).toBeCalledTimes(1)
+          expect(q2RequestHandler).toBeCalledTimes(1)
+          expect(q1CompleteHandler).toBeCalledTimes(1)
+          expect(q2CompleteHandler).toBeCalledTimes(1)
 
-        expect(fetchData).toBeCalledTimes(1)
+          expect(fetchData).toBeCalledTimes(1)
 
-        expect(q2DataHandler).not.toBeCalled()
-        done()
+          expect(q2DataHandler).not.toBeCalled()
+          done()
+        })
       },
     })
 

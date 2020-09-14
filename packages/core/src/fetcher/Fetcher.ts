@@ -19,7 +19,7 @@ class Fetcher {
   ) {
     const { onRequest, onError, onComplete, onData } = callbacks
     if (onRequest) {
-      onRequest()
+      setTimeout(onRequest)
     }
 
     if (query instanceof Query) {
