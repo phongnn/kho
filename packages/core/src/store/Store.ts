@@ -1,4 +1,4 @@
-import { Query } from "../query/Query"
+import { Query, QueryOptions } from "../query/Query"
 import { Mutation } from "../query/Mutation"
 import { LocalQuery } from "../query/LocalQuery"
 import { BaseQuery } from "../query/BaseQuery"
@@ -7,7 +7,16 @@ export interface StoreOptions {}
 
 /** Public interface exposed to developers */
 export interface Store {
+  query<TResult, TArguments, TContext>(
+    query: Query<TResult, TArguments, TContext>,
+    options?: Pick<
+      QueryOptions<TResult, TArguments, TContext>,
+      "arguments" | "context" | "fetchPolicy"
+    >
+  ): Promise<TResult>
+
   resetStore(): Promise<unknown>
+
   setQueryData(query: BaseQuery, data: any): void
 }
 

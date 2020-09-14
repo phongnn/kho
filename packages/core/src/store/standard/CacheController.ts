@@ -79,6 +79,11 @@ class CacheController {
     this.notifyActiveQueries()
   }
 
+  retrieveQueryData(query: BaseQuery) {
+    const cacheKey = this.cache.findCacheKey(query)
+    return cacheKey ? this.cache.get(cacheKey) : undefined
+  }
+
   storeMutationResult<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
     data: any,

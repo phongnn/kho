@@ -1,5 +1,5 @@
 import { InternalStore } from "../Store"
-import { Query } from "../../query/Query"
+import { Query, QueryOptions } from "../../query/Query"
 import { Mutation } from "../../query/Mutation"
 import CacheController from "./CacheController"
 import QueryHandler from "./QueryHandler"
@@ -87,6 +87,20 @@ class StandardStore implements InternalStore {
         }
       },
     })
+  }
+
+  query<TResult, TArguments, TContext>(
+    query: Query<TResult, TArguments, TContext>,
+    options: Pick<
+      QueryOptions<TResult, TArguments, TContext>,
+      "arguments" | "context" | "fetchPolicy"
+    > = {}
+  ) {
+    const effectiveQuery = query.withOptions(options)
+    const actualQuery = getActualQuery(effectiveQuery)
+
+    const networkOnly = effectiveQuery.options.fetchPolicy === "network-only"
+    return this.queryHandler.fetchQuery(actualQuery, networkOnly)
   }
 
   setQueryData(query: BaseQuery, data: any): void {

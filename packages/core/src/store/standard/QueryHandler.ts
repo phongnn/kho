@@ -10,6 +10,31 @@ class QueryHandler {
 
   constructor(private cache: CacheController) {}
 
+  /** one-off data fetching */
+  fetchQuery<TResult, TArguments, TContext>(
+    query:
+      | Query<TResult, TArguments, TContext>
+      | CompoundQuery<TResult, TArguments, TContext>,
+    networkOnly: boolean
+  ) {
+    return new Promise<TResult>((resolve, reject) => {
+      if (!networkOnly) {
+        const cachedData = this.cache.retrieveQueryData(query)
+        if (cachedData !== undefined) {
+          return resolve(cachedData)
+        }
+      }
+
+      this.fetcher.addRequest(query, {
+        onData: (data) => {
+          this.cache.storeQueryData(query, data)
+          resolve(data)
+        },
+        onError: (e) => reject(e),
+      })
+    })
+  }
+
   registerQuery<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,
     callbacks: {
