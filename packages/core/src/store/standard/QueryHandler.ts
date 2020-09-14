@@ -45,7 +45,7 @@ class QueryHandler {
     }
   ) {
     const { onRequest, onData, onError, onComplete } = callbacks
-    const { fetchPolicy, pollInterval = 0, merge } = query.options
+    const { fetchPolicy, pollInterval = 0 } = query.options
     const networkOnly = fetchPolicy === "network-only"
     const cacheAndNetwork = fetchPolicy === "cache-and-network"
 
@@ -82,9 +82,7 @@ class QueryHandler {
     const result: QueryRegistrationResult<TResult, TArguments, TContext> = {
       unregister: () => {
         stopPollingFn()
-        if (!networkOnly) {
-          this.cache.unsubscribe(queryHandle)
-        }
+        this.cache.unsubscribe(queryHandle) // if (!networkOnly)
       },
       refetch: (callbacks = {}) =>
         this.refetch(queryHandle, {
@@ -97,9 +95,8 @@ class QueryHandler {
             `[FNC] query ${query.name} is network-only and doesn't support fetchMore.`
           )
         } else if (!(queryHandle instanceof CompoundQuery)) {
-          throw new Error(
-            `[FNC] fetchMore: merge() function not defined for query ${query.name}`
-          )
+          // prettier-ignore
+          throw new Error(`[FNC] merge() function not defined for query ${query.name}.`)
         }
 
         const uniqueNextQuery = nextQuery.clone() // for safety reason
@@ -122,19 +119,13 @@ class QueryHandler {
       | Query<TResult, TArguments, TContext>
       | CompoundQuery<TResult, TArguments, TContext>,
     callbacks: {
+      onData: (data: TResult) => void
       onRequest?: () => void
       onError?: (err: Error) => void
       onComplete?: () => void
-      onData?: (data: TResult) => void
-    } = {}
+    }
   ) {
-    const { onRequest, onError, onComplete, onData } = callbacks
-    this.fetcher.addRequest(query, {
-      onRequest,
-      onError,
-      onComplete,
-      onData: onData || ((data) => this.cache.storeQueryData(query, data)),
-    })
+    this.fetcher.addRequest(query, callbacks)
   }
 
   private fetchMore<TResult, TArguments, TContext>(
@@ -146,12 +137,9 @@ class QueryHandler {
       onComplete?: () => void
     } = {}
   ) {
-    const { onRequest, onError, onComplete } = callbacks
     const mergeFn = nextQuery.options.merge || query.original.options.merge
     this.fetcher.addRequest(nextQuery, {
-      onRequest,
-      onError,
-      onComplete,
+      ...callbacks,
       onData: (newData) => {
         const { arguments: args, context } = nextQuery.options
         this.cache.mergeQueryData(query, newData, (edata, ndata) =>

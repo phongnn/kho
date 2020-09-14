@@ -60,8 +60,12 @@ class StandardStore implements InternalStore {
           const [activeQueries, inactiveQueries] = this.separateInactiveQueries(refetchQueries)
           this.cache.removeInactiveQueries(inactiveQueries)
           setTimeout(() => {
-            // @ts-ignore
-            activeQueries.forEach((q) => this.queryHandler.refetch(q))
+            activeQueries.forEach((q) =>
+              // @ts-ignore
+              this.queryHandler.refetch(q, {
+                onData: (data) => this.cache.storeQueryData(q, data),
+              })
+            )
           })
         }
 
@@ -70,14 +74,12 @@ class StandardStore implements InternalStore {
           const [activeQueries, inactiveQueries] = this.separateInactiveQueries(syncQueries)
           this.cache.removeInactiveQueries(inactiveQueries)
           if (activeQueries.length > 0) {
-            setTimeout(() => {
-              this.refetchQueriesSync(
-                // @ts-ignore
-                activeQueries,
-                () => onComplete && onComplete(data),
-                onError
-              )
-            })
+            this.refetchQueriesSync(
+              // @ts-ignore
+              activeQueries,
+              () => onComplete && onComplete(data),
+              onError
+            )
             return
           }
         }
@@ -120,6 +122,7 @@ class StandardStore implements InternalStore {
 
         for (const query of queriesToRefetch) {
           this.queryHandler.refetch(query, {
+            onData: (data) => this.cache.storeQueryData(query, data),
             onComplete: cbHandler,
             onError: cbHandler,
           })
@@ -154,6 +157,7 @@ class StandardStore implements InternalStore {
     let count = 0
     queries.forEach((query) =>
       this.queryHandler.refetch(query, {
+        onData: (data) => this.cache.storeQueryData(query, data),
         onComplete: () => {
           if (++count === queries.length) {
             onComplete()
