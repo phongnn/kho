@@ -2,7 +2,7 @@ import { useReducer, Reducer } from "react"
 import { InternalStore, Query } from "@fnc/core"
 
 interface FetchMoreFn<TResult, TArguments, TContext> {
-  (options: {
+  (options?: {
     arguments?: TArguments
     context?: TContext
     query?: Query<TResult, TArguments, TContext>
@@ -85,7 +85,7 @@ export function useDataLoadingState<TResult, TArguments, TContext>(
   >((currentState, action) => {
     switch (action.type) {
       case "ACTION_REQUEST":
-        return { ...currentState, loading: true, error: null, data: null }
+        return { ...initialState, loading: true }
       case "ACTION_FAILURE":
         return {
           ...currentState,
@@ -105,13 +105,13 @@ export function useDataLoadingState<TResult, TArguments, TContext>(
                 dispatch({ type: "ACTION_REFETCH_FAILURE", payload: err }),
               onComplete: () => dispatch({ type: "ACTION_REFETCH_SUCCESS" }),
             }),
-          fetchMore: ({ arguments: args, context, query: anotherQuery }) => {
+          // prettier-ignore
+          fetchMore: ({ arguments: args, context, query: anotherQuery } = {}) => {
             const nextQuery = (anotherQuery || query).withOptions({
               arguments: args,
               context,
             })
 
-            // prettier-ignore
             internalFetchMore(nextQuery, {
               onRequest: () => dispatch({ type: "ACTION_FETCH_MORE_REQUEST" }),
               onError: (err) => dispatch({ type: "ACTION_FETCH_MORE_FAILURE", payload: err }),
