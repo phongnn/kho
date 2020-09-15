@@ -152,6 +152,33 @@ describe("fetchMore", () => {
       },
     })
   })
+
+  it("should work with network-only query", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      () => new Promise((r) => setTimeout(() => r(++count))),
+      {
+        fetchPolicy: "network-only",
+        merge: (e, n) => e + n,
+      }
+    )
+    const store = new StandardStore()
+    const { fetchMore } = store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          setTimeout(() => fetchMore(query))
+        } else if (data === 3) {
+          // 1 + 2
+          setTimeout(() => fetchMore(query))
+        } else {
+          // 3 + 3
+          expect(data).toBe(6)
+          done()
+        }
+      },
+    })
+  })
 })
 
 describe("refetch", () => {

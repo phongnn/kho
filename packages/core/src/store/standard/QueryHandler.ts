@@ -49,11 +49,17 @@ class QueryHandler {
     const networkOnly = fetchPolicy === "network-only"
     const cacheAndNetwork = fetchPolicy === "cache-and-network"
 
+    let networkOnlyData: TResult // cache data for later "fetchMore"
+    const networkOnlyDataCallback = (data: TResult) => {
+      networkOnlyData = data
+      onData(data)
+    }
+
     // makes sure query instance is unique, not shared among UI components
     const uniqueQuery = query.clone()
     const queryHandle = getActualQuery(uniqueQuery) // convert to compound query if necessary
     const onDataCallback = networkOnly
-      ? onData
+      ? networkOnlyDataCallback
       : (data: TResult) => this.cache.storeQueryData(queryHandle, data)
 
     let alreadyCached = false
@@ -90,18 +96,32 @@ class QueryHandler {
           onData: onDataCallback,
         }),
       fetchMore: (nextQuery, callbacks) => {
-        if (networkOnly) {
-          throw new Error(
-            `[FNC] query ${query.name} is network-only and doesn't support fetchMore.`
-          )
-        } else if (!(queryHandle instanceof CompoundQuery)) {
+        if (!(queryHandle instanceof CompoundQuery)) {
           // prettier-ignore
           throw new Error(`[FNC] merge() function not defined for query ${query.name}.`)
         }
 
         const uniqueNextQuery = nextQuery.clone() // for safety reason
         queryHandle.addNextQuery(uniqueNextQuery)
-        this.fetchMore(queryHandle, uniqueNextQuery, callbacks)
+
+        const mergeFn =
+          nextQuery.options.merge || queryHandle.original.options.merge
+        this.fetcher.addRequest(nextQuery, {
+          ...callbacks,
+          onData: (newData) => {
+            const { arguments: args, context } = nextQuery.options
+            if (!networkOnly) {
+              this.cache.mergeQueryData(queryHandle, newData, (edata, ndata) =>
+                mergeFn!(edata, ndata, { arguments: args!, context: context! })
+              )
+            } else {
+              networkOnlyDataCallback(
+                // prettier-ignore
+                mergeFn!(networkOnlyData, newData, { arguments: args!, context: context! })
+              )
+            }
+          },
+        })
       },
       startPolling: (interval?: number) => {
         stopPollingFn() // clear the previous interval
@@ -126,27 +146,6 @@ class QueryHandler {
     }
   ) {
     this.fetcher.addRequest(query, callbacks)
-  }
-
-  private fetchMore<TResult, TArguments, TContext>(
-    query: CompoundQuery<TResult, TArguments, TContext>,
-    nextQuery: Query<TResult, TArguments, TContext>,
-    callbacks: {
-      onRequest?: () => void
-      onError?: (err: Error) => void
-      onComplete?: () => void
-    } = {}
-  ) {
-    const mergeFn = nextQuery.options.merge || query.original.options.merge
-    this.fetcher.addRequest(nextQuery, {
-      ...callbacks,
-      onData: (newData) => {
-        const { arguments: args, context } = nextQuery.options
-        this.cache.mergeQueryData(query, newData, (edata, ndata) =>
-          mergeFn!(edata, ndata, { arguments: args!, context: context! })
-        )
-      },
-    })
   }
 
   private startPolling<TResult, TArguments, TContext>(
