@@ -92,7 +92,7 @@ describe("request dedup", () => {
     jest.spyOn(console, "error").mockImplementation(() => {})
     fetcher.addRequest(q1, {
       onData: jest.fn(),
-      onRequest: () => {
+      onError: () => {
         q1ErrorHandlerInvoked = true
         if (q2ErrorHandlerInvoked) {
           done()
@@ -102,7 +102,7 @@ describe("request dedup", () => {
 
     fetcher.addRequest(q2, {
       onData: jest.fn(),
-      onRequest: () => {
+      onError: () => {
         q2ErrorHandlerInvoked = true
         if (q1ErrorHandlerInvoked) {
           done()

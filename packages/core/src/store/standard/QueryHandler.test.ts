@@ -202,7 +202,8 @@ describe("refetch", () => {
     let count = 0
     const query = new Query(
       "GetData",
-      (args: { x: number }) => Promise.resolve(`*${++count}*`),
+      (args: { x: number }) =>
+        new Promise((r) => setTimeout(() => r(`*${++count}*`))),
       {
         arguments: { x: 1 },
         merge: (existingData, newData) =>

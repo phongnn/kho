@@ -18,15 +18,38 @@ class Fetcher {
     }
   ) {
     const { onRequest, onError, onComplete, onData } = callbacks
+
+    // don't call onRequest if the response is immediately available
+    // (because of setTimeout(), onRequest could be called AFTER onData/onError)
+    let done = false
     if (onRequest) {
-      setTimeout(onRequest)
+      setTimeout(() => !done && onRequest())
+    }
+
+    const onDataCallback = (data: TResult) => {
+      done = true
+      onData(data)
+    }
+
+    const onErrorCallback = (err: Error) => {
+      done = true
+      if (onError) {
+        onError(err)
+      }
     }
 
     if (query instanceof Query) {
-      this.handleRequest(query, { onError, onComplete, onData })
+      this.handleRequest(query, {
+        onComplete,
+        onData: onDataCallback,
+        onError: onErrorCallback,
+      })
     } else {
-      // prettier-ignore
-      const handler = new CompoundQueryController(query, { onData, onError, onComplete })
+      const handler = new CompoundQueryController(query, {
+        onComplete,
+        onData: onDataCallback,
+        onError: onErrorCallback,
+      })
       for (const childQuery of query) {
         this.handleRequest(childQuery, {
           onData: (data) => handler.handleData(childQuery, data),

@@ -15,15 +15,16 @@ class MutationHandler {
   ) {
     const { fn, options } = mutation
     const { onRequest, onError, onComplete } = callbacks
+
+    // don't call onRequest and ignore the optimistic response if the real response is immediately available
+    // (because of setTimeout(), onRequest and optimistic response could be processed AFTER the real response)
     let done = false
 
     if (onRequest) {
-      setTimeout(onRequest)
+      setTimeout(() => !done && onRequest())
     }
 
     if (options.optimisticResponse) {
-      // ignore the optimistic response if the real response is immediately available
-      // (because of setTimeout(), optimistic response could be processed AFTER the real response)
       setTimeout(
         () =>
           !done &&
@@ -37,13 +38,14 @@ class MutationHandler {
 
     fn(options.arguments!, options.context as TContext)
       .then((data) => {
-        done = true
+        done = true // note: we can't use finally clause for this
         this.cache.storeMutationResult(mutation, data)
         if (onComplete) {
           onComplete(data)
         }
       })
       .catch((e) => {
+        done = true // note: we can't use finally clause for this
         const err = toErrorObj(e)
         if (!isProduction) {
           console.error(err)
