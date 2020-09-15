@@ -1,5 +1,5 @@
 import { Query, QueryOptions } from "../query/Query"
-import { Mutation } from "../query/Mutation"
+import { Mutation, MutationOptions } from "../query/Mutation"
 import { LocalQuery } from "../query/LocalQuery"
 import { BaseQuery } from "../query/BaseQuery"
 
@@ -12,6 +12,18 @@ export interface Store {
     options?: Pick<
       QueryOptions<TResult, TArguments, TContext>,
       "arguments" | "context" | "fetchPolicy"
+    >
+  ): Promise<TResult>
+
+  mutate<TResult, TArguments, TContext>(
+    mutation: Mutation<TResult, TArguments, TContext>,
+    options?: Pick<
+      MutationOptions<TResult, TArguments, TContext>,
+      | "arguments"
+      | "context"
+      | "optimisticResponse"
+      | "refetchQueries"
+      | "refetchQueriesSync"
     >
   ): Promise<TResult>
 

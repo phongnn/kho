@@ -1,6 +1,6 @@
 import { InternalStore } from "../Store"
 import { Query, QueryOptions } from "../../query/Query"
-import { Mutation } from "../../query/Mutation"
+import { Mutation, MutationOptions } from "../../query/Mutation"
 import CacheController from "./CacheController"
 import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
@@ -13,6 +13,8 @@ class StandardStore implements InternalStore {
   private cache = new CacheController()
   private queryHandler = new QueryHandler(this.cache)
   private mutationHandler = new MutationHandler(this.cache)
+
+  //========== InternalStore interface's methods =============
 
   registerQuery<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,
@@ -91,6 +93,8 @@ class StandardStore implements InternalStore {
     })
   }
 
+  //========== Store interface's methods =============
+
   query<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,
     options: Pick<
@@ -103,6 +107,26 @@ class StandardStore implements InternalStore {
 
     const networkOnly = effectiveQuery.options.fetchPolicy === "network-only"
     return this.queryHandler.fetchQuery(actualQuery, networkOnly)
+  }
+
+  mutate<TResult, TArguments, TContext>(
+    mutation: Mutation<TResult, TArguments, TContext>,
+    options: Pick<
+      MutationOptions<TResult, TArguments, TContext>,
+      | "arguments"
+      | "context"
+      | "optimisticResponse"
+      | "refetchQueries"
+      | "refetchQueriesSync"
+    > = {}
+  ) {
+    const actualMutation = mutation.withOptions(options)
+    return new Promise<TResult>((resolve, reject) => {
+      this.processMutation(actualMutation, {
+        onError: reject,
+        onComplete: resolve,
+      })
+    })
   }
 
   setQueryData(query: BaseQuery, data: any): void {
@@ -130,6 +154,8 @@ class StandardStore implements InternalStore {
       })
     })
   }
+
+  //========== Private methods =============
 
   private separateInactiveQueries(queries: Array<Query<any, any, any>>) {
     const activeQueries: BaseQuery[] = []

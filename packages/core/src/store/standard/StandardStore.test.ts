@@ -173,3 +173,20 @@ describe("query()", () => {
     })
   })
 })
+
+describe("mutate()", () => {
+  it("should work", async () => {
+    const args = { a: "bc" }
+    const data = { x: { y: "z" } }
+    const mutateFn = jest.fn().mockResolvedValue(data)
+    const updateFn = jest.fn()
+    const mutation = new Mutation(mutateFn, { update: updateFn })
+
+    const store = new StandardStore()
+    const result = await store.mutate(mutation, { arguments: args })
+
+    expect(result).toBe(data)
+    expect(mutateFn).toBeCalledWith(args, {})
+    expect(updateFn).toBeCalled()
+  })
+})
