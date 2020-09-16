@@ -19,37 +19,15 @@ class Fetcher {
   ) {
     const { onRequest, onError, onComplete, onData } = callbacks
 
-    // don't call onRequest if the response is immediately available
-    // (because of setTimeout(), onRequest could be called AFTER onData/onError)
-    let done = false
     if (onRequest) {
-      setTimeout(() => !done && onRequest())
-    }
-
-    const onDataCallback = (data: TResult) => {
-      done = true
-      onData(data)
-    }
-
-    const onErrorCallback = (err: Error) => {
-      done = true
-      if (onError) {
-        onError(err)
-      }
+      onRequest()
     }
 
     if (query instanceof Query) {
-      this.handleRequest(query, {
-        onComplete,
-        onData: onDataCallback,
-        onError: onErrorCallback,
-      })
+      this.handleRequest(query, { onComplete, onData, onError })
     } else {
-      const handler = new CompoundQueryController(query, {
-        onComplete,
-        onData: onDataCallback,
-        onError: onErrorCallback,
-      })
+      // prettier-ignore
+      const handler = new CompoundQueryController(query, { onComplete, onData, onError })
       for (const childQuery of query) {
         this.handleRequest(childQuery, {
           onData: (data) => handler.handleData(childQuery, data),
@@ -107,8 +85,8 @@ class Fetcher {
     fetcher(options.arguments!, options.context as TContext)
       .then((data) => {
         this.ongoingRequests.delete(query) // clean up before callbacks (can't use finally for this)
-        completeCallbacks.forEach((cb) => cb())
         dataCallback(data)
+        completeCallbacks.forEach((cb) => cb())
       })
       .catch((e) => {
         this.ongoingRequests.delete(query) // clean up before callbacks (can't use finally for this)

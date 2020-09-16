@@ -16,13 +16,13 @@ class MutationHandler {
     const { fn, options } = mutation
     const { onRequest, onError, onComplete } = callbacks
 
-    // don't call onRequest and ignore the optimistic response if the real response is immediately available
-    // (because of setTimeout(), onRequest and optimistic response could be processed AFTER the real response)
-    let done = false
-
     if (onRequest) {
-      setTimeout(() => !done && onRequest())
+      onRequest()
     }
+
+    // ignore the optimistic response if the real response is immediately available
+    // (because of setTimeout(), optimistic response could be processed AFTER the real response)
+    let done = false
 
     if (options.optimisticResponse) {
       setTimeout(

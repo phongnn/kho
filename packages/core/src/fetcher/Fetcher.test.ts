@@ -17,15 +17,12 @@ afterEach(() => {
 
 it("should invoke onComplete and onData callbacks", (done) => {
   fetchData = jest.fn().mockResolvedValue(testPayload)
-  const completeHandler = jest.fn()
 
   fetcher.addRequest(query, {
-    onComplete: completeHandler,
+    onComplete: done,
     onData: (result) => {
       expect(fetchData).toBeCalledWith({ id: testId })
-      expect(completeHandler).toBeCalled()
       expect(result).toBe(testPayload)
-      done()
     },
   })
 })
