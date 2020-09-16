@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
 import { LocalQuery } from "@fnc/core"
 
-import { useStore } from "./Provider"
+import { useInternalStore } from "./Provider"
 
 export function useLocalQuery<TResult>(query: LocalQuery<TResult>) {
-  const store = useStore()
+  const store = useInternalStore()
   const [data, setData] = useState<TResult | null>(null)
 
   useEffect(() => {

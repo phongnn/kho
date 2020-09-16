@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react"
 import { QueryOptions, Query, InternalStore } from "@fnc/core"
 
-import { useStore } from "./Provider"
+import { useInternalStore } from "./Provider"
 import { useDataLoadingState, registerQuery } from "./useDataLoadingState"
 import { deepEqual } from "./helpers"
 
@@ -37,7 +37,7 @@ export function useQuery<TResult, TArguments, TContext>(
   query: Query<TResult, TArguments, TContext>,
   options?: Omit<QueryOptions<TResult, TArguments, TContext>, "shape" | "merge">
 ) {
-  const store = useStore()
+  const store = useInternalStore()
   const { state, dispatch } = useDataLoadingState(query)
 
   useCustomEffect(() => {

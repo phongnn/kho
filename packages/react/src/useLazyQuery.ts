@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react"
 import { QueryOptions, Query } from "@fnc/core"
 
-import { useStore } from "./Provider"
+import { useInternalStore } from "./Provider"
 import {
   useDataLoadingState,
   DataLoadingState,
@@ -15,7 +15,7 @@ export function useLazyQuery<TResult, TArguments, TContext>(
     "shape" | "merge"
   > = {}
 ) {
-  const store = useStore()
+  const store = useInternalStore()
   const { state, dispatch } = useDataLoadingState(query)
 
   const unregisterFn = useRef<() => void>()
