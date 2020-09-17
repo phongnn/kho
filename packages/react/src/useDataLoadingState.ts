@@ -1,25 +1,12 @@
 import { useReducer, Reducer } from "react"
-import { InternalStore, Query } from "@fnc/core"
+import {
+  InternalFetchMoreFn,
+  InternalRefetchFn,
+  InternalStore,
+  Query,
+} from "@fnc/core"
 
-interface FetchMoreFn<TResult, TArguments, TContext> {
-  (options?: {
-    arguments?: TArguments
-    context?: TContext
-    query?: Query<TResult, TArguments, TContext>
-  }): void
-}
-
-const defaultRefetch = () => {
-  throw new Error(
-    `[react-fnc] refetch() can only be called after successful data loading.`
-  )
-}
-
-const defaultFetchMore = () => {
-  throw new Error(
-    `[react-fnc] fetchMore() can only be called after successful data loading.`
-  )
-}
+import { FetchMoreFn } from "./types"
 
 export interface DataLoadingState<TResult, TArguments, TContext> {
   loading: boolean
@@ -38,21 +25,8 @@ type DataLoadingAction<TResult, TArguments, TContext> =
   | { type: "ACTION_FAILURE"; payload: Error }
   | {
       type: "ACTION_SUCCESS"
-
-      internalRefetch: (callbacks?: {
-        onRequest?: () => void
-        onError?: (err: Error) => void
-        onComplete?: () => void
-      }) => void
-
-      internalFetchMore: (
-        nextQuery: Query<TResult, TArguments, TContext>,
-        callbacks?: {
-          onRequest?: () => void
-          onError?: (err: Error) => void
-          onComplete: () => void
-        }
-      ) => void
+      internalRefetch: InternalRefetchFn
+      internalFetchMore: InternalFetchMoreFn<TResult, TArguments, TContext>
     }
   | { type: "ACTION_FETCH_MORE_REQUEST" }
   | { type: "ACTION_FETCH_MORE_FAILURE"; payload: Error }
@@ -66,10 +40,16 @@ const initialState: DataLoadingState<any, any, any> = {
   loading: false,
   data: null,
   error: null,
-  fetchMore: defaultFetchMore,
+  fetchMore: () => {
+    // prettier-ignore
+    throw new Error(`[react-fnc] fetchMore() can only be called after successful data loading.`)
+  },
   fetchingMore: false,
   fetchMoreError: null,
-  refetch: defaultRefetch,
+  refetch: () => {
+    // prettier-ignore
+    throw new Error(`[react-fnc] refetch() can only be called after successful data loading.`)
+  },
   refetching: false,
   refetchError: null,
 }
