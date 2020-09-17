@@ -115,3 +115,47 @@ describe("fetchMore()", () => {
     expect(screen.getByText("data: 6")).toBeInTheDocument() // 3 + 3
   })
 })
+
+describe("multiple components", () => {
+  const profileQuery = new Query(
+    "GetProfile",
+    () => new Promise<string>((r) => setTimeout(() => r("XYZ"), 500))
+  )
+  const timelineQuery = new Query(
+    "GetTimeline",
+    () => new Promise<string>((r) => setTimeout(() => r("ABC"), 1000))
+  )
+
+  function ProfileDetails() {
+    const { data } = useSuspenseQuery("ProfileDetails", profileQuery)
+    return <p>{data}</p>
+  }
+
+  function ProfileTimeline() {
+    const { data } = useSuspenseQuery("Timeline", timelineQuery)
+    return <p>{data}</p>
+  }
+
+  function App() {
+    return (
+      <Provider store={createStore()}>
+        <Suspense fallback={<h1>Loading profile...</h1>}>
+          <ProfileDetails />
+          <Suspense fallback={<h1>Loading posts...</h1>}>
+            <ProfileTimeline />
+          </Suspense>
+        </Suspense>
+      </Provider>
+    )
+  }
+
+  afterEach(() => jest.useRealTimers())
+
+  it("should work", async () => {
+    jest.useFakeTimers()
+    render(<App />)
+    // jest.advanceTimersByTime(3000)
+    expect(await screen.findByText("ABC")).toBeInTheDocument()
+    expect(screen.getByText("XYZ")).toBeInTheDocument()
+  })
+})

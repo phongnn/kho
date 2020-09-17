@@ -73,6 +73,7 @@ interface SuspenseQueryEntry<TResult, TArguments, TContext> {
   unregister: () => void
   refetch: InternalRefetchFn
   fetchMore: InternalFetchMoreFn<TResult, TArguments, TContext>
+  promise?: Promise<void>
   error?: Error
   data?: TResult
   onData?: (data: TResult) => void
@@ -90,7 +91,7 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
 
   const existingEntry = suspenseQueryRegistry.get(key)
   if (!existingEntry) {
-    throw new Promise((resolve, reject) => {
+    const promise = new Promise<void>((resolve) => {
       // prettier-ignore
       const { unregister, fetchMore, refetch } = store.registerQuery<TResult, TArguments, TContext>(
         realQuery, 
@@ -99,8 +100,9 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
             // setTimeout because this might be called before registerQuery() returns
             setTimeout(() => {
               const entry = suspenseQueryRegistry.get(key)!
+              entry.promise = undefined
               entry.error = err
-              reject(err)
+              resolve()
             })
           },
           onData: (data) => {
@@ -110,7 +112,9 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
             } else {
               // setTimeout because this might be called before registerQuery() returns
               setTimeout(() => {
-                suspenseQueryRegistry.get(key)!.data = data
+                const e = suspenseQueryRegistry.get(key)!
+                e.promise = undefined
+                e.data = data
                 resolve()
               })
             }
@@ -118,8 +122,14 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
         }
       )
 
+      // prettier-ignore
       suspenseQueryRegistry.set(key, { unregister, fetchMore, refetch })
     })
+
+    suspenseQueryRegistry.get(key)!.promise = promise.catch()
+    throw promise.catch()
+  } else if (existingEntry.promise) {
+    throw existingEntry.promise
   } else if (existingEntry.error) {
     throw existingEntry.error
   }
