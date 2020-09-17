@@ -61,24 +61,29 @@ export interface InternalStore extends Store {
   ): void
 }
 
-export interface QueryRegistrationResult<TResult, TArguments, TContext> {
-  unregister: () => void
-
-  refetch: (callbacks?: {
+export interface InternalRefetchFn {
+  (callbacks?: {
     onRequest?: () => void
     onError?: (err: Error) => void
     onComplete?: () => void
-  }) => void
+  }): void
+}
 
-  fetchMore: (
+export interface InternalFetchMoreFn<TResult, TArguments, TContext> {
+  (
     query: Query<TResult, TArguments, TContext>,
     callbacks?: {
       onRequest?: () => void
       onError?: (err: Error) => void
       onComplete?: () => void
     }
-  ) => void
+  ): void
+}
 
+export interface QueryRegistrationResult<TResult, TArguments, TContext> {
+  unregister: () => void
+  refetch: InternalRefetchFn
+  fetchMore: InternalFetchMoreFn<TResult, TArguments, TContext>
   startPolling: (interval?: number) => void
   stopPolling: () => void
 }
