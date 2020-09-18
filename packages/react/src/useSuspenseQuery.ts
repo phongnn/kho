@@ -77,6 +77,7 @@ interface SuspenseQueryEntry<TResult, TArguments, TContext> {
   error?: Error
   data?: TResult
   onData?: (data: TResult) => void
+  mounted?: boolean
 }
 // prettier-ignore
 const suspenseQueryRegistry = new Map<string, SuspenseQueryEntry<any, any, any>>()
@@ -97,26 +98,40 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
         realQuery, 
         {
           onError: (err) => {
-            // setTimeout because this might be called before registerQuery() returns
-            setTimeout(() => {
-              const entry = suspenseQueryRegistry.get(key)!
+            const entry = suspenseQueryRegistry.get(key)
+            if (entry) {
               entry.promise = undefined
               entry.error = err
               resolve()
-            })
+            } else {
+              // setTimeout because this might be called before registerQuery() returns
+              setTimeout(() => {
+                const entry = suspenseQueryRegistry.get(key)!
+                entry.promise = undefined
+                entry.error = err
+                resolve()
+              })
+            }
           },
           onData: (data) => {
             const entry = suspenseQueryRegistry.get(key)
             if (entry?.onData) {
               entry.onData(data)
             } else {
-              // setTimeout because this might be called before registerQuery() returns
-              setTimeout(() => {
-                const e = suspenseQueryRegistry.get(key)!
+              const e = suspenseQueryRegistry.get(key)
+              if (e) {
                 e.promise = undefined
                 e.data = data
                 resolve()
-              })
+              } else {
+                // setTimeout because this might be called before registerQuery() returns
+                setTimeout(() => {
+                  const e = suspenseQueryRegistry.get(key)!
+                  e.promise = undefined
+                  e.data = data
+                  resolve()
+                })
+              }
             }
           }
         }
@@ -134,13 +149,13 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
     throw existingEntry.error
   }
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    existingEntry.mounted = true
+    return () => {
       suspenseQueryRegistry.get(key)?.unregister()
       suspenseQueryRegistry.delete(key)
-    },
-    [key]
-  )
+    }
+  }, [key])
 
   const { state, dispatch } = useCustomState<TResult>(existingEntry.data)
   const refetch = useCallback(
@@ -168,8 +183,11 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
   )
 
   if (!existingEntry.onData) {
-    existingEntry.onData = (data: TResult) =>
-      dispatch({ type: "ACTION_DATA", payload: data })
+    existingEntry.onData = (data: TResult) => {
+      if (existingEntry.mounted) {
+        dispatch({ type: "ACTION_DATA", payload: data })
+      }
+    }
   }
 
   return {
