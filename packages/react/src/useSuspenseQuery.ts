@@ -70,9 +70,9 @@ export function useCustomState<TResult>(initialData: TResult) {
 }
 
 interface SuspenseQueryEntry<TResult, TArguments, TContext> {
-  unregister: () => void
-  refetch: InternalRefetchFn
-  fetchMore: InternalFetchMoreFn<TResult, TArguments, TContext>
+  unregister?: () => void
+  refetch?: InternalRefetchFn
+  fetchMore?: InternalFetchMoreFn<TResult, TArguments, TContext>
   promise?: Promise<void>
   error?: Error
   data?: TResult
@@ -81,6 +81,20 @@ interface SuspenseQueryEntry<TResult, TArguments, TContext> {
 }
 // prettier-ignore
 const suspenseQueryRegistry = new Map<string, SuspenseQueryEntry<any, any, any>>()
+
+function removeSuspenseQuery(key: string) {
+  suspenseQueryRegistry.get(key)?.unregister!()
+  suspenseQueryRegistry.delete(key)
+}
+
+function removeIfNotMounted(key: string) {
+  console.log(`Cleaning up suspense query ${key}...`)
+  const entry = suspenseQueryRegistry.get(key)
+  if (entry && !entry.mounted) {
+    entry.unregister!()
+    suspenseQueryRegistry.delete(key)
+  }
+}
 
 export function useSuspenseQuery<TResult, TArguments, TContext>(
   key: string,
@@ -92,6 +106,7 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
 
   const existingEntry = suspenseQueryRegistry.get(key)
   if (!existingEntry) {
+    let promiseFulfilled = false
     const promise = new Promise<void>((resolve) => {
       // prettier-ignore
       const { unregister, fetchMore, refetch } = store.registerQuery<TResult, TArguments, TContext>(
@@ -102,46 +117,48 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
             if (entry) {
               entry.promise = undefined
               entry.error = err
-              resolve()
             } else {
-              // setTimeout because this might be called before registerQuery() returns
-              setTimeout(() => {
-                const entry = suspenseQueryRegistry.get(key)!
-                entry.promise = undefined
-                entry.error = err
-                resolve()
-              })
+              suspenseQueryRegistry.set(key, { error: err })
             }
+
+            promiseFulfilled = true
+            // user might have opened a different view by the time this request finishes -> clean up
+            setTimeout(() => removeIfNotMounted(key), 2000)
+            resolve()
           },
           onData: (data) => {
             const entry = suspenseQueryRegistry.get(key)
             if (entry?.onData) {
-              entry.onData(data)
-            } else {
-              const e = suspenseQueryRegistry.get(key)
-              if (e) {
-                e.promise = undefined
-                e.data = data
-                resolve()
-              } else {
-                // setTimeout because this might be called before registerQuery() returns
-                setTimeout(() => {
-                  const e = suspenseQueryRegistry.get(key)!
-                  e.promise = undefined
-                  e.data = data
-                  resolve()
-                })
-              }
+              return entry.onData(data)
             }
+            
+            if (entry) {
+              entry.promise = undefined
+              entry.data = data
+            } else {
+              suspenseQueryRegistry.set(key, { data })
+            }
+
+            promiseFulfilled = true
+            // user might have opened a different view by the time this request finishes -> clean up
+            setTimeout(() => removeIfNotMounted(key), 2000)
+            resolve()
           }
         }
       )
 
-      // prettier-ignore
-      suspenseQueryRegistry.set(key, { unregister, fetchMore, refetch })
+      const entry = suspenseQueryRegistry.get(key)
+      if (!entry) {
+        // prettier-ignore
+        suspenseQueryRegistry.set(key, { unregister, fetchMore, refetch })
+      } else {
+        Object.assign(entry, { unregister, fetchMore, refetch })
+      }
     })
 
-    suspenseQueryRegistry.get(key)!.promise = promise.catch()
+    if (!promiseFulfilled) {
+      suspenseQueryRegistry.get(key)!.promise = promise.catch()
+    }
     throw promise.catch()
   } else if (existingEntry.promise) {
     throw existingEntry.promise
@@ -151,16 +168,13 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
 
   useEffect(() => {
     existingEntry.mounted = true
-    return () => {
-      suspenseQueryRegistry.get(key)?.unregister()
-      suspenseQueryRegistry.delete(key)
-    }
-  }, [key])
+    return () => removeSuspenseQuery(key)
+  }, [key, existingEntry])
 
   const { state, dispatch } = useCustomState<TResult>(existingEntry.data)
   const refetch = useCallback(
     () =>
-      existingEntry.refetch({
+      existingEntry.refetch!({
         onRequest: () => dispatch({ type: "ACTION_REFETCH_REQUEST" }),
         onError: (err) =>
           dispatch({ type: "ACTION_REFETCH_FAILURE", payload: err }),
@@ -172,7 +186,7 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
     ({ arguments: args, context, query: anotherQuery } = {}) => {
       // prettier-ignore
       const nextQuery = (anotherQuery || realQuery).withOptions({ arguments: args, context })
-      existingEntry.fetchMore(nextQuery, {
+      existingEntry.fetchMore!(nextQuery, {
         onRequest: () => dispatch({ type: "ACTION_FETCH_MORE_REQUEST" }),
         onError: (err) =>
           dispatch({ type: "ACTION_FETCH_MORE_FAILURE", payload: err }),
@@ -183,11 +197,8 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
   )
 
   if (!existingEntry.onData) {
-    existingEntry.onData = (data: TResult) => {
-      if (existingEntry.mounted) {
-        dispatch({ type: "ACTION_DATA", payload: data })
-      }
-    }
+    existingEntry.onData = (data: TResult) =>
+      existingEntry.mounted && dispatch({ type: "ACTION_DATA", payload: data })
   }
 
   return {
