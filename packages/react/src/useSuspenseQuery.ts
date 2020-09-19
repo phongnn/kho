@@ -88,7 +88,6 @@ function removeSuspenseQuery(key: string) {
 }
 
 function removeIfNotMounted(key: string) {
-  console.log(`Cleaning up suspense query ${key}...`)
   const entry = suspenseQueryRegistry.get(key)
   if (entry && !entry.mounted) {
     entry.unregister!()
