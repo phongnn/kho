@@ -30,6 +30,7 @@ export interface Store {
   resetStore(): Promise<unknown>
 
   setQueryData(query: BaseQuery, data: any): void
+  deleteQuery(query: BaseQuery): Promise<unknown>
 }
 
 /** Interface exposed to view connectors (e.g., React hooks) */

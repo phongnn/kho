@@ -71,6 +71,67 @@ describe("resetStore()", () => {
   })
 })
 
+describe("deleteQuery()", () => {
+  it("should refetch active query", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(++count))
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          setTimeout(() => store.deleteQuery(query.clone()))
+        } else {
+          expect(data).toBe(2)
+          done()
+        }
+      },
+    })
+  })
+
+  it("should refetch active compound query", (done) => {
+    let count = 0
+    // prettier-ignore
+    const query = new Query("GetData", () => Promise.resolve(++count), { merge: (e, n) => e + n })
+    const store = new StandardStore()
+    const { fetchMore } = store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          // prettier-ignore
+          setTimeout(() => fetchMore(query.withOptions({ arguments: { x: 2 } })))
+        } else if (data === 3) {
+          setTimeout(() => store.deleteQuery(query.clone()))
+        } else {
+          expect(data).toBe(7) // 3 + 4
+          done()
+        }
+      },
+    })
+  })
+
+  it("should reset active local query's value", (done) => {
+    const query = new LocalQuery("Profile", { initialValue: "nothing" })
+    const mutation = new Mutation(() => Promise.resolve(), {
+      update: (cache) => cache.updateQuery(query, "something"),
+    })
+
+    const store = new StandardStore()
+    let valueSet = false
+    store.registerLocalQuery(query, {
+      onData: (data) => {
+        if (data === "nothing" && !valueSet) {
+          valueSet = true
+          setTimeout(() => store.processMutation(mutation))
+        } else if (data === "something") {
+          setTimeout(() => store.deleteQuery(query.clone()))
+        } else {
+          expect(data).toBe("nothing") // reset to initial value
+          done()
+        }
+      },
+    })
+  })
+})
+
 describe("query()", () => {
   it("should load and return data", async () => {
     const query = new Query("GetData", jest.fn().mockResolvedValue("hello"))
