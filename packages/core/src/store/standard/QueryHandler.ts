@@ -25,13 +25,17 @@ class QueryHandler {
         }
       }
 
-      this.fetcher.addRequest(query, {
-        onData: (data) => {
-          this.cache.storeQueryData(query, data)
-          resolve(data)
+      this.fetcher.addRequest(
+        query,
+        {
+          onData: (data) => {
+            this.cache.storeQueryData(query, data)
+            resolve(data)
+          },
+          onError: (e) => reject(e),
         },
-        onError: (e) => reject(e),
-      })
+        { ignoreDedupOnData: false }
+      )
     })
   }
 
@@ -106,22 +110,32 @@ class QueryHandler {
 
         const mergeFn =
           nextQuery.options.merge || queryHandle.original.options.merge
-        this.fetcher.addRequest(nextQuery, {
-          ...callbacks,
-          onData: (newData) => {
-            const { arguments: args, context } = nextQuery.options
-            if (!networkOnly) {
-              this.cache.mergeQueryData(queryHandle, newData, (edata, ndata) =>
-                mergeFn!(edata, ndata, { arguments: args!, context: context! })
-              )
-            } else {
-              networkOnlyDataCallback(
-                // prettier-ignore
-                mergeFn!(networkOnlyData, newData, { arguments: args!, context: context! })
-              )
-            }
+        this.fetcher.addRequest(
+          nextQuery,
+          {
+            ...callbacks,
+            onData: (newData) => {
+              const { arguments: args, context } = nextQuery.options
+              if (!networkOnly) {
+                this.cache.mergeQueryData(
+                  queryHandle,
+                  newData,
+                  (edata, ndata) =>
+                    mergeFn!(edata, ndata, {
+                      arguments: args!,
+                      context: context!,
+                    })
+                )
+              } else {
+                networkOnlyDataCallback(
+                  // prettier-ignore
+                  mergeFn!(networkOnlyData, newData, { arguments: args!, context: context! })
+                )
+              }
+            },
           },
-        })
+          { ignoreDedupOnData: false }
+        )
       },
       startPolling: (interval?: number) => {
         stopPollingFn() // clear the previous interval

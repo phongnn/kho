@@ -233,6 +233,26 @@ describe("query()", () => {
       })
     })
   })
+
+  it("should return data even when request is deduped", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      () => new Promise((r) => setTimeout(() => r(++count)))
+    )
+    const store = new StandardStore()
+
+    store.registerQuery(query, {
+      onRequest: () => {
+        setTimeout(async () => {
+          const result = await store.query(query)
+          expect(result).toBe(1) // cached value
+          done()
+        })
+      },
+      onData: jest.fn(),
+    })
+  })
 })
 
 describe("mutate()", () => {

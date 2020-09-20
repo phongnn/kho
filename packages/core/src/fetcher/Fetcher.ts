@@ -15,7 +15,8 @@ class Fetcher {
       onComplete?: () => void
       onRequest?: () => void
       onError?: (err: Error) => void
-    }
+    },
+    options?: { ignoreDedupOnData: boolean }
   ) {
     const { onRequest, onError, onComplete, onData } = callbacks
 
@@ -24,15 +25,19 @@ class Fetcher {
     }
 
     if (query instanceof Query) {
-      this.handleRequest(query, { onComplete, onData, onError })
+      this.handleRequest(query, { onComplete, onData, onError }, options)
     } else {
       // prettier-ignore
       const handler = new CompoundQueryController(query, { onComplete, onData, onError })
       for (const childQuery of query) {
-        this.handleRequest(childQuery, {
-          onData: (data) => handler.handleData(childQuery, data),
-          onError: (err) => handler.handleError(err),
-        })
+        this.handleRequest(
+          childQuery,
+          {
+            onData: (data) => handler.handleData(childQuery, data),
+            onError: (err) => handler.handleError(err),
+          },
+          { ignoreDedupOnData: false }
+        )
       }
     }
   }
@@ -43,19 +48,25 @@ class Fetcher {
       onData: (data: TResult) => void
       onComplete?: () => void
       onError?: (err: Error) => void
-    }
+    },
+    options: { ignoreDedupOnData?: boolean } = {}
   ) {
     const { onData, onComplete, onError } = callbacks
+    const { ignoreDedupOnData = true } = options
 
     // dedup requests
     const [_, ongoingReqInfo] = this.getMatchedOngoingRequest(query)
     if (ongoingReqInfo) {
-      if (onError || onComplete) {
-        ongoingReqInfo.addCallbacks({ onError, onComplete })
+      if (onError || onComplete || !ignoreDedupOnData) {
+        ongoingReqInfo.addCallbacks({
+          onError,
+          onComplete,
+          onData: ignoreDedupOnData ? undefined : onData,
+        })
       }
     } else {
       const info = new RequestInfo(
-        onData,
+        [onData],
         onError ? [onError] : [],
         onComplete ? [onComplete] : []
       )
@@ -80,12 +91,12 @@ class Fetcher {
     requestInfo: RequestInfo<TResult>
   ) {
     const { fetcher, options } = query
-    const { dataCallback, completeCallbacks, errorCallbacks } = requestInfo
+    const { dataCallbacks, completeCallbacks, errorCallbacks } = requestInfo
 
     fetcher(options.arguments!, options.context as TContext)
       .then((data) => {
         this.ongoingRequests.delete(query) // clean up before callbacks (can't use finally for this)
-        dataCallback(data)
+        dataCallbacks.forEach((cb) => cb(data))
         completeCallbacks.forEach((cb) => cb())
       })
       .catch((e) => {
@@ -100,20 +111,23 @@ class Fetcher {
 }
 
 class RequestInfo<TResult> {
+  // multiple callbacks for "dedup"-ed requests
   constructor(
-    readonly dataCallback: (data: TResult) => void,
-    readonly errorCallbacks: Array<(err: Error) => void>, // multiple callbacks for "dedup"-ed requests
-    readonly completeCallbacks: Array<() => void> // multiple callbacks for "dedup"-ed requests
+    readonly dataCallbacks: Array<(data: TResult) => void>,
+    readonly errorCallbacks: Array<(err: Error) => void>,
+    readonly completeCallbacks: Array<() => void>
   ) {}
 
   /** for "dedup"-ed requests */
-  addCallbacks({
-    onError,
-    onComplete,
-  }: {
+  addCallbacks(callbacks: {
+    onData?: (data: TResult) => void
     onError?: (err: Error) => void
     onComplete?: () => void
   }) {
+    const { onData, onError, onComplete } = callbacks
+    if (onData) {
+      this.dataCallbacks.push(onData)
+    }
     if (onError) {
       this.errorCallbacks.push(onError)
     }

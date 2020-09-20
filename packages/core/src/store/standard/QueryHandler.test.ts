@@ -179,6 +179,34 @@ describe("fetchMore", () => {
       },
     })
   })
+
+  it("should work even when request is deduped", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      () => new Promise<number>((r) => setTimeout(() => r(++count))),
+      {
+        merge: (existingData, newData) => existingData + newData,
+        fetchPolicy: "network-only",
+      }
+    )
+    const store = new StandardStore()
+    const { fetchMore } = store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          setTimeout(() =>
+            store.registerQuery(query, {
+              onRequest: () => setTimeout(() => fetchMore(query)), // refetch while 2nd query is in progress
+              onData: (d) => expect(d).toBe(2),
+            })
+          )
+        } else {
+          expect(data).toBe(3) // 1 + 2
+          done()
+        }
+      },
+    })
+  })
 })
 
 describe("refetch", () => {
