@@ -85,8 +85,12 @@ class QueryHandler {
 
     let stopPollingFn = () => {} // no-op
     if (pollInterval > 0) {
-      // prettier-ignore
-      stopPollingFn = this.startPolling(queryHandle, pollInterval, onDataCallback)
+      stopPollingFn = this.startPolling(
+        queryHandle,
+        pollInterval,
+        onDataCallback,
+        { ignoreDedupOnData: !networkOnly }
+      )
     }
 
     const result: QueryRegistrationResult<TResult, TArguments, TContext> = {
@@ -95,10 +99,14 @@ class QueryHandler {
         this.cache.unsubscribe(queryHandle) // if (!networkOnly)
       },
       refetch: (callbacks = {}) =>
-        this.refetch(queryHandle, {
-          ...callbacks,
-          onData: onDataCallback,
-        }),
+        this.fetcher.addRequest(
+          queryHandle,
+          {
+            ...callbacks,
+            onData: onDataCallback,
+          },
+          { ignoreDedupOnData: !networkOnly }
+        ),
       fetchMore: (nextQuery, callbacks) => {
         if (!(queryHandle instanceof CompoundQuery)) {
           // prettier-ignore
@@ -132,8 +140,12 @@ class QueryHandler {
       },
       startPolling: (interval?: number) => {
         stopPollingFn() // clear the previous interval
-        // prettier-ignore
-        stopPollingFn = this.startPolling(queryHandle, interval || pollInterval, onDataCallback)
+        stopPollingFn = this.startPolling(
+          queryHandle,
+          interval || pollInterval,
+          onDataCallback,
+          { ignoreDedupOnData: !networkOnly }
+        )
       },
       stopPolling: () => stopPollingFn(),
     }
@@ -160,15 +172,11 @@ class QueryHandler {
       | Query<TResult, TArguments, TContext>
       | CompoundQuery<TResult, TArguments, TContext>,
     pollInterval: number,
-    onData: (data: TResult) => void
+    onData: (data: TResult) => void,
+    options: { ignoreDedupOnData: boolean }
   ) {
     const interval = setInterval(
-      () =>
-        this.fetcher.addRequest(
-          queryHandle,
-          { onData },
-          { ignoreDedupOnData: true }
-        ),
+      () => this.fetcher.addRequest(queryHandle, { onData }, options),
       pollInterval
     )
 
