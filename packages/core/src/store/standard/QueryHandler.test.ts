@@ -87,6 +87,31 @@ describe("fetchPolicy", () => {
       },
     })
   })
+
+  test("network-only should work even when request is de-duped", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      () => new Promise<number>((r) => setTimeout(() => r(++count)))
+    )
+
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: jest.fn(),
+      onRequest: () =>
+        setTimeout(() =>
+          store.registerQuery(
+            query.withOptions({ fetchPolicy: "network-only" }),
+            {
+              onData: (data) => {
+                expect(data).toBe(1)
+                done()
+              },
+            }
+          )
+        ),
+    })
+  })
 })
 
 describe("fetchMore", () => {
@@ -274,6 +299,32 @@ describe("refetch", () => {
           setTimeout(refetch)
         } else {
           expect(data).toBe("*2*")
+          done()
+        }
+      },
+    })
+  })
+
+  test("refetch compound query should work even when request is de-duped", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      () => new Promise<number>((r) => setTimeout(() => r(++count))),
+      {
+        merge: (e, n) => e + n,
+      }
+    )
+
+    const store = new StandardStore()
+    const { fetchMore, refetch } = store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          setTimeout(() => fetchMore(query))
+        } else if (data === 3) {
+          // 1 + 2
+          setTimeout(refetch)
+        } else {
+          expect(data).toBe(6) // 3 + 3 (de-duped request -> same value)
           done()
         }
       },
