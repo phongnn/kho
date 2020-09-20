@@ -25,17 +25,13 @@ class QueryHandler {
         }
       }
 
-      this.fetcher.addRequest(
-        query,
-        {
-          onData: (data) => {
-            this.cache.storeQueryData(query, data)
-            resolve(data)
-          },
-          onError: (e) => reject(e),
+      this.fetcher.addRequest(query, {
+        onData: (data) => {
+          this.cache.storeQueryData(query, data)
+          resolve(data)
         },
-        { ignoreDedupOnData: false }
-      )
+        onError: (e) => reject(e),
+      })
     })
   }
 
@@ -75,12 +71,16 @@ class QueryHandler {
     }
 
     if (!alreadyCached || cacheAndNetwork) {
-      this.fetcher.addRequest(uniqueQuery, {
-        onRequest,
-        onError,
-        onComplete,
-        onData: onDataCallback,
-      })
+      this.fetcher.addRequest(
+        uniqueQuery,
+        {
+          onRequest,
+          onError,
+          onComplete,
+          onData: onDataCallback,
+        },
+        { ignoreDedupOnData: !networkOnly }
+      )
     }
 
     let stopPollingFn = () => {} // no-op
@@ -110,32 +110,25 @@ class QueryHandler {
 
         const mergeFn =
           nextQuery.options.merge || queryHandle.original.options.merge
-        this.fetcher.addRequest(
-          nextQuery,
-          {
-            ...callbacks,
-            onData: (newData) => {
-              const { arguments: args, context } = nextQuery.options
-              if (!networkOnly) {
-                this.cache.mergeQueryData(
-                  queryHandle,
-                  newData,
-                  (edata, ndata) =>
-                    mergeFn!(edata, ndata, {
-                      arguments: args!,
-                      context: context!,
-                    })
-                )
-              } else {
-                networkOnlyDataCallback(
-                  // prettier-ignore
-                  mergeFn!(networkOnlyData, newData, { arguments: args!, context: context! })
-                )
-              }
-            },
+        this.fetcher.addRequest(nextQuery, {
+          ...callbacks,
+          onData: (newData) => {
+            const { arguments: args, context } = nextQuery.options
+            if (!networkOnly) {
+              this.cache.mergeQueryData(queryHandle, newData, (edata, ndata) =>
+                mergeFn!(edata, ndata, {
+                  arguments: args!,
+                  context: context!,
+                })
+              )
+            } else {
+              networkOnlyDataCallback(
+                // prettier-ignore
+                mergeFn!(networkOnlyData, newData, { arguments: args!, context: context! })
+              )
+            }
           },
-          { ignoreDedupOnData: false }
-        )
+        })
       },
       startPolling: (interval?: number) => {
         stopPollingFn() // clear the previous interval
@@ -159,7 +152,7 @@ class QueryHandler {
       onComplete?: () => void
     }
   ) {
-    this.fetcher.addRequest(query, callbacks)
+    this.fetcher.addRequest(query, callbacks, { ignoreDedupOnData: true })
   }
 
   private startPolling<TResult, TArguments, TContext>(
@@ -170,7 +163,12 @@ class QueryHandler {
     onData: (data: TResult) => void
   ) {
     const interval = setInterval(
-      () => this.fetcher.addRequest(queryHandle, { onData }),
+      () =>
+        this.fetcher.addRequest(
+          queryHandle,
+          { onData },
+          { ignoreDedupOnData: true }
+        ),
       pollInterval
     )
 

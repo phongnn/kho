@@ -72,11 +72,15 @@ describe("request dedup", () => {
       },
     })
 
-    fetcher.addRequest(q2, {
-      onRequest: q2RequestHandler,
-      onComplete: q2CompleteHandler,
-      onData: q2DataHandler,
-    })
+    fetcher.addRequest(
+      q2,
+      {
+        onRequest: q2RequestHandler,
+        onComplete: q2CompleteHandler,
+        onData: q2DataHandler,
+      },
+      { ignoreDedupOnData: true }
+    )
   })
 
   it("should invoke both onError callbacks", (done) => {

@@ -52,7 +52,7 @@ class Fetcher {
     options: { ignoreDedupOnData?: boolean } = {}
   ) {
     const { onData, onComplete, onError } = callbacks
-    const { ignoreDedupOnData = true } = options
+    const { ignoreDedupOnData = false } = options
 
     // dedup requests
     const [_, ongoingReqInfo] = this.getMatchedOngoingRequest(query)
