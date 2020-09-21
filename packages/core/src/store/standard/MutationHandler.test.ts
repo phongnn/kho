@@ -113,7 +113,7 @@ describe("optimistic response", () => {
         ]),
       {
         shape: [UserType],
-        updates: {
+        mutations: {
           AddUser: (existingData, { optimistic, mutationResult }) => {
             // this function is called twice, but we should add to list only once
             return optimistic ? [...existingData, mutationResult] : existingData
@@ -399,7 +399,7 @@ describe("update()", () => {
       () => Promise.resolve([{ username: "x", email: "x@test.com" }]),
       {
         shape: [UserType],
-        updates: {
+        mutations: {
           // prettier-ignore
           AddUser: (currentValue, { context: { newUserRef } }) => [...currentValue, newUserRef],
         },

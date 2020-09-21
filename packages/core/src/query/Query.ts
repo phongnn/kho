@@ -3,12 +3,9 @@ import { NormalizedShape } from "../normalization/NormalizedType"
 import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
 
 export interface QueryOptions<TResult, TArguments, TContext> {
-  fetchPolicy?: "cache-first" | "cache-and-network" | "network-only"
-
   arguments?: TArguments
   context?: Partial<TContext>
   shape?: NormalizedShape
-  pollInterval?: number
   merge?: (
     existingData: any,
     newData: any,
@@ -17,7 +14,9 @@ export interface QueryOptions<TResult, TArguments, TContext> {
       context: Partial<TContext>
     }
   ) => any
-  updates?: Record<string, QueryUpdateFn>
+  mutations?: Record<string, QueryUpdateFn>
+  fetchPolicy?: "cache-first" | "cache-and-network" | "network-only"
+  pollInterval?: number
 }
 
 const defaultQueryOptions: QueryOptions<any, any, any> = {

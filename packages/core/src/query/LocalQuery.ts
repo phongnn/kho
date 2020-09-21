@@ -17,14 +17,14 @@ export class LocalQuery<TData> extends BaseQuery {
     // The property still has to be declared here because it's expected by BaseQuery class.
     shape?: NormalizedShape
     initialValue?: TData
-    updates?: Record<string, QueryUpdateFn>
+    mutations?: Record<string, QueryUpdateFn>
   }
 
   constructor(
     readonly name: string,
     options: {
       initialValue?: TData
-      updates?: Record<string, QueryUpdateFn>
+      mutations?: Record<string, QueryUpdateFn>
     } = {}
   ) {
     super(new LocalQueryKey(name), options)

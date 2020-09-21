@@ -12,7 +12,7 @@ export interface QueryUpdateInfoArgument {
 }
 
 export interface QueryUpdateFn {
-  (existingValue: any, info: QueryUpdateInfoArgument): any
+  (currentValue: any, info: QueryUpdateInfoArgument): any
 }
 
 export abstract class BaseQuery {
@@ -20,7 +20,7 @@ export abstract class BaseQuery {
     readonly key: BaseQueryKey,
     readonly options: {
       shape?: NormalizedShape
-      updates?: Record<string, QueryUpdateFn>
+      mutations?: Record<string, QueryUpdateFn>
     } = {}
   ) {}
 }

@@ -61,8 +61,8 @@ class QueryBucket {
     info: QueryUpdateInfoArgument
   ) {
     for (const item of this.queryData.values()) {
-      const { updates = {} } = item.query.options
-      const updateFn = updates[mutation.name]
+      const { mutations = {} } = item.query.options
+      const updateFn = mutations[mutation.name]
       if (updateFn) {
         item.data = updateFn(item.data, info)
       }

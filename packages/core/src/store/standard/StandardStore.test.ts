@@ -18,7 +18,7 @@ describe("LocalQuery", () => {
     const mutation = new Mutation("UpdateData", () => Promise.resolve(testPayload))
     const query = new LocalQuery("SomeLocalState", {
       initialValue,
-      updates: {
+      mutations: {
         UpdateData: (_, { mutationResult }) => mutationResult,
       },
     })
@@ -56,7 +56,7 @@ describe("resetStore()", () => {
   it("should reset active local query's value", (done) => {
     const query = new LocalQuery("Profile", {
       initialValue: "nothing",
-      updates: {
+      mutations: {
         UpdateData: (_, { mutationResult }) => mutationResult,
       },
     })
@@ -120,7 +120,7 @@ describe("deleteQuery()", () => {
   it("should reset active local query's value", (done) => {
     const query = new LocalQuery("Profile", {
       initialValue: "nothing",
-      updates: {
+      mutations: {
         UpdateData: (_, { mutationResult }) => mutationResult,
       },
     })
