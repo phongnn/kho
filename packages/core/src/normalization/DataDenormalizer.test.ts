@@ -5,7 +5,7 @@ import Selector from "./Selector"
 
 afterAll(() => {
   // @ts-ignore
-  NormalizedType.typeRegistry = new Map()
+  NormalizedType.registry = new Map()
 })
 
 const UserType = NormalizedType.register("User", { keyFields: ["username"] })

@@ -6,7 +6,7 @@ afterEach(() => {
   // @ts-ignore
   Query.registry = new Map()
   // @ts-ignore
-  NormalizedType.typeRegistry = new Map()
+  NormalizedType.registry = new Map()
 })
 
 describe("fetchPolicy", () => {

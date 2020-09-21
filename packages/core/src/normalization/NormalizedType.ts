@@ -18,7 +18,7 @@ export class NormalizedTypePlaceholder {
 }
 
 export class NormalizedType {
-  private static typeRegistry: Map<string, NormalizedType> = new Map()
+  private static registry: Map<string, NormalizedType> = new Map()
 
   static register(
     name: string,
@@ -27,7 +27,7 @@ export class NormalizedType {
       keyFields?: string[]
     } = {}
   ) {
-    if (this.typeRegistry.has(name)) {
+    if (this.registry.has(name)) {
       throw new Error(`Normalized type already exists: ${name}`)
     }
     const newType = new NormalizedType(
@@ -35,13 +35,13 @@ export class NormalizedType {
       settings.keyFields || ["id"],
       settings.shape
     )
-    this.typeRegistry.set(name, newType)
+    this.registry.set(name, newType)
     return newType
   }
 
   static of(name: string) {
     return new NormalizedTypePlaceholder(name, () => {
-      const type = this.typeRegistry.get(name)
+      const type = this.registry.get(name)
       if (!type) {
         throw new Error(`[FNC] Normalized type not found: ${name}.`)
       }

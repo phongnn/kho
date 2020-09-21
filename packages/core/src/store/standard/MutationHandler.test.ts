@@ -10,7 +10,7 @@ afterEach(() => {
   // @ts-ignore
   Mutation.registry = new Map()
   // @ts-ignore
-  NormalizedType.typeRegistry = new Map()
+  NormalizedType.registry = new Map()
 })
 
 describe("callbacks", () => {
