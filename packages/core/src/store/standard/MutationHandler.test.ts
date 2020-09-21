@@ -8,6 +8,8 @@ afterEach(() => {
   // @ts-ignore
   Query.registry = new Map()
   // @ts-ignore
+  Mutation.registry = new Map()
+  // @ts-ignore
   NormalizedType.typeRegistry = new Map()
 })
 
@@ -20,7 +22,10 @@ describe("callbacks", () => {
 
     const args = { test: { message: "blah" } }
     const context = { token: "xyz", extra: { test: true } }
-    const mutation = new Mutation(fn, { arguments: args, context })
+    const mutation = new Mutation("UpdateData", fn, {
+      arguments: args,
+      context,
+    })
 
     const onRequest = jest.fn()
 
@@ -39,7 +44,7 @@ describe("callbacks", () => {
   it("should invoke error callback", (done) => {
     const errMsg = "a strang error"
     const fn = jest.fn().mockRejectedValue(errMsg)
-    const mutation = new Mutation(fn)
+    const mutation = new Mutation("UpdateData", fn)
 
     jest.spyOn(console, "error").mockImplementation(() => {})
     const store = new StandardStore()
@@ -83,6 +88,7 @@ describe("callbacks", () => {
     })
 
     const mutation = new Mutation(
+      "UpdateData",
       () =>
         Promise.resolve([
           { username: "z", email: "z@test.com" },
@@ -125,6 +131,7 @@ describe("optimistic response", () => {
     })
 
     const mutation = new Mutation(
+      "UpdateData",
       () =>
         new Promise((r) =>
           setTimeout(() =>
@@ -155,7 +162,7 @@ describe("optimistic response", () => {
   })
 
   it("should ignore optimistic value when real res. is immediately available", (done) => {
-    const mutation = new Mutation(() => Promise.resolve(2), {
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(2), {
       optimisticResponse: 1,
       beforeQueryUpdates: (_, { data }) => {
         if (data === 1) {
@@ -180,9 +187,13 @@ describe("refetchQueries", () => {
     const q1 = query.withOptions({ arguments: { name: "x" } })
     const q2 = query.withOptions({ arguments: { name: "y" } })
 
-    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
-      refetchQueries: [query.withOptions({ arguments: { name: "x" } })],
-    })
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        refetchQueries: [query.withOptions({ arguments: { name: "x" } })],
+      }
+    )
 
     const store = new StandardStore()
     store.registerQuery(q1, {
@@ -207,9 +218,13 @@ describe("refetchQueries", () => {
   it("should work in sync mode", (done) => {
     let count = 0
     const query = new Query("GetData", () => Promise.resolve(++count))
-    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
-      refetchQueriesSync: [query],
-    })
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        refetchQueriesSync: [query],
+      }
+    )
 
     const store = new StandardStore()
     store.registerQuery(query, { onData: jest.fn() })
@@ -231,9 +246,13 @@ describe("refetchQueries", () => {
         merge: (existingData, newData) => [...existingData, ...newData],
       }
     )
-    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
-      refetchQueries: [query],
-    })
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        refetchQueries: [query],
+      }
+    )
 
     let mutationProcessed = false
     const store = new StandardStore()
@@ -260,9 +279,13 @@ describe("refetchQueries", () => {
   it("should remove inactive queries' data", (done) => {
     let count = 0
     const query = new Query("GetData", () => Promise.resolve(++count))
-    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
-      refetchQueries: [query],
-    })
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        refetchQueries: [query],
+      }
+    )
 
     const store = new StandardStore()
     const { unregister } = store.registerQuery(query, {
@@ -293,9 +316,13 @@ describe("refetchQueries", () => {
         merge: (existingData, newData) => [...existingData, ...newData],
       }
     )
-    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
-      refetchQueriesSync: [query],
-    })
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        refetchQueriesSync: [query],
+      }
+    )
 
     let mutationProcessed = false
     const store = new StandardStore()
@@ -323,9 +350,13 @@ describe("refetchQueries", () => {
   it("should remove inactive queries' data [sync mode]", (done) => {
     let count = 0
     const query = new Query("GetData", () => Promise.resolve(++count))
-    const mutation = new Mutation(jest.fn().mockResolvedValue(null), {
-      refetchQueriesSync: [query],
-    })
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        refetchQueriesSync: [query],
+      }
+    )
 
     const store = new StandardStore()
     const { unregister } = store.registerQuery(query, {
@@ -352,7 +383,7 @@ describe("update()", () => {
     const args = { x: { y: "z" }, t: "t" }
     const context = { token: "aaa", extra: { smth: true } }
 
-    const mutation = new Mutation(() => Promise.resolve(), {
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
       beforeQueryUpdates: (_, info) => {
         expect(info.arguments).toStrictEqual(args)
         // expect(info.context).toStrictEqual(context)
@@ -366,7 +397,7 @@ describe("update()", () => {
   describe("updateQuery()", () => {
     it("should throw error if query not in cache", (done) => {
       const query = new Query("GetData", jest.fn())
-      const mutation = new Mutation(() => Promise.resolve(), {
+      const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
         beforeQueryUpdates: (cache) => cache.updateQuery(query, null),
       })
 
@@ -382,7 +413,7 @@ describe("update()", () => {
 
     it("should set local query data which was not found in cache", (done) => {
       const query = new LocalQuery<string>("UserId")
-      const mutation = new Mutation(() => Promise.resolve(), {
+      const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
         beforeQueryUpdates: (cache) => cache.updateQuery(query, "nguyen"),
       })
 
@@ -428,6 +459,7 @@ describe("update()", () => {
       })
 
       const mutation = new Mutation(
+        "UpdateData",
         () => Promise.resolve({ username: "z", email: "z@test.com" }),
         {
           shape: UserType,
@@ -444,7 +476,7 @@ describe("update()", () => {
       const query = new Query("GetData", () => Promise.resolve(1), {
         merge: (e, n) => e + n,
       })
-      const mutation = new Mutation(() => Promise.resolve(), {
+      const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
         beforeQueryUpdates: (cache) => cache.updateQuery(query, 1000),
       })
       const store = new StandardStore()
@@ -471,7 +503,7 @@ describe("update()", () => {
       () => Promise.resolve([{ username: "x", email: "x@test.com" }]),
       { shape: [UserType] }
     )
-    const mutation = new Mutation(() => Promise.resolve(), {
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
       beforeQueryUpdates: (cache) => {
         // prettier-ignore
         const ref = cache.addObject(UserType, { username: "y", email: "y@t.s", avatar: "http" })
@@ -500,7 +532,7 @@ describe("update()", () => {
         Promise.resolve({ username: "x", email: "x@test.com", avatar: "http" }),
       { shape: UserType }
     )
-    const mutation = new Mutation(() => Promise.resolve(), {
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
       beforeQueryUpdates: (cache) => {
         const ref = cache.findObjectRef(UserType, { username: "x" })!
         cache.updateObject(ref, {
@@ -549,7 +581,7 @@ describe("update()", () => {
       },
     })
 
-    const mutation = new Mutation(() => Promise.resolve(), {
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
       beforeQueryUpdates: (cache) =>
         cache.deleteObject(cache.findObjectRef(UserType, { username: "x" })!),
     })

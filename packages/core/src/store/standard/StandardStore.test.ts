@@ -6,6 +6,8 @@ import { Mutation } from "../../query/Mutation"
 afterEach(() => {
   // @ts-ignore
   Query.registry = new Map()
+  // @ts-ignore
+  Mutation.registry = new Map()
 })
 
 describe("LocalQuery", () => {
@@ -13,7 +15,7 @@ describe("LocalQuery", () => {
     const initialValue = { msg: null }
     const testPayload = { msg: "Hello, World" }
     const query = new LocalQuery("SomeLocalState", { initialValue })
-    const mutation = new Mutation(() => Promise.resolve(), {
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
       beforeQueryUpdates: (cache) => cache.updateQuery(query, testPayload),
     })
     const store = new StandardStore()
@@ -49,7 +51,7 @@ describe("resetStore()", () => {
 
   it("should reset active local query's value", (done) => {
     const query = new LocalQuery("Profile", { initialValue: "nothing" })
-    const mutation = new Mutation(() => Promise.resolve(), {
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
       beforeQueryUpdates: (cache) => cache.updateQuery(query, "something"),
     })
 
@@ -110,7 +112,7 @@ describe("deleteQuery()", () => {
 
   it("should reset active local query's value", (done) => {
     const query = new LocalQuery("Profile", { initialValue: "nothing" })
-    const mutation = new Mutation(() => Promise.resolve(), {
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
       beforeQueryUpdates: (cache) => cache.updateQuery(query, "something"),
     })
 
@@ -261,7 +263,9 @@ describe("mutate()", () => {
     const data = { x: { y: "z" } }
     const mutateFn = jest.fn().mockResolvedValue(data)
     const updateFn = jest.fn()
-    const mutation = new Mutation(mutateFn, { beforeQueryUpdates: updateFn })
+    const mutation = new Mutation("UpdateData", mutateFn, {
+      beforeQueryUpdates: updateFn,
+    })
 
     const store = new StandardStore()
     const result = await store.mutate(mutation, { arguments: args })
