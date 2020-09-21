@@ -5,7 +5,7 @@ import CacheController from "./CacheController"
 import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
 import CompoundQuery from "../../fetcher/CompoundQuery"
-import { BaseQuery } from "../../query/BaseQuery"
+import { BaseQuery, QueryUpdateInfoArgument } from "../../query/BaseQuery"
 import { LocalQuery } from "../../query/LocalQuery"
 import { getActualQuery } from "../../helpers"
 
@@ -47,14 +47,19 @@ class StandardStore implements InternalStore {
     callbacks: {
       onRequest?: () => void
       onError?: (err: Error) => void
-      onComplete?: (data: TResult) => void
+      onComplete?: () => void
     } = {}
   ) {
     const { onRequest, onError, onComplete } = callbacks
     this.mutationHandler.processMutation(mutation, {
       onRequest,
       onError,
-      onComplete: (data: TResult) => {
+      onComplete: (info: QueryUpdateInfoArgument) => {
+        const { afterQueryUpdates } = mutation.options
+        if (afterQueryUpdates) {
+          setTimeout(() => afterQueryUpdates(this, info))
+        }
+
         // prettier-ignore
         const { refetchQueries, refetchQueriesSync: syncQueries } = mutation.options
         if (refetchQueries) {
@@ -79,7 +84,7 @@ class StandardStore implements InternalStore {
             this.refetchQueriesSync(
               // @ts-ignore
               activeQueries,
-              () => onComplete && onComplete(data),
+              () => onComplete && onComplete(),
               onError
             )
             return
@@ -87,7 +92,7 @@ class StandardStore implements InternalStore {
         }
 
         if (onComplete) {
-          onComplete(data)
+          onComplete()
         }
       },
     })

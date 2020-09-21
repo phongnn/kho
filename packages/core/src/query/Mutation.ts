@@ -2,10 +2,11 @@ import {
   NormalizedShape,
   NormalizedType,
 } from "../normalization/NormalizedType"
-import { BaseQuery } from "./BaseQuery"
+import { BaseQuery, QueryUpdateInfoArgument } from "./BaseQuery"
 import { mergeOptions } from "../helpers"
 import { Query } from "./Query"
 import { NormalizedObjectRef } from "../normalization/NormalizedObject"
+import { Store } from "../store/Store"
 
 export interface FNCCache {
   readQuery(query: BaseQuery): any
@@ -16,23 +17,19 @@ export interface FNCCache {
   deleteObject(ref: NormalizedObjectRef): void
 }
 
-export interface BeforeQueryUpdatesFn<TArguments> {
-  (
-    cache: FNCCache,
-    info: {
-      data: any
-      optimistic: boolean
-      arguments?: TArguments
-    }
-  ): any
-}
-
 export interface MutationOptions<TResult, TArguments, TContext> {
   arguments?: TArguments
   context?: Partial<TContext>
   shape?: NormalizedShape
   optimisticResponse?: any
-  beforeQueryUpdates?: BeforeQueryUpdatesFn<TArguments>
+  beforeQueryUpdates?: (
+    cache: FNCCache,
+    info: Omit<QueryUpdateInfoArgument, "context">
+  ) => any
+  afterQueryUpdates?: (
+    store: Store,
+    info: QueryUpdateInfoArgument
+  ) => void | Promise<unknown>
   refetchQueries?: Query<any, any, any>[]
   refetchQueriesSync?: Query<any, any, any>[]
 }

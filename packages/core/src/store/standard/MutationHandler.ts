@@ -1,6 +1,7 @@
 import CacheController from "./CacheController"
 import { Mutation } from "../../query/Mutation"
 import { isProduction } from "../../helpers"
+import { QueryUpdateInfoArgument } from "../../query/BaseQuery"
 
 class MutationHandler {
   constructor(private cache: CacheController) {}
@@ -10,8 +11,8 @@ class MutationHandler {
     callbacks: {
       onRequest?: () => void
       onError?: (err: Error) => void
-      onComplete?: (data: TResult) => void
-    } = {}
+      onComplete: (info: QueryUpdateInfoArgument) => void
+    }
   ) {
     const { fn, options } = mutation
     const { onRequest, onError, onComplete } = callbacks
@@ -39,10 +40,8 @@ class MutationHandler {
     fn(options.arguments!, options.context as TContext)
       .then((data) => {
         done = true // note: we can't use finally clause for this
-        this.cache.storeMutationResult(mutation, data)
-        if (onComplete) {
-          onComplete(data)
-        }
+        const info = this.cache.storeMutationResult(mutation, data)
+        onComplete(info)
       })
       .catch((e) => {
         done = true // note: we can't use finally clause for this

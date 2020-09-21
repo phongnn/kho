@@ -279,10 +279,73 @@ describe("mutate()", () => {
     })
 
     const store = new StandardStore()
-    const result = await store.mutate(mutation, { arguments: args })
+    await store.mutate(mutation, { arguments: args })
 
-    expect(result).toBe(data)
     expect(mutateFn).toBeCalledWith(args, {})
     expect(updateFn).toBeCalled()
   })
 })
+
+// describe('setQueryData()', () => {
+// it("should update query result", (done) => {
+//   // prettier-ignore
+//   const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+//   const query = new Query(
+//     "GetUsers",
+//     () =>
+//       Promise.resolve([
+//         { username: "x", email: "x@test.com" },
+//         { username: "y", email: "y@test.com", avatar: "http://" },
+//       ]),
+//     { shape: [UserType] }
+//   )
+
+//   const store = new StandardStore()
+//   store.registerQuery(query, {
+//     onData: (data) => {
+//       if (data.length === 3) {
+//         expect(data[2]).toStrictEqual({
+//           username: "z",
+//           email: "z@test.com",
+//         })
+//         done()
+//       }
+//     },
+//   })
+
+//   const mutation = new Mutation(
+//     "UpdateData",
+//     () => Promise.resolve({ username: "z", email: "z@test.com" }),
+//     {
+//       shape: UserType,
+//       beforeQueryUpdates: (cache, { data }) => {
+//         const existingData = cache.readQuery(query) || []
+//         cache.updateQuery(query, [...existingData, data])
+//       },
+//     }
+//   )
+//   store.processMutation(mutation)
+// })
+
+// it("should update compound query result", (done) => {
+//   const query = new Query("GetData", () => Promise.resolve(1), {
+//     merge: (e, n) => e + n,
+//   })
+//   const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
+//     beforeQueryUpdates: (cache) => cache.updateQuery(query, 1000),
+//   })
+//   const store = new StandardStore()
+//   const { fetchMore } = store.registerQuery(query, {
+//     onData: (data) => {
+//       if (data === 1) {
+//         setTimeout(() => fetchMore(query))
+//       } else if (data === 2) {
+//         setTimeout(() => store.processMutation(mutation))
+//       } else {
+//         expect(data).toBe(1000)
+//         done()
+//       }
+//     },
+//   })
+// })
+// })

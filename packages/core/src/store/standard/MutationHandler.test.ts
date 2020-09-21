@@ -2,6 +2,7 @@ import StandardStore from "./StandardStore"
 import { Query } from "../../query/Query"
 import { Mutation } from "../../query/Mutation"
 import { NormalizedType } from "../../normalization/NormalizedType"
+import { LocalQuery } from "../../query/LocalQuery"
 
 afterEach(() => {
   // @ts-ignore
@@ -31,10 +32,9 @@ describe("callbacks", () => {
     const store = new StandardStore()
     store.processMutation(mutation, {
       onRequest,
-      onComplete: (data) => {
+      onComplete: () => {
         expect(onRequest).toBeCalled()
         expect(fn).toBeCalledWith(args, context)
-        expect(data).toBe(result)
         done()
       },
     })
@@ -155,7 +155,7 @@ describe("optimistic response", () => {
   it("should ignore optimistic value when real res. is immediately available", (done) => {
     const mutation = new Mutation("UpdateData", () => Promise.resolve(2), {
       optimisticResponse: 1,
-      beforeQueryUpdates: (_, { data }) => {
+      beforeQueryUpdates: (_, { mutationResult: data }) => {
         if (data === 1) {
           throw new Error(`Unexpected callback with response: ${data}.`)
         } else {
@@ -375,15 +375,14 @@ describe("refetchQueries", () => {
   })
 })
 
-describe("update()", () => {
+describe("beforeQueryUpdates()", () => {
   it("should be passed mutation arguments and context", (done) => {
     const args = { x: { y: "z" }, t: "t" }
     const context = { token: "aaa", extra: { smth: true } }
 
     const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-      beforeQueryUpdates: (_, info) => {
-        expect(info.arguments).toStrictEqual(args)
-        // expect(info.context).toStrictEqual(context)
+      beforeQueryUpdates: (_, { mutationArgs }) => {
+        expect(mutationArgs).toStrictEqual(args)
         done()
       },
     })
@@ -491,105 +490,25 @@ describe("update()", () => {
   })
 })
 
-/*
-  describe("updateQuery()", () => {
-    it("should throw error if query not in cache", (done) => {
-      const query = new Query("GetData", jest.fn())
-      const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-        beforeQueryUpdates: (cache) => cache.updateQuery(query, null),
-      })
-
-      jest.spyOn(console, "error").mockImplementation(() => {})
-      const store = new StandardStore()
-      store.processMutation(mutation, {
-        onError: (e) => {
-          expect(e.message).toMatch("requires data to be already in cache")
-          done()
-        },
-      })
+describe("afterQueryUpdates()", () => {
+  it("should work", (done) => {
+    const query = new LocalQuery<string>("UserId")
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
+      afterQueryUpdates: (store) => store.setQueryData(query, "nguyen"),
     })
 
-    it("should set local query data which was not found in cache", (done) => {
-      const query = new LocalQuery<string>("UserId")
-      const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-        beforeQueryUpdates: (cache) => cache.updateQuery(query, "nguyen"),
-      })
-
-      const store = new StandardStore()
-      store.processMutation(mutation, {
-        onComplete: () => {
-          setTimeout(() =>
-            store.registerLocalQuery(query, {
-              onData: (data) => {
-                expect(data).toBe("nguyen")
-                done()
-              },
-            })
-          )
-        },
-      })
-    })
-
-    it("should update query result", (done) => {
-      // prettier-ignore
-      const UserType = NormalizedType.register("User", { keyFields: ["username"] })
-      const query = new Query(
-        "GetUsers",
-        () =>
-          Promise.resolve([
-            { username: "x", email: "x@test.com" },
-            { username: "y", email: "y@test.com", avatar: "http://" },
-          ]),
-        { shape: [UserType] }
-      )
-
-      const store = new StandardStore()
-      store.registerQuery(query, {
-        onData: (data) => {
-          if (data.length === 3) {
-            expect(data[2]).toStrictEqual({
-              username: "z",
-              email: "z@test.com",
-            })
-            done()
-          }
-        },
-      })
-
-      const mutation = new Mutation(
-        "UpdateData",
-        () => Promise.resolve({ username: "z", email: "z@test.com" }),
-        {
-          shape: UserType,
-          beforeQueryUpdates: (cache, { data }) => {
-            const existingData = cache.readQuery(query) || []
-            cache.updateQuery(query, [...existingData, data])
-          },
-        }
-      )
-      store.processMutation(mutation)
-    })
-
-    it("should update compound query result", (done) => {
-      const query = new Query("GetData", () => Promise.resolve(1), {
-        merge: (e, n) => e + n,
-      })
-      const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-        beforeQueryUpdates: (cache) => cache.updateQuery(query, 1000),
-      })
-      const store = new StandardStore()
-      const { fetchMore } = store.registerQuery(query, {
-        onData: (data) => {
-          if (data === 1) {
-            setTimeout(() => fetchMore(query))
-          } else if (data === 2) {
-            setTimeout(() => store.processMutation(mutation))
-          } else {
-            expect(data).toBe(1000)
-            done()
-          }
-        },
-      })
+    const store = new StandardStore()
+    store.processMutation(mutation, {
+      onComplete: () => {
+        setTimeout(() =>
+          store.registerLocalQuery(query, {
+            onData: (data) => {
+              expect(data).toBe("nguyen")
+              done()
+            },
+          })
+        )
+      },
     })
   })
-*/
+})

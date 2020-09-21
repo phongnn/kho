@@ -25,7 +25,7 @@ export interface Store {
       | "refetchQueries"
       | "refetchQueriesSync"
     >
-  ): Promise<TResult>
+  ): Promise<unknown>
 
   resetStore(): Promise<unknown>
 
