@@ -111,18 +111,18 @@ class CacheContainer implements FNCCache {
   }
 
   // Note: unlike saveQueryData(), this function expects data already in normalized format.
-  updateQuery(query: BaseQuery, data: any) {
-    const actualQuery = query instanceof Query ? getActualQuery(query) : query
-    const cacheKey = this.findCacheKey(actualQuery)
-    if (cacheKey) {
-      this.queryBucket.get(cacheKey)!.data = data
-    } else if (query instanceof LocalQuery) {
-      this.queryBucket.set(new CacheKey(query), { query, data, selector: null })
-    } else {
-      // prettier-ignore
-      throw Error(`[FNC] updateQuery() requires data to be already in cache.`)
-    }
-  }
+  // updateQuery(query: BaseQuery, data: any) {
+  //   const actualQuery = query instanceof Query ? getActualQuery(query) : query
+  //   const cacheKey = this.findCacheKey(actualQuery)
+  //   if (cacheKey) {
+  //     this.queryBucket.get(cacheKey)!.data = data
+  //   } else if (query instanceof LocalQuery) {
+  //     this.queryBucket.set(new CacheKey(query), { query, data, selector: null })
+  //   } else {
+  //     // prettier-ignore
+  //     throw Error(`[FNC] updateQuery() requires data to be already in cache.`)
+  //   }
+  // }
 
   addObject(type: NormalizedType, data: any) {
     const plainKey = extractPlainKey(data, type)

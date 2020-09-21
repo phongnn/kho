@@ -2,7 +2,6 @@ import StandardStore from "./StandardStore"
 import { Query } from "../../query/Query"
 import { Mutation } from "../../query/Mutation"
 import { NormalizedType } from "../../normalization/NormalizedType"
-import { LocalQuery } from "../../query/LocalQuery"
 
 afterEach(() => {
   // @ts-ignore
@@ -112,7 +111,28 @@ describe("optimistic response", () => {
           // prettier-ignore
           { username: "y", email: "y@test.com", avatar: "http://", __optimistic__: false },
         ]),
-      { shape: [UserType] }
+      {
+        shape: [UserType],
+        updates: {
+          AddUser: (existingData, { optimistic, mutationResult }) => {
+            // this function is called twice, but we should add to list only once
+            return optimistic ? [...existingData, mutationResult] : existingData
+          },
+        },
+      }
+    )
+    const mutation = new Mutation(
+      "AddUser",
+      () =>
+        new Promise(
+          // prettier-ignore
+          (r) => setTimeout(() => r({ username: "z", email: "z@test.com", __optimistic__: false }))
+        ),
+      {
+        shape: UserType,
+        // prettier-ignore
+        optimisticResponse: { username: "z", email: "z@test.com", __optimistic__: true },
+      }
     )
 
     expect.assertions(2)
@@ -129,35 +149,6 @@ describe("optimistic response", () => {
         }
       },
     })
-
-    const mutation = new Mutation(
-      "UpdateData",
-      () =>
-        new Promise((r) =>
-          setTimeout(() =>
-            r({
-              username: "z",
-              email: "z@test.com",
-              __optimistic__: false,
-            })
-          )
-        ),
-      {
-        shape: UserType,
-        beforeQueryUpdates: (cache, { data, optimistic }) => {
-          // update() is called twice, but we should add to list only once
-          if (optimistic) {
-            const existingData = cache.readQuery(query) || []
-            cache.updateQuery(query, [...existingData, data])
-          }
-        },
-        optimisticResponse: {
-          username: "z",
-          email: "z@test.com",
-          __optimistic__: true,
-        },
-      }
-    )
     store.processMutation(mutation)
   })
 
@@ -400,6 +391,107 @@ describe("update()", () => {
     store.processMutation(mutation.withOptions({ arguments: args, context }))
   })
 
+  it("should add normalized object", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () => Promise.resolve([{ username: "x", email: "x@test.com" }]),
+      {
+        shape: [UserType],
+        updates: {
+          // prettier-ignore
+          AddUser: (currentValue, { context: { newUserRef } }) => [...currentValue, newUserRef],
+        },
+      }
+    )
+    const mutation = new Mutation("AddUser", () => Promise.resolve(), {
+      beforeQueryUpdates: (cache) => {
+        // prettier-ignore
+        const ref = cache.addObject(UserType, { username: "y", email: "y@t.s", avatar: "http" })
+        return { newUserRef: ref }
+      },
+    })
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data.length === 1) {
+          setTimeout(() => store.processMutation(mutation))
+        } else {
+          expect(data[1]).toStrictEqual({ username: "y", email: "y@t.s" })
+          done()
+        }
+      },
+    })
+  })
+
+  it("should update normalized object", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve({ username: "x", email: "x@test.com", avatar: "http" }),
+      { shape: UserType }
+    )
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
+      beforeQueryUpdates: (cache) => {
+        const ref = cache.findObjectRef(UserType, { username: "x" })!
+        cache.updateObject(ref, {
+          ...cache.readObject(ref),
+          email: "new-x@t.s",
+        })
+      },
+    })
+
+    let updated = false
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (!updated) {
+          updated = true
+          setTimeout(() => store.processMutation(mutation))
+        } else {
+          // prettier-ignore
+          expect(data).toStrictEqual({ username: "x", email: "new-x@t.s", avatar: "http" })
+          done()
+        }
+      },
+    })
+  })
+
+  it("should delete normalized object", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve([
+          { username: "x", email: "x@test.com" },
+          { username: "y", email: "y@test.com", avatar: "http://" },
+        ]),
+      { shape: [UserType] }
+    )
+
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data.length === 1) {
+          expect(data[0].username).toBe("y")
+          done()
+        }
+      },
+    })
+
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
+      beforeQueryUpdates: (cache) =>
+        cache.deleteObject(cache.findObjectRef(UserType, { username: "x" })!),
+    })
+    store.processMutation(mutation)
+  })
+})
+
+/*
   describe("updateQuery()", () => {
     it("should throw error if query not in cache", (done) => {
       const query = new Query("GetData", jest.fn())
@@ -500,97 +592,4 @@ describe("update()", () => {
       })
     })
   })
-
-  it("should add normalized object", (done) => {
-    // prettier-ignore
-    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
-    const query = new Query(
-      "GetUsers",
-      () => Promise.resolve([{ username: "x", email: "x@test.com" }]),
-      { shape: [UserType] }
-    )
-    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-      beforeQueryUpdates: (cache) => {
-        // prettier-ignore
-        const ref = cache.addObject(UserType, { username: "y", email: "y@t.s", avatar: "http" })
-        cache.updateQuery(query, [...cache.readQuery(query), ref])
-      },
-    })
-    const store = new StandardStore()
-    store.registerQuery(query, {
-      onData: (data) => {
-        if (data.length === 1) {
-          setTimeout(() => store.processMutation(mutation))
-        } else {
-          expect(data[1]).toStrictEqual({ username: "y", email: "y@t.s" })
-          done()
-        }
-      },
-    })
-  })
-
-  it("should update normalized object", (done) => {
-    // prettier-ignore
-    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
-    const query = new Query(
-      "GetUsers",
-      () =>
-        Promise.resolve({ username: "x", email: "x@test.com", avatar: "http" }),
-      { shape: UserType }
-    )
-    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-      beforeQueryUpdates: (cache) => {
-        const ref = cache.findObjectRef(UserType, { username: "x" })!
-        cache.updateObject(ref, {
-          ...cache.readObject(ref),
-          email: "new-x@t.s",
-        })
-      },
-    })
-
-    let updated = false
-    const store = new StandardStore()
-    store.registerQuery(query, {
-      onData: (data) => {
-        if (!updated) {
-          updated = true
-          setTimeout(() => store.processMutation(mutation))
-        } else {
-          // prettier-ignore
-          expect(data).toStrictEqual({ username: "x", email: "new-x@t.s", avatar: "http" })
-          done()
-        }
-      },
-    })
-  })
-
-  it("should delete normalized object", (done) => {
-    // prettier-ignore
-    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
-    const query = new Query(
-      "GetUsers",
-      () =>
-        Promise.resolve([
-          { username: "x", email: "x@test.com" },
-          { username: "y", email: "y@test.com", avatar: "http://" },
-        ]),
-      { shape: [UserType] }
-    )
-
-    const store = new StandardStore()
-    store.registerQuery(query, {
-      onData: (data) => {
-        if (data.length === 1) {
-          expect(data[0].username).toBe("y")
-          done()
-        }
-      },
-    })
-
-    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-      beforeQueryUpdates: (cache) =>
-        cache.deleteObject(cache.findObjectRef(UserType, { username: "x" })!),
-    })
-    store.processMutation(mutation)
-  })
-})
+*/

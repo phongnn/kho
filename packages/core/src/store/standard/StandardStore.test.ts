@@ -14,9 +14,13 @@ describe("LocalQuery", () => {
   it("should callback with initial value, then with set data", (done) => {
     const initialValue = { msg: null }
     const testPayload = { msg: "Hello, World" }
-    const query = new LocalQuery("SomeLocalState", { initialValue })
-    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-      beforeQueryUpdates: (cache) => cache.updateQuery(query, testPayload),
+    // prettier-ignore
+    const mutation = new Mutation("UpdateData", () => Promise.resolve(testPayload))
+    const query = new LocalQuery("SomeLocalState", {
+      initialValue,
+      updates: {
+        UpdateData: (_, { mutationResult }) => mutationResult,
+      },
     })
     const store = new StandardStore()
     store.registerLocalQuery(query, {
@@ -50,11 +54,14 @@ describe("resetStore()", () => {
   })
 
   it("should reset active local query's value", (done) => {
-    const query = new LocalQuery("Profile", { initialValue: "nothing" })
-    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-      beforeQueryUpdates: (cache) => cache.updateQuery(query, "something"),
+    const query = new LocalQuery("Profile", {
+      initialValue: "nothing",
+      updates: {
+        UpdateData: (_, { mutationResult }) => mutationResult,
+      },
     })
-
+    // prettier-ignore
+    const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
     const store = new StandardStore()
     let valueSet = false
     store.registerLocalQuery(query, {
@@ -111,10 +118,14 @@ describe("deleteQuery()", () => {
   })
 
   it("should reset active local query's value", (done) => {
-    const query = new LocalQuery("Profile", { initialValue: "nothing" })
-    const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-      beforeQueryUpdates: (cache) => cache.updateQuery(query, "something"),
+    const query = new LocalQuery("Profile", {
+      initialValue: "nothing",
+      updates: {
+        UpdateData: (_, { mutationResult }) => mutationResult,
+      },
     })
+    // prettier-ignore
+    const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
 
     const store = new StandardStore()
     let valueSet = false

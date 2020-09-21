@@ -9,8 +9,6 @@ import { NormalizedObjectRef } from "../normalization/NormalizedObject"
 
 export interface FNCCache {
   readQuery(query: BaseQuery): any
-  updateQuery(query: BaseQuery, data: any): void
-
   addObject(type: NormalizedType, data: any): NormalizedObjectRef
   findObjectRef(type: NormalizedType, key: any): NormalizedObjectRef | null
   readObject(ref: NormalizedObjectRef): any
