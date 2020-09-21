@@ -1,5 +1,10 @@
-import { BaseQuery, BaseQueryKey } from "../query/BaseQuery"
+import {
+  BaseQuery,
+  BaseQueryKey,
+  QueryUpdateInfoArgument,
+} from "../query/BaseQuery"
 import Selector from "../normalization/Selector"
+import { Mutation } from "../query/Mutation"
 
 // Equivalent query keys will share the same cache key
 // (a query can be used by multiple components or by one component but renderred several times).
@@ -17,8 +22,14 @@ export class CacheKey {
   }
 }
 
+interface QueryBucketItem {
+  query: BaseQuery
+  data: any
+  selector: Selector | null
+}
+
 class QueryBucket {
-  private queryData = new Map<CacheKey, [any, Selector | null]>()
+  private queryData = new Map<CacheKey, QueryBucketItem>()
 
   findCacheKey(query: BaseQuery) {
     for (const key of this.queryData.keys()) {
@@ -33,7 +44,7 @@ class QueryBucket {
     return this.queryData.get(cacheKey)
   }
 
-  set(cacheKey: CacheKey, value: [any, Selector | null]) {
+  set(cacheKey: CacheKey, value: QueryBucketItem) {
     this.queryData.set(cacheKey, value)
   }
 
@@ -43,6 +54,19 @@ class QueryBucket {
 
   clear() {
     this.queryData.clear()
+  }
+
+  updateRelatedQueries<TResult, TArguments, TContext>(
+    mutation: Mutation<TResult, TArguments, TContext>,
+    info: QueryUpdateInfoArgument
+  ) {
+    for (const item of this.queryData.values()) {
+      const { updates = {} } = item.query.options
+      const updateFn = updates[mutation.name]
+      if (updateFn) {
+        item.data = updateFn(item.data, info)
+      }
+    }
   }
 }
 

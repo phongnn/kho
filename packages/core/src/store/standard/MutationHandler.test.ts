@@ -254,7 +254,8 @@ describe("refetchQueries", () => {
       }
     )
 
-    let mutationProcessed = false
+    let mutationTriggered = false
+    let mutationCompleted = false
     const store = new StandardStore()
     const { fetchMore } = store.registerQuery(
       query.withOptions({ arguments: { x: 1 } }),
@@ -264,10 +265,12 @@ describe("refetchQueries", () => {
             setTimeout(() =>
               fetchMore(query.withOptions({ arguments: { x: 2 } }))
             )
-          } else if (!mutationProcessed) {
-            mutationProcessed = true
-            store.processMutation(mutation)
-          } else {
+          } else if (!mutationTriggered) {
+            mutationTriggered = true
+            store.processMutation(mutation, {
+              onComplete: () => (mutationCompleted = true),
+            })
+          } else if (mutationCompleted) {
             expect(data).toStrictEqual(["1-3", "2-4"]) // refetched values
             done()
           }
@@ -324,7 +327,8 @@ describe("refetchQueries", () => {
       }
     )
 
-    let mutationProcessed = false
+    let mutationTriggered = false
+    let mutationCompleted = false
     const store = new StandardStore()
     const { fetchMore } = store.registerQuery(
       query.withOptions({ arguments: { x: 1 } }),
@@ -334,10 +338,12 @@ describe("refetchQueries", () => {
             setTimeout(() =>
               fetchMore(query.withOptions({ arguments: { x: 2 } }))
             )
-          } else if (!mutationProcessed) {
-            mutationProcessed = true
-            store.processMutation(mutation)
-          } else {
+          } else if (!mutationTriggered) {
+            mutationTriggered = true
+            store.processMutation(mutation, {
+              onComplete: () => (mutationCompleted = true),
+            })
+          } else if (mutationCompleted) {
             expect(data).toStrictEqual(["1-3", "2-4"]) // refetched values
             done()
           }

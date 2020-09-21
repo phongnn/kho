@@ -1,4 +1,4 @@
-import { BaseQueryKey, BaseQuery } from "./BaseQuery"
+import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
 import { NormalizedShape } from "../normalization/NormalizedType"
 
 class LocalQueryKey implements BaseQueryKey {
@@ -17,10 +17,17 @@ export class LocalQuery<TData> extends BaseQuery {
     // The property still has to be declared here because it's expected by BaseQuery class.
     shape?: NormalizedShape
     initialValue?: TData
+    updates?: Record<string, QueryUpdateFn>
   }
 
-  constructor(readonly name: string, options: { initialValue?: TData } = {}) {
-    super(new LocalQueryKey(name))
+  constructor(
+    readonly name: string,
+    options: {
+      initialValue?: TData
+      updates?: Record<string, QueryUpdateFn>
+    } = {}
+  ) {
+    super(new LocalQueryKey(name), options)
     this.options = options
   }
 

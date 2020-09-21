@@ -1,6 +1,6 @@
 import { deepEqual, mergeOptions } from "../helpers"
 import { NormalizedShape } from "../normalization/NormalizedType"
-import { BaseQueryKey, BaseQuery } from "./BaseQuery"
+import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
 
 export interface QueryOptions<TResult, TArguments, TContext> {
   fetchPolicy?: "cache-first" | "cache-and-network" | "network-only"
@@ -17,6 +17,7 @@ export interface QueryOptions<TResult, TArguments, TContext> {
       context: Partial<TContext>
     }
   ) => any
+  updates?: Record<string, QueryUpdateFn>
 }
 
 const defaultQueryOptions: QueryOptions<any, any, any> = {

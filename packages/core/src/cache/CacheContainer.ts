@@ -1,7 +1,7 @@
 import { Query } from "../query/Query"
-import { BaseQuery } from "../query/BaseQuery"
+import { BaseQuery, QueryUpdateInfoArgument } from "../query/BaseQuery"
 import { LocalQuery } from "../query/LocalQuery"
-import { FNCCache } from "../query/Mutation"
+import { FNCCache, Mutation } from "../query/Mutation"
 // prettier-ignore
 import { NormalizedType, NormalizedShape } from "../normalization/NormalizedType"
 // prettier-ignore
@@ -28,7 +28,7 @@ class CacheContainer implements FNCCache {
       return null
     }
 
-    const [data, selector] = cacheEntry
+    const { data, selector } = cacheEntry
     if (!selector) {
       return data
     }
@@ -45,12 +45,12 @@ class CacheContainer implements FNCCache {
     const cacheKey = existingCacheKey || new CacheKey(query)
     const { shape } = query.options
     if (!shape) {
-      this.queryBucket.set(cacheKey, [data, null]) // data not normalized -> no selector
+      this.queryBucket.set(cacheKey, { query, data, selector: null }) // data not normalized
     } else {
       const normalizer = this.createNormalizer()
       const { result, objects, selector } = normalizer.normalize(data, shape)
 
-      this.queryBucket.set(cacheKey, [result, selector])
+      this.queryBucket.set(cacheKey, { query, data: result, selector })
       this.objectBucket.addObjects(objects)
     }
     return existingCacheKey ? null : cacheKey // return new cache key only
@@ -69,20 +69,17 @@ class CacheContainer implements FNCCache {
     shape: NormalizedShape | undefined,
     mergeFn: (existingData: any, newData: any) => any
   ) {
-    const [existingData, existingSelector] = this.queryBucket.get(cacheKey)!
+    const existingItem = this.queryBucket.get(cacheKey)!
+    const { data: existingData, selector: existingSelector } = existingItem
     if (!shape) {
-      const data = mergeFn(existingData, newData)
-      this.queryBucket.set(cacheKey, [data, existingSelector])
+      existingItem.data = mergeFn(existingData, newData)
     } else {
       const normalizer = this.createNormalizer()
       // prettier-ignore
       const { result, objects, selector: newSelector } = normalizer.normalize(newData, shape)
-
       this.objectBucket.addObjects(objects)
-
-      const data = mergeFn(existingData, result)
       existingSelector!.merge(newSelector)
-      this.queryBucket.set(cacheKey, [data, existingSelector])
+      existingItem.data = mergeFn(existingData, result)
     }
   }
 
@@ -91,6 +88,13 @@ class CacheContainer implements FNCCache {
     const { result, objects } = normalizer.normalize(data, shape)
     this.objectBucket.addObjects(objects)
     return result // normalized data
+  }
+
+  updateRelatedQueries<TResult, TArguments, TContext>(
+    mutation: Mutation<TResult, TArguments, TContext>,
+    info: QueryUpdateInfoArgument
+  ) {
+    this.queryBucket.updateRelatedQueries(mutation, info)
   }
 
   clear() {
@@ -103,7 +107,7 @@ class CacheContainer implements FNCCache {
   readQuery(query: BaseQuery) {
     const actualQuery = query instanceof Query ? getActualQuery(query) : query
     const cacheKey = this.findCacheKey(actualQuery)
-    return cacheKey ? this.queryBucket.get(cacheKey)![0] : null
+    return cacheKey ? this.queryBucket.get(cacheKey)!.data : null
   }
 
   // Note: unlike saveQueryData(), this function expects data already in normalized format.
@@ -111,10 +115,9 @@ class CacheContainer implements FNCCache {
     const actualQuery = query instanceof Query ? getActualQuery(query) : query
     const cacheKey = this.findCacheKey(actualQuery)
     if (cacheKey) {
-      const [_, selector] = this.queryBucket.get(cacheKey)!
-      this.queryBucket.set(cacheKey, [data, selector])
+      this.queryBucket.get(cacheKey)!.data = data
     } else if (query instanceof LocalQuery) {
-      this.queryBucket.set(new CacheKey(query), [data, null])
+      this.queryBucket.set(new CacheKey(query), { query, data, selector: null })
     } else {
       // prettier-ignore
       throw Error(`[FNC] updateQuery() requires data to be already in cache.`)

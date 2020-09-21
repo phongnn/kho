@@ -90,20 +90,24 @@ class CacheController {
     optimistic: boolean = false
   ) {
     const { shape, beforeQueryUpdates: updateFn } = mutation.options
-    if (!data && !updateFn) {
-      return // no further processing required
-    }
 
-    const normalizedData = shape
-      ? this.cache.saveMutationResult(data, shape)
-      : null
-    if (updateFn) {
-      updateFn(this.cache, {
-        data: normalizedData ?? data,
-        optimistic,
-        arguments: mutation.options.arguments,
-      })
-    }
+    const normalizedData =
+      data && shape ? this.cache.saveMutationResult(data, shape) : null
+
+    const queryUpdateContext = updateFn
+      ? updateFn(this.cache, {
+          data: normalizedData ?? data,
+          optimistic,
+          arguments: mutation.options.arguments,
+        })
+      : undefined
+
+    this.cache.updateRelatedQueries(mutation, {
+      mutationResult: normalizedData ?? data,
+      mutationArgs: mutation.options.arguments,
+      optimistic,
+      context: queryUpdateContext,
+    })
 
     this.notifyActiveQueries()
   }
