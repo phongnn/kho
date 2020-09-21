@@ -89,7 +89,7 @@ class CacheController {
     data: any,
     optimistic: boolean = false
   ) {
-    const { shape, update: updateFn } = mutation.options
+    const { shape, beforeQueryUpdates: updateFn } = mutation.options
     if (!data && !updateFn) {
       return // no further processing required
     }
@@ -102,7 +102,6 @@ class CacheController {
         data: normalizedData ?? data,
         optimistic,
         arguments: mutation.options.arguments,
-        context: mutation.options.context,
       })
     }
 

@@ -18,24 +18,23 @@ export interface FNCCache {
   deleteObject(ref: NormalizedObjectRef): void
 }
 
-export interface MutationUpdateFn<TArguments, TContext> {
+export interface BeforeQueryUpdatesFn<TArguments> {
   (
     cache: FNCCache,
     info: {
       data: any
       optimistic: boolean
       arguments?: TArguments
-      context?: Partial<TContext>
     }
-  ): void
+  ): any
 }
 
 export interface MutationOptions<TResult, TArguments, TContext> {
   arguments?: TArguments
   context?: Partial<TContext>
   shape?: NormalizedShape
-  update?: MutationUpdateFn<TArguments, TContext>
   optimisticResponse?: any
+  beforeQueryUpdates?: BeforeQueryUpdatesFn<TArguments>
   refetchQueries?: Query<any, any, any>[]
   refetchQueriesSync?: Query<any, any, any>[]
 }

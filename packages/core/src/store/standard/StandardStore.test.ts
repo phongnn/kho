@@ -14,7 +14,7 @@ describe("LocalQuery", () => {
     const testPayload = { msg: "Hello, World" }
     const query = new LocalQuery("SomeLocalState", { initialValue })
     const mutation = new Mutation(() => Promise.resolve(), {
-      update: (cache) => cache.updateQuery(query, testPayload),
+      beforeQueryUpdates: (cache) => cache.updateQuery(query, testPayload),
     })
     const store = new StandardStore()
     store.registerLocalQuery(query, {
@@ -50,7 +50,7 @@ describe("resetStore()", () => {
   it("should reset active local query's value", (done) => {
     const query = new LocalQuery("Profile", { initialValue: "nothing" })
     const mutation = new Mutation(() => Promise.resolve(), {
-      update: (cache) => cache.updateQuery(query, "something"),
+      beforeQueryUpdates: (cache) => cache.updateQuery(query, "something"),
     })
 
     const store = new StandardStore()
@@ -111,7 +111,7 @@ describe("deleteQuery()", () => {
   it("should reset active local query's value", (done) => {
     const query = new LocalQuery("Profile", { initialValue: "nothing" })
     const mutation = new Mutation(() => Promise.resolve(), {
-      update: (cache) => cache.updateQuery(query, "something"),
+      beforeQueryUpdates: (cache) => cache.updateQuery(query, "something"),
     })
 
     const store = new StandardStore()
@@ -261,7 +261,7 @@ describe("mutate()", () => {
     const data = { x: { y: "z" } }
     const mutateFn = jest.fn().mockResolvedValue(data)
     const updateFn = jest.fn()
-    const mutation = new Mutation(mutateFn, { update: updateFn })
+    const mutation = new Mutation(mutateFn, { beforeQueryUpdates: updateFn })
 
     const store = new StandardStore()
     const result = await store.mutate(mutation, { arguments: args })
