@@ -55,9 +55,16 @@ class StandardStore implements InternalStore {
       onRequest,
       onError,
       onComplete: (info: QueryUpdateInfoArgument) => {
-        const { afterQueryUpdates } = mutation.options
+        const { afterQueryUpdates, syncMode = false } = mutation.options
         if (afterQueryUpdates) {
-          setTimeout(() => afterQueryUpdates(this, info))
+          if (!syncMode) {
+            setTimeout(() => afterQueryUpdates(this, info))
+          } else {
+            const x = afterQueryUpdates(this, info)
+            if (x && x.then) {
+              return x.then(onComplete, onError)
+            }
+          }
         }
         if (onComplete) {
           onComplete()

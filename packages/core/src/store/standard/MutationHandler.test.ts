@@ -287,9 +287,9 @@ describe("beforeQueryUpdates()", () => {
 
 describe("afterQueryUpdates()", () => {
   it("should work", (done) => {
-    const query = new LocalQuery<string>("UserId")
+    const query = new LocalQuery<string>("UserId", { initialValue: "nothing" })
     const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-      afterQueryUpdates: (store) => store.setQueryData(query, "nguyen"),
+      afterQueryUpdates: (store) => store.setQueryData(query, "something"),
     })
 
     const store = new StandardStore()
@@ -298,12 +298,123 @@ describe("afterQueryUpdates()", () => {
         setTimeout(() =>
           store.registerLocalQuery(query, {
             onData: (data) => {
-              expect(data).toBe("nguyen")
+              expect(data).toBe("something")
               done()
             },
           })
         )
       },
+    })
+  })
+})
+
+describe("syncMode", () => {
+  it("should be async by default", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetX",
+      () => new Promise<number>((r) => setTimeout(() => r(++count)))
+    )
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        afterQueryUpdates: (store) => store.query(query),
+      }
+    )
+
+    const store = new StandardStore()
+    store.processMutation(mutation, {
+      onComplete: () => {
+        expect(count).toBe(0) // onComplete is called BEFORE query is fetched
+        done()
+      },
+    })
+  })
+
+  it("should be sync when explicitly set", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetY",
+      () => new Promise<number>((r) => setTimeout(() => r(++count)))
+    )
+    let dataFetched = false
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        afterQueryUpdates: async (store) => {
+          const val = await store.query(query)
+          expect(val).toBe(1)
+          dataFetched = true
+        },
+        syncMode: true,
+      }
+    )
+
+    const store = new StandardStore()
+    store.processMutation(mutation, {
+      onComplete: () => {
+        expect(dataFetched).toBe(true)
+        done()
+      },
+    })
+  })
+
+  it("should be sync even when afterQueryUpdates() doesn't return a promise", (done) => {
+    let happened = false
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        afterQueryUpdates: () => (happened = true),
+        syncMode: true,
+      }
+    )
+
+    const store = new StandardStore()
+    store.processMutation(mutation, {
+      onComplete: () => {
+        expect(happened).toBe(true)
+        done()
+      },
+    })
+  })
+
+  it("should call onError if afterQueryUpdates() throws", (done) => {
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        afterQueryUpdates: jest.fn().mockRejectedValue("strange err"),
+        syncMode: true,
+      }
+    )
+
+    const store = new StandardStore()
+    store.processMutation(mutation, {
+      onError: (err) => {
+        expect(err).toBe("strange err")
+        done()
+      },
+    })
+  })
+
+  it("should NOT call onError if afterQueryUpdates() throws in async mode", (done) => {
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        afterQueryUpdates: jest.fn().mockRejectedValue("strange err"),
+      }
+    )
+
+    const store = new StandardStore()
+    store.processMutation(mutation, {
+      onError: () => {
+        throw new Error("onError is unexpectedly called")
+      },
+      onComplete: done,
     })
   })
 })

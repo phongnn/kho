@@ -26,10 +26,8 @@ export interface MutationOptions<TResult, TArguments, TContext> {
     cache: FNCCache,
     info: Omit<QueryUpdateInfoArgument, "context">
   ) => any
-  afterQueryUpdates?: (
-    store: Store,
-    info: QueryUpdateInfoArgument
-  ) => void | Promise<unknown>
+  afterQueryUpdates?: (store: Store, info: QueryUpdateInfoArgument) => any
+  syncMode?: boolean
 }
 
 export class Mutation<TResult, TArguments, TContext> {
