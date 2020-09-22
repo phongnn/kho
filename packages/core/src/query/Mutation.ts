@@ -30,8 +30,6 @@ export interface MutationOptions<TResult, TArguments, TContext> {
     store: Store,
     info: QueryUpdateInfoArgument
   ) => void | Promise<unknown>
-  refetchQueries?: Query<any, any, any>[]
-  refetchQueriesSync?: Query<any, any, any>[]
 }
 
 export class Mutation<TResult, TArguments, TContext> {

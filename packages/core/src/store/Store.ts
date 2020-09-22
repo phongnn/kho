@@ -19,18 +19,14 @@ export interface Store {
     mutation: Mutation<TResult, TArguments, TContext>,
     options?: Pick<
       MutationOptions<TResult, TArguments, TContext>,
-      | "arguments"
-      | "context"
-      | "optimisticResponse"
-      | "refetchQueries"
-      | "refetchQueriesSync"
+      "arguments" | "context" | "optimisticResponse"
     >
-  ): Promise<unknown>
+  ): Promise<void>
 
-  resetStore(): Promise<unknown>
-
+  refetchQueries(queries: Query<any, any, any>[]): Promise<void>
   setQueryData(query: BaseQuery, data: any): void
-  deleteQuery(query: BaseQuery): Promise<unknown>
+  deleteQuery(query: BaseQuery): Promise<void>
+  resetStore(): Promise<void>
 }
 
 /** Interface exposed to view connectors (e.g., React hooks) */

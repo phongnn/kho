@@ -59,38 +59,6 @@ class StandardStore implements InternalStore {
         if (afterQueryUpdates) {
           setTimeout(() => afterQueryUpdates(this, info))
         }
-
-        // prettier-ignore
-        const { refetchQueries, refetchQueriesSync: syncQueries } = mutation.options
-        if (refetchQueries) {
-          // prettier-ignore
-          const [activeQueries, inactiveQueries] = this.separateInactiveQueries(refetchQueries)
-          this.cache.removeInactiveQueries(inactiveQueries)
-          setTimeout(() => {
-            activeQueries.forEach((q) =>
-              // @ts-ignore
-              this.queryHandler.refetch(q, {
-                onData: (data) => this.cache.storeQueryData(q, data),
-              })
-            )
-          })
-        }
-
-        if (syncQueries) {
-          // prettier-ignore
-          const [activeQueries, inactiveQueries] = this.separateInactiveQueries(syncQueries)
-          this.cache.removeInactiveQueries(inactiveQueries)
-          if (activeQueries.length > 0) {
-            this.refetchQueriesSync(
-              // @ts-ignore
-              activeQueries,
-              () => onComplete && onComplete(),
-              onError
-            )
-            return
-          }
-        }
-
         if (onComplete) {
           onComplete()
         }
@@ -118,18 +86,14 @@ class StandardStore implements InternalStore {
     mutation: Mutation<TResult, TArguments, TContext>,
     options: Pick<
       MutationOptions<TResult, TArguments, TContext>,
-      | "arguments"
-      | "context"
-      | "optimisticResponse"
-      | "refetchQueries"
-      | "refetchQueriesSync"
+      "arguments" | "context" | "optimisticResponse"
     > = {}
   ) {
     const actualMutation = mutation.withOptions(options)
-    return new Promise<TResult>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.processMutation(actualMutation, {
-        onError: reject,
         onComplete: resolve,
+        onError: reject,
       })
     })
   }
@@ -138,8 +102,39 @@ class StandardStore implements InternalStore {
     this.cache.storeQueryData(query, data)
   }
 
+  refetchQueries(queries: Query<any, any, any>[]) {
+    return new Promise<void>((resolve, reject) => {
+      const [activeQueries, inactiveQueries] = this.separateInactiveQueries(
+        queries
+      )
+      this.cache.removeInactiveQueries(inactiveQueries)
+      if (activeQueries.length === 0) {
+        return resolve()
+      }
+
+      let hasError = false
+      let count = 0
+      activeQueries.forEach((query) =>
+        this.queryHandler.refetch(query, {
+          onData: (data) => this.cache.storeQueryData(query, data),
+          onComplete: () => {
+            if (++count === activeQueries.length) {
+              resolve()
+            }
+          },
+          onError: (err) => {
+            if (!hasError) {
+              hasError = true
+              reject(err)
+            }
+          },
+        })
+      )
+    })
+  }
+
   resetStore() {
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       this.cache.reset((queriesToRefetch) => {
         let doneCount = 0
         const cbHandler = () => {
@@ -161,7 +156,7 @@ class StandardStore implements InternalStore {
   }
 
   deleteQuery(query: BaseQuery) {
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       const actualQuery = query instanceof Query ? getActualQuery(query) : query
       const activeQuery = this.cache.findActiveQuery(actualQuery)
       if (!activeQuery) {
@@ -185,46 +180,23 @@ class StandardStore implements InternalStore {
   //========== Private methods =============
 
   private separateInactiveQueries(queries: Array<Query<any, any, any>>) {
-    const activeQueries: BaseQuery[] = []
-    const inactiveQueries: BaseQuery[] = []
+    // prettier-ignore
+    const activeQueries: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
+    // prettier-ignore
+    const inactiveQueries: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
     queries.forEach((query) => {
       const actualQuery = getActualQuery(query)
-      const activeQuery = this.cache.findActiveQuery(actualQuery)
+      const activeQuery = this.cache.findActiveQuery(actualQuery) as
+        | Query<any, any, any>
+        | CompoundQuery<any, any, any>
+
       if (activeQuery) {
         activeQueries.push(activeQuery)
       } else {
         inactiveQueries.push(actualQuery)
       }
     })
-
     return [activeQueries, inactiveQueries]
-  }
-
-  private refetchQueriesSync(
-    queries: Array<Query<any, any, any> | CompoundQuery<any, any, any>>,
-    onComplete: () => void,
-    onError?: (err: Error) => void
-  ) {
-    let hasError = false
-    let count = 0
-    queries.forEach((query) =>
-      this.queryHandler.refetch(query, {
-        onData: (data) => this.cache.storeQueryData(query, data),
-        onComplete: () => {
-          if (++count === queries.length) {
-            onComplete()
-          }
-        },
-        onError: (err) => {
-          if (!hasError) {
-            hasError = true
-            if (onError) {
-              onError(err)
-            }
-          }
-        },
-      })
-    )
   }
 }
 

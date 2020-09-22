@@ -286,6 +286,119 @@ describe("mutate()", () => {
   })
 })
 
+describe("refetchQueries()", () => {
+  it("should work", (done) => {
+    let count = 0
+    // prettier-ignore
+    const query = new Query("GetData", (args: { name: string }) => Promise.resolve(++count))
+    const q1 = query.withOptions({ arguments: { name: "x" } })
+    const q2 = query.withOptions({ arguments: { name: "y" } })
+
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        afterQueryUpdates: (store) => {
+          store.refetchQueries([
+            query.withOptions({ arguments: { name: "x" } }),
+          ])
+        },
+      }
+    )
+
+    const store = new StandardStore()
+    store.registerQuery(q1, {
+      onData: (countValue) => {
+        if (countValue > 2) {
+          expect(countValue).toBe(3)
+          done()
+        }
+      },
+    })
+    store.registerQuery(q2, {
+      onData: (countValue) => {
+        if (countValue > 2) {
+          throw new Error("Query is unexpectedly refetched.")
+        }
+      },
+    })
+
+    store.processMutation(mutation)
+  })
+
+  it("should refetch active compound query", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      (args: { x: number }) => Promise.resolve([`${args.x}-${++count}`]),
+      {
+        merge: (existingData, newData) => [...existingData, ...newData],
+      }
+    )
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        afterQueryUpdates: (store) => store.refetchQueries([query]),
+      }
+    )
+
+    let mutationTriggered = false
+    let mutationCompleted = false
+    const store = new StandardStore()
+    const { fetchMore } = store.registerQuery(
+      query.withOptions({ arguments: { x: 1 } }),
+      {
+        onData: (data) => {
+          if (data.length === 1) {
+            setTimeout(() =>
+              fetchMore(query.withOptions({ arguments: { x: 2 } }))
+            )
+          } else if (!mutationTriggered) {
+            mutationTriggered = true
+            store.processMutation(mutation, {
+              onComplete: () => (mutationCompleted = true),
+            })
+          } else if (mutationCompleted) {
+            expect(data).toStrictEqual(["1-3", "2-4"]) // refetched values
+            done()
+          }
+        },
+      }
+    )
+  })
+
+  it("should remove inactive queries' data", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(++count))
+    const mutation = new Mutation(
+      "UpdateData",
+      jest.fn().mockResolvedValue(null),
+      {
+        afterQueryUpdates: (store) => store.refetchQueries([query]),
+      }
+    )
+
+    const store = new StandardStore()
+    const { unregister } = store.registerQuery(query, {
+      onData: () =>
+        setTimeout(() => {
+          unregister() // make the query inactive
+          store.processMutation(mutation, {
+            onComplete: () =>
+              store.registerQuery(query, {
+                onData: (data) => {
+                  // refetched value as previous value was already removed from cache
+                  expect(data).toBe(2)
+                  done()
+                },
+              }),
+          })
+        }),
+    })
+  })
+})
+
 // describe('setQueryData()', () => {
 // it("should update query result", (done) => {
 //   // prettier-ignore
