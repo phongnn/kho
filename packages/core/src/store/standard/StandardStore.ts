@@ -106,13 +106,14 @@ class StandardStore implements InternalStore {
   }
 
   setQueryData(query: BaseQuery, data: any): void {
-    this.cache.storeQueryData(query, data)
+    const actualQuery = query instanceof Query ? getActualQuery(query) : query
+    this.cache.storeQueryData(actualQuery, data)
   }
 
   refetchQueries(queries: Query<any, any, any>[]) {
     return new Promise<void>((resolve, reject) => {
       const [activeQueries, inactiveQueries] = this.separateInactiveQueries(
-        queries
+        queries.map((q) => getActualQuery(q))
       )
       this.cache.removeInactiveQueries(inactiveQueries)
       if (activeQueries.length === 0) {
@@ -186,21 +187,19 @@ class StandardStore implements InternalStore {
 
   //========== Private methods =============
 
-  private separateInactiveQueries(queries: Array<Query<any, any, any>>) {
-    // prettier-ignore
+  // prettier-ignore
+  private separateInactiveQueries(
+    queries: Array<Query<any, any, any> | CompoundQuery<any, any, any>>
+  ) {
     const activeQueries: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
-    // prettier-ignore
     const inactiveQueries: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
     queries.forEach((query) => {
-      const actualQuery = getActualQuery(query)
-      const activeQuery = this.cache.findActiveQuery(actualQuery) as
-        | Query<any, any, any>
-        | CompoundQuery<any, any, any>
-
+      const activeQuery = this.cache.findActiveQuery(query)
       if (activeQuery) {
+        // @ts-ignore
         activeQueries.push(activeQuery)
       } else {
-        inactiveQueries.push(actualQuery)
+        inactiveQueries.push(query)
       }
     })
     return [activeQueries, inactiveQueries]

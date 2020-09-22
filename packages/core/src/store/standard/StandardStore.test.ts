@@ -2,12 +2,15 @@ import { Query } from "../../query/Query"
 import { LocalQuery } from "../../query/LocalQuery"
 import StandardStore from "./StandardStore"
 import { Mutation } from "../../query/Mutation"
+import { NormalizedType } from "../../normalization/NormalizedType"
 
 afterEach(() => {
   // @ts-ignore
   Query.registry = new Map()
   // @ts-ignore
   Mutation.registry = new Map()
+  // @ts-ignore
+  NormalizedType.registry = new Map()
 })
 
 describe("LocalQuery", () => {
@@ -29,115 +32,6 @@ describe("LocalQuery", () => {
           setTimeout(() => store.processMutation(mutation))
         } else {
           expect(data).toBe(testPayload)
-          done()
-        }
-      },
-    })
-  })
-})
-
-describe("resetStore()", () => {
-  it("should reset cache and refetch active query", (done) => {
-    let count = 0
-    const query = new Query("GetData", () => Promise.resolve(++count))
-    const store = new StandardStore()
-    store.registerQuery(query, {
-      onData: (data) => {
-        if (data === 1) {
-          setTimeout(() => store.resetStore())
-        } else {
-          expect(data).toBe(2)
-          done()
-        }
-      },
-    })
-  })
-
-  it("should reset active local query's value", (done) => {
-    const query = new LocalQuery("Profile", {
-      initialValue: "nothing",
-      mutations: {
-        UpdateData: (_, { mutationResult }) => mutationResult,
-      },
-    })
-    // prettier-ignore
-    const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
-    const store = new StandardStore()
-    let valueSet = false
-    store.registerLocalQuery(query, {
-      onData: (data) => {
-        if (data === "nothing" && !valueSet) {
-          valueSet = true
-          setTimeout(() => store.processMutation(mutation))
-        } else if (data === "something") {
-          setTimeout(() => store.resetStore())
-        } else {
-          expect(data).toBe("nothing") // reset to initial value
-          done()
-        }
-      },
-    })
-  })
-})
-
-describe("deleteQuery()", () => {
-  it("should refetch active query", (done) => {
-    let count = 0
-    const query = new Query("GetData", () => Promise.resolve(++count))
-    const store = new StandardStore()
-    store.registerQuery(query, {
-      onData: (data) => {
-        if (data === 1) {
-          setTimeout(() => store.deleteQuery(query.clone()))
-        } else {
-          expect(data).toBe(2)
-          done()
-        }
-      },
-    })
-  })
-
-  it("should refetch active compound query", (done) => {
-    let count = 0
-    // prettier-ignore
-    const query = new Query("GetData", () => Promise.resolve(++count), { merge: (e, n) => e + n })
-    const store = new StandardStore()
-    const { fetchMore } = store.registerQuery(query, {
-      onData: (data) => {
-        if (data === 1) {
-          // prettier-ignore
-          setTimeout(() => fetchMore(query.withOptions({ arguments: { x: 2 } })))
-        } else if (data === 3) {
-          setTimeout(() => store.deleteQuery(query.clone()))
-        } else {
-          expect(data).toBe(7) // 3 + 4
-          done()
-        }
-      },
-    })
-  })
-
-  it("should reset active local query's value", (done) => {
-    const query = new LocalQuery("Profile", {
-      initialValue: "nothing",
-      mutations: {
-        UpdateData: (_, { mutationResult }) => mutationResult,
-      },
-    })
-    // prettier-ignore
-    const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
-
-    const store = new StandardStore()
-    let valueSet = false
-    store.registerLocalQuery(query, {
-      onData: (data) => {
-        if (data === "nothing" && !valueSet) {
-          valueSet = true
-          setTimeout(() => store.processMutation(mutation))
-        } else if (data === "something") {
-          setTimeout(() => store.deleteQuery(query.clone()))
-        } else {
-          expect(data).toBe("nothing") // reset to initial value
           done()
         }
       },
@@ -271,18 +165,21 @@ describe("query()", () => {
 describe("mutate()", () => {
   it("should work", async () => {
     const args = { a: "bc" }
-    const data = { x: { y: "z" } }
-    const mutateFn = jest.fn().mockResolvedValue(data)
-    const updateFn = jest.fn()
+    const mutateFn = jest.fn().mockResolvedValue(null)
+    const fn1 = jest.fn()
+    const fn2 = jest.fn()
     const mutation = new Mutation("UpdateData", mutateFn, {
-      beforeQueryUpdates: updateFn,
+      beforeQueryUpdates: fn1,
+      afterQueryUpdates: fn2,
+      syncMode: true,
     })
 
     const store = new StandardStore()
     await store.mutate(mutation, { arguments: args })
 
     expect(mutateFn).toBeCalledWith(args, {})
-    expect(updateFn).toBeCalled()
+    expect(fn1).toBeCalled()
+    expect(fn2).toBeCalled()
   })
 })
 
@@ -370,95 +267,195 @@ describe("refetchQueries()", () => {
 
   it("should remove inactive queries' data", (done) => {
     let count = 0
-    const query = new Query("GetData", () => Promise.resolve(++count))
+    const query = new Query(
+      "GetData",
+      () => new Promise<number>((r) => setTimeout(() => r(++count)))
+    )
     const mutation = new Mutation(
       "UpdateData",
       jest.fn().mockResolvedValue(null),
       {
         afterQueryUpdates: (store) => store.refetchQueries([query]),
+        syncMode: true,
       }
     )
 
     const store = new StandardStore()
     const { unregister } = store.registerQuery(query, {
-      onData: () =>
-        setTimeout(() => {
-          unregister() // make the query inactive
-          store.processMutation(mutation, {
-            onComplete: () =>
-              store.registerQuery(query, {
-                onData: (data) => {
-                  // refetched value as previous value was already removed from cache
-                  expect(data).toBe(2)
-                  done()
-                },
-              }),
-          })
-        }),
+      onData: () => {
+        unregister() // make the query inactive
+        store.processMutation(mutation, {
+          onComplete: () => {
+            const { unregister } = store.registerQuery(query, {
+              onData: (data) => {
+                // refetched value as previous value was already removed from cache
+                expect(data).toBe(2)
+                unregister()
+                done()
+              },
+            })
+          },
+        })
+      },
     })
   })
 })
 
-// describe('setQueryData()', () => {
-// it("should update query result", (done) => {
-//   // prettier-ignore
-//   const UserType = NormalizedType.register("User", { keyFields: ["username"] })
-//   const query = new Query(
-//     "GetUsers",
-//     () =>
-//       Promise.resolve([
-//         { username: "x", email: "x@test.com" },
-//         { username: "y", email: "y@test.com", avatar: "http://" },
-//       ]),
-//     { shape: [UserType] }
-//   )
+describe("setQueryData()", () => {
+  it("should update query result", (done) => {
+    // prettier-ignore
+    const UserType = NormalizedType.register("User", { keyFields: ["username"] })
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve([
+          { username: "x", email: "x@test.com" },
+          { username: "y", email: "y@test.com", avatar: "http://" },
+        ]),
+      { shape: [UserType] }
+    )
 
-//   const store = new StandardStore()
-//   store.registerQuery(query, {
-//     onData: (data) => {
-//       if (data.length === 3) {
-//         expect(data[2]).toStrictEqual({
-//           username: "z",
-//           email: "z@test.com",
-//         })
-//         done()
-//       }
-//     },
-//   })
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data.length === 1) {
+          expect(data[0]).toStrictEqual({
+            username: "z",
+            email: "z@test.com",
+          })
+          done()
+        }
+      },
+    })
 
-//   const mutation = new Mutation(
-//     "UpdateData",
-//     () => Promise.resolve({ username: "z", email: "z@test.com" }),
-//     {
-//       shape: UserType,
-//       beforeQueryUpdates: (cache, { data }) => {
-//         const existingData = cache.readQuery(query) || []
-//         cache.updateQuery(query, [...existingData, data])
-//       },
-//     }
-//   )
-//   store.processMutation(mutation)
-// })
+    store.setQueryData(query.clone(), [{ username: "z", email: "z@test.com" }])
+  })
 
-// it("should update compound query result", (done) => {
-//   const query = new Query("GetData", () => Promise.resolve(1), {
-//     merge: (e, n) => e + n,
-//   })
-//   const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
-//     beforeQueryUpdates: (cache) => cache.updateQuery(query, 1000),
-//   })
-//   const store = new StandardStore()
-//   const { fetchMore } = store.registerQuery(query, {
-//     onData: (data) => {
-//       if (data === 1) {
-//         setTimeout(() => fetchMore(query))
-//       } else if (data === 2) {
-//         setTimeout(() => store.processMutation(mutation))
-//       } else {
-//         expect(data).toBe(1000)
-//         done()
-//       }
-//     },
-//   })
-// })
-// })
+  it("should update compound query result", (done) => {
+    const query = new Query("GetData", () => Promise.resolve(1), {
+      merge: (e, n) => e + n,
+    })
+    const store = new StandardStore()
+    const { fetchMore } = store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          setTimeout(() => fetchMore(query))
+        } else if (data === 2) {
+          setTimeout(() => store.setQueryData(query.clone(), 1000))
+        } else {
+          expect(data).toBe(1000)
+          done()
+        }
+      },
+    })
+  })
+})
+
+describe("deleteQuery()", () => {
+  it("should refetch active query", (done) => {
+    let count = 0
+    const query = new Query("GetX", () => Promise.resolve(++count))
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          setTimeout(() => store.deleteQuery(query.clone()))
+        } else {
+          expect(data).toBe(2)
+          done()
+        }
+      },
+    })
+  })
+
+  it("should refetch active compound query", (done) => {
+    let count = 0
+    // prettier-ignore
+    const query = new Query("GetY", () => Promise.resolve(++count), { merge: (e, n) => e + n })
+    const store = new StandardStore()
+    const { fetchMore } = store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          // prettier-ignore
+          setTimeout(() => fetchMore(query.withOptions({ arguments: { x: 2 } })))
+        } else if (data === 3) {
+          setTimeout(() => store.deleteQuery(query.clone()))
+        } else {
+          expect(data).toBe(7) // 3 + 4
+          done()
+        }
+      },
+    })
+  })
+
+  it("should reset active local query's value", (done) => {
+    const query = new LocalQuery("Profile", {
+      initialValue: "nothing",
+      mutations: {
+        UpdateData: (_, { mutationResult }) => mutationResult,
+      },
+    })
+    // prettier-ignore
+    const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
+
+    const store = new StandardStore()
+    let valueSet = false
+    store.registerLocalQuery(query, {
+      onData: (data) => {
+        if (data === "nothing" && !valueSet) {
+          valueSet = true
+          setTimeout(() => store.processMutation(mutation))
+        } else if (data === "something") {
+          setTimeout(() => store.deleteQuery(query.clone()))
+        } else {
+          expect(data).toBe("nothing") // reset to initial value
+          done()
+        }
+      },
+    })
+  })
+})
+
+describe("resetStore()", () => {
+  it("should reset cache and refetch active query", (done) => {
+    let count = 0
+    const query = new Query("GetData", () => Promise.resolve(++count))
+    const store = new StandardStore()
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data === 1) {
+          setTimeout(() => store.resetStore())
+        } else {
+          expect(data).toBe(2)
+          done()
+        }
+      },
+    })
+  })
+
+  it("should reset active local query's value", (done) => {
+    const query = new LocalQuery("Profile", {
+      initialValue: "nothing",
+      mutations: {
+        UpdateData: (_, { mutationResult }) => mutationResult,
+      },
+    })
+    // prettier-ignore
+    const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
+    const store = new StandardStore()
+    let valueSet = false
+    store.registerLocalQuery(query, {
+      onData: (data) => {
+        if (data === "nothing" && !valueSet) {
+          valueSet = true
+          setTimeout(() => store.processMutation(mutation))
+        } else if (data === "something") {
+          setTimeout(() => store.resetStore())
+        } else {
+          expect(data).toBe("nothing") // reset to initial value
+          done()
+        }
+      },
+    })
+  })
+})
