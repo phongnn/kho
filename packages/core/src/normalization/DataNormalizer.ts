@@ -27,7 +27,7 @@ class DataNormalizer {
     if (Array.isArray(shape)) {
       if (shape.length !== 1) {
         throw new Error(
-          `[FNC] Normalized type array must have exactly one element.`
+          `[Kho] Normalized type array must have exactly one element.`
         )
       }
       return this.normalizeArray(data, shape[0])
@@ -127,7 +127,7 @@ class DataNormalizer {
     if (data && !Array.isArray(data)) {
       const typeName =
         typeof itemType.name === "string" ? itemType.name : "unknown"
-      throw new Error(`[FNC] Data is not an array of ${typeName} as expected.`)
+      throw new Error(`[Kho] Data is not an array of ${typeName} as expected.`)
     }
 
     if (!data || data.length === 0) {

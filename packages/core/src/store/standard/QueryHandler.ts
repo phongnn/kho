@@ -110,7 +110,7 @@ class QueryHandler {
       fetchMore: (nextQuery, callbacks) => {
         if (!(queryHandle instanceof CompoundQuery)) {
           // prettier-ignore
-          throw new Error(`[FNC] merge() function not defined for query ${query.name}.`)
+          throw new Error(`[Kho] merge() function not defined for query ${query.name}.`)
         }
 
         const uniqueNextQuery = nextQuery.clone() // for safety reason

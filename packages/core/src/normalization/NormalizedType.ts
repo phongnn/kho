@@ -43,7 +43,7 @@ export class NormalizedType {
     return new NormalizedTypePlaceholder(name, () => {
       const type = this.registry.get(name)
       if (!type) {
-        throw new Error(`[FNC] Normalized type not found: ${name}.`)
+        throw new Error(`[Kho] Normalized type not found: ${name}.`)
       }
       return type
     })

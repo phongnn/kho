@@ -1,4 +1,4 @@
-import { InternalStore } from "../Store"
+import { AdvancedStore } from "../Store"
 import { Query, QueryOptions } from "../../query/Query"
 import { Mutation, MutationOptions } from "../../query/Mutation"
 import CacheController from "./CacheController"
@@ -9,12 +9,12 @@ import { BaseQuery, QueryUpdateInfoArgument } from "../../query/BaseQuery"
 import { LocalQuery } from "../../query/LocalQuery"
 import { getActualQuery } from "../../helpers"
 
-class StandardStore implements InternalStore {
+class StandardStore implements AdvancedStore {
   private cache = new CacheController()
   private queryHandler = new QueryHandler(this.cache)
   private mutationHandler = new MutationHandler(this.cache)
 
-  //========== InternalStore interface's methods =============
+  //========== AdvancedStore interface's methods =============
 
   registerQuery<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,

@@ -4,11 +4,11 @@ import {
 } from "../normalization/NormalizedType"
 import { BaseQuery, QueryUpdateInfoArgument } from "./BaseQuery"
 import { mergeOptions } from "../helpers"
-import { Query } from "./Query"
 import { NormalizedObjectRef } from "../normalization/NormalizedObject"
 import { Store } from "../store/Store"
 
-export interface FNCCache {
+/** Interface exposed for use only in mutations' beforeQueryUpdates() */
+export interface KhoCache {
   readQuery(query: BaseQuery): any
   addObject(type: NormalizedType, data: any): NormalizedObjectRef
   findObjectRef(type: NormalizedType, key: any): NormalizedObjectRef | null
@@ -23,7 +23,7 @@ export interface MutationOptions<TResult, TArguments, TContext> {
   shape?: NormalizedShape
   optimisticResponse?: any
   beforeQueryUpdates?: (
-    cache: FNCCache,
+    cache: KhoCache,
     info: Omit<QueryUpdateInfoArgument, "context">
   ) => any
   afterQueryUpdates?: (store: Store, info: QueryUpdateInfoArgument) => any
@@ -38,6 +38,8 @@ export class Mutation<TResult, TArguments, TContext> {
     readonly fn: (args: TArguments, ctx: TContext) => Promise<TResult>,
     readonly options: MutationOptions<TResult, TArguments, TContext> = {}
   ) {
+    this.options.syncMode = options.syncMode ?? false
+
     // make sure a mutation name can't be registered with more than 1 function
     const prevFn = Mutation.registry.get(name)
     if (prevFn && prevFn !== fn) {

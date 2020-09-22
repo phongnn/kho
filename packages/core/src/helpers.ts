@@ -51,7 +51,7 @@ export function extractPlainKey(obj: any, type: NormalizedType) {
   keyFields.forEach((f) => {
     if (!obj[f]) {
       throw new Error(
-        `[FNC] Data of type "${type.name}" must contain key field "${f}".`
+        `[Kho] Data of type "${type.name}" must contain key field "${f}".`
       )
     }
     keyObj[f] = obj[f]

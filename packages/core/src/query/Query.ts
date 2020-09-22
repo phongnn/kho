@@ -19,11 +19,6 @@ export interface QueryOptions<TResult, TArguments, TContext> {
   pollInterval?: number
 }
 
-const defaultQueryOptions: QueryOptions<any, any, any> = {
-  fetchPolicy: "cache-first",
-  pollInterval: 0,
-}
-
 class QueryKey<TArguments> implements BaseQueryKey {
   constructor(private name: string, private args: TArguments) {}
 
@@ -43,9 +38,11 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
     readonly name: string,
     readonly fetcher: (args: TArguments, ctx: TContext) => Promise<TResult>,
     // prettier-ignore
-    readonly options: QueryOptions<TResult, TArguments, TContext> = defaultQueryOptions
+    readonly options: QueryOptions<TResult, TArguments, TContext> = {}
   ) {
     super(new QueryKey(name, options.arguments), options)
+    this.options.fetchPolicy = options.fetchPolicy ?? "cache-first"
+    this.options.pollInterval = options.pollInterval ?? 0
 
     // make sure a query name can't be registered with more than 1 fetcher function
     const prevFetcher = Query.registry.get(name)

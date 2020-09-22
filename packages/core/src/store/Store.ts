@@ -1,9 +1,7 @@
-import { Query, QueryOptions } from "../query/Query"
-import { Mutation, MutationOptions } from "../query/Mutation"
-import { LocalQuery } from "../query/LocalQuery"
 import { BaseQuery } from "../query/BaseQuery"
-
-export interface StoreOptions {}
+import { Query, QueryOptions } from "../query/Query"
+import { LocalQuery } from "../query/LocalQuery"
+import { Mutation, MutationOptions } from "../query/Mutation"
 
 /** Public interface exposed to developers */
 export interface Store {
@@ -29,8 +27,8 @@ export interface Store {
   resetStore(): Promise<void>
 }
 
-/** Interface exposed to view connectors (e.g., React hooks) */
-export interface InternalStore extends Store {
+/** Interface for use by view connectors, e.g. React hooks, NOT directly in the views */
+export interface AdvancedStore extends Store {
   registerQuery<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,
     callbacks: {
@@ -58,7 +56,7 @@ export interface InternalStore extends Store {
   ): void
 }
 
-export interface InternalRefetchFn {
+export interface RefetchFn {
   (callbacks?: {
     onRequest?: () => void
     onError?: (err: Error) => void
@@ -66,7 +64,7 @@ export interface InternalRefetchFn {
   }): void
 }
 
-export interface InternalFetchMoreFn<TResult, TArguments, TContext> {
+export interface FetchMoreFn<TResult, TArguments, TContext> {
   (
     query: Query<TResult, TArguments, TContext>,
     callbacks?: {
@@ -79,8 +77,8 @@ export interface InternalFetchMoreFn<TResult, TArguments, TContext> {
 
 export interface QueryRegistrationResult<TResult, TArguments, TContext> {
   unregister: () => void
-  refetch: InternalRefetchFn
-  fetchMore: InternalFetchMoreFn<TResult, TArguments, TContext>
+  refetch: RefetchFn
+  fetchMore: FetchMoreFn<TResult, TArguments, TContext>
   startPolling: (interval?: number) => void
   stopPolling: () => void
 }

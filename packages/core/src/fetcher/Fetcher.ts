@@ -142,8 +142,8 @@ const toErrorObj = (e: any) =>
     ? e
     : new Error(
         typeof e === "string"
-          ? `[FNC Fetcher] ${e}`
-          : `[FNC] Error when fetching data: ${e}`
+          ? `[Kho Fetcher] ${e}`
+          : `[Kho] Error when fetching data: ${e}`
       )
 
 export default Fetcher

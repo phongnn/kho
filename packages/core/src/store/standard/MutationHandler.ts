@@ -61,8 +61,8 @@ const toErrorObj = (e: any) =>
     ? e
     : new Error(
         typeof e === "string"
-          ? `[FNC mutation handler] ${e}`
-          : `[FNC] Error when mutating data: ${e}`
+          ? `[Kho mutation handler] ${e}`
+          : `[Kho] Error when mutating data: ${e}`
       )
 
 export default MutationHandler

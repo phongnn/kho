@@ -71,7 +71,7 @@ class CacheController {
   ) {
     const cacheKey = this.activeQueries.get(query)?.cacheKey
     if (!cacheKey) {
-      throw new Error(`[FNC] Unable to find cache key to merge data.`)
+      throw new Error(`[Kho] Unable to find cache key to merge data.`)
     }
 
     const { shape } = query.original.options
