@@ -3,10 +3,11 @@ import { QueryOptions, Query, InternalStore } from "@fnc/core"
 
 import { useInternalStore } from "./Provider"
 import { useDataLoadingState, registerQuery } from "./useDataLoadingState"
-import { deepEqual } from "./helpers"
+import { equal } from "./helpers"
 
 type QueryDependencyList = [
   InternalStore,
+  React.Dispatch<any>,
   Query<any, any, any>,
   QueryOptions<any, any, any> | undefined
 ]
@@ -24,12 +25,13 @@ function hasChanges(
   currentDeps: QueryDependencyList,
   newDeps: QueryDependencyList
 ) {
-  const [cStore, cQuery, cOptions = {}] = currentDeps
-  const [nStore, nQuery, nOptions = {}] = newDeps
+  const [cStore, cQuery, cDispatch, cOptions = {}] = currentDeps
+  const [nStore, nQuery, nDispatch, nOptions = {}] = newDeps
   return (
     nStore !== cStore ||
     nQuery !== cQuery ||
-    !deepEqual(nOptions.arguments, cOptions.arguments) // TODO: write compareQueryArguments
+    nDispatch !== cDispatch ||
+    !equal(nOptions.arguments, cOptions.arguments)
   )
 }
 
@@ -43,7 +45,7 @@ export function useQuery<TResult, TArguments, TContext>(
   useCustomEffect(() => {
     const actualQuery = !options ? query : query.withOptions(options)
     return registerQuery(store, actualQuery, dispatch) // return unregister fn
-  }, [store, query, options])
+  }, [store, dispatch, query, options])
 
   return state
 }

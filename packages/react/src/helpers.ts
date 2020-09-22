@@ -1,20 +1,28 @@
-// import React from "react"
-// import { equal } from "@wry/equality"
+export function equal(a: any, b: any) {
+  if (a === b || (!a && !b)) {
+    return true
+  } else if (!a || !b) {
+    return false
+  }
 
-export { equal as deepEqual } from "@wry/equality"
+  const aKeys = Object.keys(a)
+  const keyCount = aKeys.length
+  if (keyCount !== Object.keys(b).length) {
+    return false
+  }
 
-/**
- * useEffect but using deep comparison not reference equality of the inputs
- * (copied from https://github.com/kentcdodds/use-deep-compare-effect)
- */
-// export function useDeepCompareEffect(
-//   effect: React.EffectCallback,
-//   dependencies: React.DependencyList
-// ) {
-//   const ref = React.useRef<React.DependencyList>([])
-//   if (!equal(dependencies, ref.current)) {
-//     ref.current = dependencies
-//   }
+  for (let i = 0; i < keyCount; ++i) {
+    if (!b.hasOwnProperty(aKeys[i])) {
+      return false
+    }
+  }
 
-//   React.useEffect(effect, ref.current)
-// }
+  for (let i = 0; i < keyCount; ++i) {
+    const key = aKeys[i]
+    if (!equal(a[key], b[key])) {
+      return false
+    }
+  }
+
+  return true
+}
