@@ -9,7 +9,7 @@ import { Provider, useStore } from "../Provider"
 
 let count = 0
 const query = new Query("GetData", () => Promise.resolve(++count))
-const logOutMutation = new Mutation(jest.fn().mockResolvedValue(null))
+const logOutMutation = new Mutation("Logout", jest.fn().mockResolvedValue(null))
 
 function MyComponent() {
   const store = useStore()

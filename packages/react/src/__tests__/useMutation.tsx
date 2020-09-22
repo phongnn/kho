@@ -11,9 +11,13 @@ import { useMutation } from "../useMutation"
 import { Provider } from "../Provider"
 
 let mutateFn: (args: any, ctx: any) => Promise<void>
-const mutation = new Mutation((args: any, ctx: any) => mutateFn(args, ctx), {
-  context: { blah: "blah" },
-})
+const mutation = new Mutation(
+  "UpdateData",
+  (args: any, ctx: any) => mutateFn(args, ctx),
+  {
+    context: { blah: "blah" },
+  }
+)
 
 function MyComponent() {
   const [mutate, { loading, error, called }] = useMutation(mutation, {
