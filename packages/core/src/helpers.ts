@@ -2,21 +2,42 @@ import { Query } from "./query/Query"
 import CompoundQuery from "./fetcher/CompoundQuery"
 import { NormalizedType } from "./normalization/NormalizedType"
 
-export { equal as deepEqual } from "@wry/equality"
-
 export const env = process.env.NODE_ENV
 export const isProduction = env === "production"
 
-/**
- * A non-compliant but very performant implementation to generate GUID-like identifiers
- * (by @joelpt: https://stackoverflow.com/a/13403498)
- */
-// export function guid() {
-//   return (
-//     Math.random().toString(36).substring(2, 15) +
-//     Math.random().toString(36).substring(2, 15)
-//   )
-// }
+export function deepEqual(a: any, b: any) {
+  if (a === b || (!a && !b)) {
+    return true
+  } else if (!a || !b) {
+    return false
+  }
+
+  const type = a.toString()
+  if (type !== b.toString()) {
+    return false
+  }
+
+  const keys = Object.keys(a)
+  const keyCount = keys.length
+  if (keyCount !== Object.keys(b).length) {
+    return false
+  }
+
+  for (let i = 0; i < keyCount; ++i) {
+    if (!b.hasOwnProperty(keys[i])) {
+      return false
+    }
+  }
+
+  for (let i = 0; i < keyCount; ++i) {
+    const key = keys[i]
+    if (!deepEqual(a[key], b[key])) {
+      return false
+    }
+  }
+
+  return true
+}
 
 /** converts to CompoundQuery if necessary */
 export function getActualQuery(query: Query<any, any, any>) {

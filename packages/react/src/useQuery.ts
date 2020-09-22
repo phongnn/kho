@@ -3,7 +3,7 @@ import { QueryOptions, Query, InternalStore } from "@fnc/core"
 
 import { useInternalStore } from "./Provider"
 import { useDataLoadingState, registerQuery } from "./useDataLoadingState"
-import { equal } from "./helpers"
+import { deepEqual } from "./helpers"
 
 type QueryDependencyList = [
   InternalStore,
@@ -31,7 +31,7 @@ function hasChanges(
     nStore !== cStore ||
     nQuery !== cQuery ||
     nDispatch !== cDispatch ||
-    !equal(nOptions.arguments, cOptions.arguments)
+    !deepEqual(nOptions.arguments, cOptions.arguments)
   )
 }
 

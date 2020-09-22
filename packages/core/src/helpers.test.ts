@@ -1,6 +1,23 @@
-import { mergeOptions } from "./helpers"
+import { mergeOptions, deepEqual } from "./helpers"
 
-describe("mergeOptions", () => {
+// prettier-ignore
+test("deepEqual() should work", () => {
+  expect(deepEqual({ a: [1, 2] }, { a: [1, 2] })).toBe(true)
+  expect(deepEqual({ a: [1, 2] }, { a: [2, 1] })).toBe(false)
+
+  expect(deepEqual({ a: [1, { b: 1 }] }, { a: [1, { b: 1 }] })).toBe(true)
+  expect(deepEqual({ a: [1, { b: 1 }] }, { a: [1, { b: 2 }] })).toBe(false)
+
+  expect(deepEqual({ a: [1, { b: ["x", "y"] }] }, { a: [1, { b: ["x", "y"] }] })).toBe(true)
+  expect(deepEqual({ a: [1, { b: ["x", "y"] }] }, { a: [1, { b: ["x", "y", "z"] }] })).toBe(false)
+  expect(deepEqual({ a: [1, { b: ["x", "y"] }] }, { a: [1, { b: ["x", "z"] }] })).toBe(false)
+
+  expect(deepEqual({ a: [1, { b: [{ x: "y" }] }] }, { a: [1, { b: [{ x: "y" }] }] })).toBe(true)
+  expect(deepEqual({ a: [1, { b: [{ x: "y" }] }] }, { a: [1, { b: [{ x: "z" }] }] })).toBe(false)
+  expect(deepEqual({ a: [1, { b: [{ x: "y" }] }] }, { a: [1, { b: [{ x: "y", z: "z" }] }] })).toBe(false)
+})
+
+describe("mergeOptions()", () => {
   const originalOptions = {
     fetchPolicy: "cache-and-network",
     arguments: { name: "Nguyen", age: 20 },
