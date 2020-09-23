@@ -5,7 +5,7 @@ import CacheController from "./CacheController"
 import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
 import CompoundQuery from "../../fetcher/CompoundQuery"
-import { BaseQuery, QueryUpdateInfoArgument } from "../../query/BaseQuery"
+import { QueryUpdateInfoArgument } from "../../query/BaseQuery"
 import { LocalQuery } from "../../query/LocalQuery"
 import { getActualQuery } from "../../helpers"
 
@@ -105,7 +105,10 @@ class StandardStore implements AdvancedStore {
     })
   }
 
-  setQueryData(query: BaseQuery, data: any): void {
+  setQueryData<TResult>(
+    query: Query<TResult, any, any> | LocalQuery<TResult>,
+    data: TResult
+  ) {
     const actualQuery = query instanceof Query ? getActualQuery(query) : query
     this.cache.storeQueryData(actualQuery, data)
   }
@@ -163,7 +166,7 @@ class StandardStore implements AdvancedStore {
     })
   }
 
-  deleteQuery(query: BaseQuery) {
+  deleteQuery(query: Query<any, any, any> | LocalQuery<any>) {
     return new Promise<void>((resolve) => {
       const actualQuery = query instanceof Query ? getActualQuery(query) : query
       const activeQuery = this.cache.findActiveQuery(actualQuery)

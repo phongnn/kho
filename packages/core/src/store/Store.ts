@@ -1,4 +1,3 @@
-import { BaseQuery } from "../query/BaseQuery"
 import { Query, QueryOptions } from "../query/Query"
 import { LocalQuery } from "../query/LocalQuery"
 import { Mutation, MutationOptions } from "../query/Mutation"
@@ -21,9 +20,13 @@ export interface Store {
     >
   ): Promise<void>
 
+  setQueryData<TResult>(
+    query: Query<TResult, any, any> | LocalQuery<TResult>,
+    data: TResult
+  ): void
+
   refetchQueries(queries: Query<any, any, any>[]): Promise<void>
-  setQueryData(query: BaseQuery, data: any): void
-  deleteQuery(query: BaseQuery): Promise<void>
+  deleteQuery(query: Query<any, any, any> | LocalQuery<any>): Promise<void>
   resetStore(): Promise<void>
 }
 
