@@ -1,6 +1,10 @@
-import { Query } from "../common/Query"
-import { BaseQuery, QueryUpdateInfoArgument } from "../common/BaseQuery"
-import { KhoCache, Mutation } from "../common/Mutation"
+import {
+  Query,
+  BaseQuery,
+  QueryUpdateInfoArgument,
+  KhoCache,
+  Mutation,
+} from "../common"
 // prettier-ignore
 import { NormalizedType, NormalizedShape } from "../normalization/NormalizedType"
 // prettier-ignore

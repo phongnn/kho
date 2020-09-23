@@ -1,7 +1,6 @@
-import { Query } from "../common/Query"
-import CompoundQuery from "../common/CompoundQuery"
-import CompoundQueryController from "./CompoundQueryController"
+import { Query, CompoundQuery } from "../common"
 import { isProduction } from "../common/helpers"
+import CompoundQueryController from "./CompoundQueryController"
 
 class Fetcher {
   private ongoingRequests = new Map<Query<any, any, any>, RequestInfo<any>>()

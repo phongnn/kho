@@ -1,7 +1,5 @@
-import { Query } from "../../common/Query"
-import { LocalQuery } from "../../common/LocalQuery"
+import { Query, LocalQuery, Mutation } from "../../common"
 import StandardStore from "./StandardStore"
-import { Mutation } from "../../common/Mutation"
 import { NormalizedType } from "../../normalization/NormalizedType"
 
 afterEach(() => {

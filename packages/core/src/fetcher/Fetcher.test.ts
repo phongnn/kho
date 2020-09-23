@@ -1,5 +1,5 @@
+import { Query } from "../common"
 import Fetcher from "./Fetcher"
-import { Query } from "../common/Query"
 
 const testId = "testId"
 const testPayload = { payload: { message: "Hello, World!" } }

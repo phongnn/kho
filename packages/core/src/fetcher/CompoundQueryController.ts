@@ -1,5 +1,4 @@
-import CompoundQuery from "../common/CompoundQuery"
-import { Query } from "../common/Query"
+import { Query, CompoundQuery } from "../common"
 
 class CompoundQueryController<TResult, TArguments, TContext> {
   private compoundQuery: CompoundQuery<TResult, TArguments, TContext>
