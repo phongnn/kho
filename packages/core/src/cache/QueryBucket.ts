@@ -5,7 +5,7 @@ import {
   QueryUpdateInfoArgument,
   Mutation,
 } from "../common"
-import Selector from "../normalization/Selector"
+import { Selector } from "../normalization"
 
 // Equivalent query keys will share the same cache key
 // (a query can be used by multiple components or by one component but renderred several times).

@@ -1,6 +1,5 @@
 import AdvancedStoreImpl from "./AdvancedStoreImpl"
-import { Query, LocalQuery, Mutation } from "../../common"
-import { NormalizedType } from "../../normalization/NormalizedType"
+import { Query, LocalQuery, Mutation, NormalizedType } from "../../common"
 
 afterEach(() => {
   // @ts-ignore

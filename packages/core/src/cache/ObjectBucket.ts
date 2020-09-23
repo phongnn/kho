@@ -1,5 +1,4 @@
-import { NormalizedType } from "../normalization/NormalizedType"
-import { NormalizedObjectKey } from "../normalization/NormalizedObject"
+import { NormalizedType, NormalizedObjectKey } from "../common"
 
 class ObjectBucket {
   private objects = new Map<NormalizedType, Map<NormalizedObjectKey, any>>()

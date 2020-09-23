@@ -3,10 +3,11 @@ import {
   NormalizedTypeShapeValue,
   NormalizedTypePlaceholder,
   RecordOf,
-} from "./NormalizedType"
-import { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"
-import Selector from "./Selector"
+  NormalizedObjectKey,
+  NormalizedObjectRef,
+} from "../common"
 import { extractPlainKey } from "../common/helpers"
+import Selector from "./Selector"
 
 type NormalizedStructure =
   | any
@@ -15,7 +16,7 @@ type NormalizedStructure =
 
 type NormalizedObjects = Map<NormalizedType, Array<[NormalizedObjectKey, any]>>
 
-class DataNormalizer {
+export default class DataNormalizer {
   constructor(
     private lookupObjectKey: (
       type: NormalizedType,
@@ -215,5 +216,3 @@ function mergeNormalizedObjects(
     addNormalizedObjects(type, objects, existingObjects)
   }
 }
-
-export default DataNormalizer

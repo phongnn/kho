@@ -4,18 +4,15 @@ import {
   QueryUpdateInfoArgument,
   CacheFacade,
   Mutation,
+  NormalizedType,
+  NormalizedShape,
+  NormalizedObjectKey,
+  NormalizedObjectRef,
 } from "../common"
-// prettier-ignore
-import { NormalizedType, NormalizedShape } from "../normalization/NormalizedType"
-// prettier-ignore
-import { NormalizedObjectKey, NormalizedObjectRef } from "../normalization/NormalizedObject"
-import DataNormalizer from "../normalization/DataNormalizer"
-import DataDenormalizer from "../normalization/DataDenormalizer"
+import { extractPlainKey, getActualQuery } from "../common/helpers"
+import { DataNormalizer, DataDenormalizer } from "../normalization"
 import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
-import { extractPlainKey, getActualQuery } from "../common/helpers"
-
-export { CacheKey } from "./QueryBucket"
 
 class CacheContainer implements CacheFacade {
   private queryBucket = new QueryBucket()

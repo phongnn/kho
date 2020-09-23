@@ -1,5 +1,5 @@
 import { deepEqual, mergeOptions } from "./helpers"
-import { NormalizedShape } from "../normalization/NormalizedType"
+import { NormalizedShape } from "./NormalizedType"
 import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
 
 export interface QueryOptions<TResult, TArguments, TContext> {

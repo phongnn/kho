@@ -1,8 +1,8 @@
 export {
   AdvancedStore,
-  RefetchFn,
-  FetchMoreFn,
   QueryRegistrationResult,
   LocalQueryRegistrationResult,
+  RefetchFn,
+  FetchMoreFn,
 } from "./AdvancedStore"
 export { createStore } from "./createStore"

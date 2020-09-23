@@ -1,6 +1,6 @@
 // prettier-ignore
 import { BaseQuery, Query, LocalQuery, CompoundQuery, Mutation } from "../../common"
-import CacheContainer, { CacheKey } from "../../cache/CacheContainer"
+import { CacheContainer, CacheKey } from "../../cache"
 
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void

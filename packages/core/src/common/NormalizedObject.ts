@@ -1,15 +1,11 @@
 import { NormalizedType } from "./NormalizedType"
-import { deepEqual } from "../common/helpers"
+import { deepEqual } from "./helpers"
 
 export class NormalizedObjectKey {
   constructor(private plainKey: any) {}
 
   matches(plainKey: any) {
-    if (typeof plainKey === "object" && typeof this.plainKey === "object") {
-      return deepEqual(plainKey, this.plainKey)
-    } else {
-      return plainKey === this.plainKey
-    }
+    return deepEqual(plainKey, this.plainKey)
   }
 }
 

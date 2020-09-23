@@ -1,6 +1,10 @@
+import {
+  NormalizedShape,
+  NormalizedType,
+  NormalizedObjectRef,
+  NormalizedObjectKey,
+} from "../common"
 import DataNormalizer from "./DataNormalizer"
-import { NormalizedShape, NormalizedType } from "./NormalizedType"
-import { NormalizedObjectRef, NormalizedObjectKey } from "./NormalizedObject"
 
 afterAll(() => {
   // @ts-ignore

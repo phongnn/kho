@@ -1,7 +1,10 @@
-import DataDenormalizer from "./DataDenormalizer"
-import { NormalizedType } from "./NormalizedType"
-import { NormalizedObjectRef, NormalizedObjectKey } from "./NormalizedObject"
+import {
+  NormalizedType,
+  NormalizedObjectRef,
+  NormalizedObjectKey,
+} from "../common"
 import Selector from "./Selector"
+import DataDenormalizer from "./DataDenormalizer"
 
 afterAll(() => {
   // @ts-ignore

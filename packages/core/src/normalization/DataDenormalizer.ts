@@ -1,8 +1,11 @@
-import { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"
-import { NormalizedType } from "./NormalizedType"
+import {
+  NormalizedType,
+  NormalizedObjectKey,
+  NormalizedObjectRef,
+} from "../common"
 import Selector from "./Selector"
 
-class DataDenormalizer {
+export default class DataDenormalizer {
   constructor(
     private lookupObject: (
       type: NormalizedType,
@@ -40,5 +43,3 @@ class DataDenormalizer {
     return result
   }
 }
-
-export default DataDenormalizer
