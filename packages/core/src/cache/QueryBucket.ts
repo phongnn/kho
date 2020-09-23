@@ -3,9 +3,9 @@ import {
   BaseQueryKey,
   QueryUpdateFn,
   QueryUpdateInfoArgument,
-} from "../query/BaseQuery"
+} from "../common/BaseQuery"
 import Selector from "../normalization/Selector"
-import { Mutation } from "../query/Mutation"
+import { Mutation } from "../common/Mutation"
 
 // Equivalent query keys will share the same cache key
 // (a query can be used by multiple components or by one component but renderred several times).

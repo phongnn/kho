@@ -1,9 +1,9 @@
 import CacheContainer, { CacheKey } from "../../cache/CacheContainer"
-import { BaseQuery } from "../../query/BaseQuery"
-import { Query } from "../../query/Query"
-import { LocalQuery } from "../../query/LocalQuery"
-import CompoundQuery from "../../fetcher/CompoundQuery"
-import { Mutation } from "../../query/Mutation"
+import { BaseQuery } from "../../common/BaseQuery"
+import { Query } from "../../common/Query"
+import { LocalQuery } from "../../common/LocalQuery"
+import CompoundQuery from "../../common/CompoundQuery"
+import { Mutation } from "../../common/Mutation"
 
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void

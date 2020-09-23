@@ -1,13 +1,13 @@
 import { AdvancedStore } from "../Store"
-import { Query, QueryOptions } from "../../query/Query"
-import { Mutation, MutationOptions } from "../../query/Mutation"
+import { Query, QueryOptions } from "../../common/Query"
+import { Mutation, MutationOptions } from "../../common/Mutation"
 import CacheController from "./CacheController"
 import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
-import CompoundQuery from "../../fetcher/CompoundQuery"
-import { QueryUpdateInfoArgument } from "../../query/BaseQuery"
-import { LocalQuery } from "../../query/LocalQuery"
-import { getActualQuery } from "../../helpers"
+import CompoundQuery from "../../common/CompoundQuery"
+import { QueryUpdateInfoArgument } from "../../common/BaseQuery"
+import { LocalQuery } from "../../common/LocalQuery"
+import { getActualQuery } from "../../common/helpers"
 
 class StandardStore implements AdvancedStore {
   private cache = new CacheController()

@@ -1,5 +1,5 @@
-import { Query } from "../query/Query"
-import CompoundQuery from "./CompoundQuery"
+import { Query } from "../common/Query"
+import CompoundQuery from "../common/CompoundQuery"
 import CompoundQueryController from "./CompoundQueryController"
 
 const q1 = new Query("GetData", () => Promise.resolve("arbitrary-string"), {

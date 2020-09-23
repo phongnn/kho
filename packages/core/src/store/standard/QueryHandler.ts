@@ -1,9 +1,9 @@
 import { QueryRegistrationResult } from "../Store"
-import { Query } from "../../query/Query"
-import CompoundQuery from "../../fetcher/CompoundQuery"
+import { Query } from "../../common/Query"
+import CompoundQuery from "../../common/CompoundQuery"
 import Fetcher from "../../fetcher/Fetcher"
 import CacheController from "./CacheController"
-import { getActualQuery } from "../../helpers"
+import { getActualQuery } from "../../common/helpers"
 
 class QueryHandler {
   private fetcher = new Fetcher()

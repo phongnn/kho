@@ -1,6 +1,6 @@
-export { Query, QueryOptions } from "./query/Query"
-export { LocalQuery } from "./query/LocalQuery"
-export { Mutation, MutationOptions, KhoCache } from "./query/Mutation"
+export { Query, QueryOptions } from "./common/Query"
+export { LocalQuery } from "./common/LocalQuery"
+export { Mutation, MutationOptions, KhoCache } from "./common/Mutation"
 export {
   Store,
   AdvancedStore,

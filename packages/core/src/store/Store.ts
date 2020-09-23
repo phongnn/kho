@@ -1,6 +1,6 @@
-import { Query, QueryOptions } from "../query/Query"
-import { LocalQuery } from "../query/LocalQuery"
-import { Mutation, MutationOptions } from "../query/Mutation"
+import { Query, QueryOptions } from "../common/Query"
+import { LocalQuery } from "../common/LocalQuery"
+import { Mutation, MutationOptions } from "../common/Mutation"
 
 /** Public interface exposed to developers */
 export interface Store {

@@ -6,7 +6,7 @@ import {
 } from "./NormalizedType"
 import { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"
 import Selector from "./Selector"
-import { extractPlainKey } from "../helpers"
+import { extractPlainKey } from "../common/helpers"
 
 type NormalizedStructure =
   | any

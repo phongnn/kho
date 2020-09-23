@@ -1,7 +1,7 @@
 import CacheController from "./CacheController"
-import { Mutation } from "../../query/Mutation"
-import { isProduction } from "../../helpers"
-import { QueryUpdateInfoArgument } from "../../query/BaseQuery"
+import { Mutation } from "../../common/Mutation"
+import { isProduction } from "../../common/helpers"
+import { QueryUpdateInfoArgument } from "../../common/BaseQuery"
 
 class MutationHandler {
   constructor(private cache: CacheController) {}

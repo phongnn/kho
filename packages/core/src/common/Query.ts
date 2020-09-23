@@ -1,4 +1,4 @@
-import { deepEqual, mergeOptions } from "../helpers"
+import { deepEqual, mergeOptions } from "./helpers"
 import { NormalizedShape } from "../normalization/NormalizedType"
 import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
 

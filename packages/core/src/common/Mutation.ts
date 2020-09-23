@@ -3,7 +3,7 @@ import {
   NormalizedType,
 } from "../normalization/NormalizedType"
 import { BaseQuery, QueryUpdateInfoArgument } from "./BaseQuery"
-import { mergeOptions } from "../helpers"
+import { mergeOptions } from "./helpers"
 import { NormalizedObjectRef } from "../normalization/NormalizedObject"
 import { Store } from "../store/Store"
 

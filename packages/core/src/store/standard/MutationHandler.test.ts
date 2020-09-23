@@ -1,8 +1,8 @@
 import StandardStore from "./StandardStore"
-import { Query } from "../../query/Query"
-import { Mutation } from "../../query/Mutation"
+import { Query } from "../../common/Query"
+import { Mutation } from "../../common/Mutation"
 import { NormalizedType } from "../../normalization/NormalizedType"
-import { LocalQuery } from "../../query/LocalQuery"
+import { LocalQuery } from "../../common/LocalQuery"
 
 afterEach(() => {
   // @ts-ignore

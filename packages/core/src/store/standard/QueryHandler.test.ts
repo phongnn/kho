@@ -1,5 +1,5 @@
 import StandardStore from "./StandardStore"
-import { Query } from "../../query/Query"
+import { Query } from "../../common/Query"
 import { NormalizedType } from "../../normalization/NormalizedType"
 
 afterEach(() => {

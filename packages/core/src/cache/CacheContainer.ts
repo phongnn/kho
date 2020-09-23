@@ -1,6 +1,6 @@
-import { Query } from "../query/Query"
-import { BaseQuery, QueryUpdateInfoArgument } from "../query/BaseQuery"
-import { KhoCache, Mutation } from "../query/Mutation"
+import { Query } from "../common/Query"
+import { BaseQuery, QueryUpdateInfoArgument } from "../common/BaseQuery"
+import { KhoCache, Mutation } from "../common/Mutation"
 // prettier-ignore
 import { NormalizedType, NormalizedShape } from "../normalization/NormalizedType"
 // prettier-ignore
@@ -9,7 +9,7 @@ import DataNormalizer from "../normalization/DataNormalizer"
 import DataDenormalizer from "../normalization/DataDenormalizer"
 import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
-import { extractPlainKey, getActualQuery } from "../helpers"
+import { extractPlainKey, getActualQuery } from "../common/helpers"
 
 export { CacheKey } from "./QueryBucket"
 
