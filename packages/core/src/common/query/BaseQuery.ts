@@ -1,4 +1,4 @@
-import { NormalizedShape } from "./NormalizedType"
+import { NormalizedShape } from "../NormalizedType"
 
 export interface BaseQueryKey {
   matches(qk: BaseQueryKey): boolean

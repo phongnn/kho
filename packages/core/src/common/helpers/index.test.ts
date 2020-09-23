@@ -1,4 +1,4 @@
-import { mergeOptions, deepEqual } from "./helpers"
+import { mergeOptions, deepEqual } from "."
 
 // prettier-ignore
 test("deepEqual() should work", () => {

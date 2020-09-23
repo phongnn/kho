@@ -1,10 +1,10 @@
-import { Store } from "./Store"
+import { Store } from "../Store"
 import { Query } from "./Query"
 import { LocalQuery } from "./LocalQuery"
 import { QueryUpdateInfoArgument } from "./BaseQuery"
-import { NormalizedShape, NormalizedType } from "./NormalizedType"
-import { NormalizedObjectRef } from "./NormalizedObject"
-import { mergeOptions } from "./helpers"
+import { NormalizedShape, NormalizedType } from "../NormalizedType"
+import { NormalizedObjectRef } from "../NormalizedObject"
+import { mergeOptions } from "../helpers"
 
 /** Interface exposed for use only in mutations' beforeQueryUpdates() */
 export interface CacheFacade {

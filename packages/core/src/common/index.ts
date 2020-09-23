@@ -4,12 +4,11 @@ export {
   BaseQueryKey,
   QueryUpdateFn,
   QueryUpdateInfoArgument,
-} from "./BaseQuery"
-export { QueryOptions, Query } from "./Query"
-export { LocalQuery } from "./LocalQuery"
-export { CompoundQuery } from "./CompoundQuery"
-export { Mutation, MutationOptions, CacheFacade } from "./Mutation"
-
+} from "./query/BaseQuery"
+export { QueryOptions, Query } from "./query/Query"
+export { LocalQuery } from "./query/LocalQuery"
+export { CompoundQuery } from "./query/CompoundQuery"
+export { Mutation, MutationOptions, CacheFacade } from "./query/Mutation"
 export {
   NormalizedTypePlaceholder,
   NormalizedType,

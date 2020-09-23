@@ -1,5 +1,5 @@
 import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
-import { NormalizedShape } from "./NormalizedType"
+import { NormalizedShape } from "../NormalizedType"
 
 class LocalQueryKey implements BaseQueryKey {
   constructor(private name: string) {}

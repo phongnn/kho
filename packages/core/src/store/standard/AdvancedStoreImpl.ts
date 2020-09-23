@@ -1,14 +1,14 @@
-import { AdvancedStore } from "../AdvancedStore"
 import {
-  QueryUpdateInfoArgument,
   Query,
   QueryOptions,
   LocalQuery,
   CompoundQuery,
   Mutation,
   MutationOptions,
+  QueryUpdateInfoArgument,
 } from "../../common"
 import { getActualQuery } from "../../common/helpers"
+import { AdvancedStore } from "../AdvancedStore"
 import CacheController from "./CacheController"
 import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
