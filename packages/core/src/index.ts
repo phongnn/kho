@@ -7,11 +7,12 @@ export {
   MutationOptions,
   CacheFacade,
 } from "./common"
+
 export {
+  createStore,
   AdvancedStore,
-  RefetchFn,
-  FetchMoreFn,
   QueryRegistrationResult,
   LocalQueryRegistrationResult,
-} from "./store/AdvancedStore"
-export { createStore } from "./store/createStore"
+  RefetchFn,
+  FetchMoreFn,
+} from "./store"
