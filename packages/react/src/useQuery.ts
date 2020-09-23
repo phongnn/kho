@@ -1,12 +1,15 @@
 import { useRef, useEffect } from "react"
-import { QueryOptions, Query, InternalStore } from "@fnc/core"
+import { QueryOptions, Query, AdvancedStore } from "@fnc/core"
 
-import { useInternalStore } from "./Provider"
-import { useDataLoadingState, registerQuery } from "./useDataLoadingState"
-import { deepEqual } from "./helpers"
+import { useAdvancedStore } from "./Provider"
+import {
+  useDataLoadingState,
+  registerQuery,
+} from "./common/useDataLoadingState"
+import { deepEqual } from "./common/helpers"
 
 type QueryDependencyList = [
-  InternalStore,
+  AdvancedStore,
   React.Dispatch<any>,
   Query<any, any, any>,
   QueryOptions<any, any, any> | undefined
@@ -39,7 +42,7 @@ export function useQuery<TResult, TArguments, TContext>(
   query: Query<TResult, TArguments, TContext>,
   options?: Omit<QueryOptions<TResult, TArguments, TContext>, "shape" | "merge">
 ) {
-  const store = useInternalStore()
+  const store = useAdvancedStore()
   const { state, dispatch } = useDataLoadingState(query)
 
   useCustomEffect(() => {

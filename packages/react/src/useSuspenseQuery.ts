@@ -1,13 +1,13 @@
 import { Reducer, useCallback, useEffect, useReducer } from "react"
 import {
-  InternalFetchMoreFn,
-  InternalRefetchFn,
+  FetchMoreFn as InternalFetchMoreFn,
+  RefetchFn as InternalRefetchFn,
   Query,
   QueryOptions,
 } from "@fnc/core"
 
-import { useInternalStore } from "./Provider"
-import { FetchMoreFn } from "./types"
+import { useAdvancedStore } from "./Provider"
+import { FetchMoreFn } from "./common/types"
 
 export interface CustomState<TResult> {
   data: TResult
@@ -100,7 +100,7 @@ export function useSuspenseQuery<TResult, TArguments, TContext>(
   query: Query<TResult, TArguments, TContext>,
   options?: Omit<QueryOptions<TResult, TArguments, TContext>, "shape" | "merge">
 ) {
-  const store = useInternalStore()
+  const store = useAdvancedStore()
   const realQuery = !options ? query : query.withOptions(options)
 
   const existingEntry = suspenseQueryRegistry.get(key)

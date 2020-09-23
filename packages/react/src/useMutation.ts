@@ -1,7 +1,7 @@
 import { useReducer, Reducer } from "react"
 import { MutationOptions, Mutation } from "@fnc/core"
 
-import { useInternalStore } from "./Provider"
+import { useAdvancedStore } from "./Provider"
 
 interface MutationState {
   loading: boolean
@@ -47,7 +47,7 @@ export function useMutation<TResult, TArguments, TContext>(
     "shape" | "update"
   > = {}
 ) {
-  const store = useInternalStore()
+  const store = useAdvancedStore()
   const { state, dispatch } = useCustomState()
   const originalOptions = options
 

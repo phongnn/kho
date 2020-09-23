@@ -1,28 +1,28 @@
 import React, { ReactElement, useContext } from "react"
-import { Store, InternalStore } from "@fnc/core"
+import { Store, AdvancedStore } from "@fnc/core"
 
-const FNCContext = React.createContext<Store | null>(null)
+const StoreContext = React.createContext<Store | null>(null)
 
 export function Provider(props: { store: Store; children: ReactElement }) {
   const { store, children } = props
-  return <FNCContext.Provider value={store}>{children}</FNCContext.Provider>
+  return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
 }
 
-export function useInternalStore() {
-  const store = useContext(FNCContext)
+export function useAdvancedStore() {
+  const store = useContext(StoreContext)
   if (!store) {
     throw new Error(
-      "FNC store not found. Make sure you have a Provider component in the tree."
+      "Data store not found. Make sure you have a Provider component in the tree."
     )
   }
-  return store as InternalStore
+  return store as AdvancedStore
 }
 
 export function useStore() {
-  const store = useContext(FNCContext)
+  const store = useContext(StoreContext)
   if (!store) {
     throw new Error(
-      "FNC store not found. Make sure you have a Provider component in the tree."
+      "Data store not found. Make sure you have a Provider component in the tree."
     )
   }
   return store

@@ -2,7 +2,7 @@ module.exports = {
   transform: {
     "\\.tsx?$": "ts-jest",
   },
-  // testPathIgnorePatterns: ["<rootDir>/node_modules/"],
-  setupFilesAfterEnv: ["<rootDir>/src/setupTests.ts"],
+  testPathIgnorePatterns: ["__setup__.ts"],
+  setupFilesAfterEnv: ["<rootDir>/src/__tests__/__setup__.ts"],
   clearMocks: true,
 }

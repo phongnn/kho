@@ -1,8 +1,8 @@
 import { useReducer, Reducer } from "react"
 import {
-  InternalFetchMoreFn,
-  InternalRefetchFn,
-  InternalStore,
+  FetchMoreFn as InternalFetchMoreFn,
+  RefetchFn as InternalRefetchFn,
+  AdvancedStore,
   Query,
 } from "@fnc/core"
 
@@ -42,13 +42,13 @@ const initialState: DataLoadingState<any, any, any> = {
   error: null,
   fetchMore: () => {
     // prettier-ignore
-    throw new Error(`[react-fnc] fetchMore() can only be called after successful data loading.`)
+    throw new Error(`[react-kho] fetchMore() can only be called after successful data loading.`)
   },
   fetchingMore: false,
   fetchMoreError: null,
   refetch: () => {
     // prettier-ignore
-    throw new Error(`[react-fnc] refetch() can only be called after successful data loading.`)
+    throw new Error(`[react-kho] refetch() can only be called after successful data loading.`)
   },
   refetching: false,
   refetchError: null,
@@ -130,7 +130,7 @@ export function useDataLoadingState<TResult, TArguments, TContext>(
 }
 
 export function registerQuery<TResult, TArguments, TContext>(
-  store: InternalStore,
+  store: AdvancedStore,
   query: Query<TResult, TArguments, TContext>,
   dispatch: React.Dispatch<DataLoadingAction<TResult, TArguments, TContext>>
 ) {
