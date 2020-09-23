@@ -1,4 +1,4 @@
-import { AdvancedStore } from "../Store"
+import { AdvancedStore } from "../AdvancedStore"
 import {
   QueryUpdateInfoArgument,
   Query,
@@ -13,7 +13,7 @@ import CacheController from "./CacheController"
 import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
 
-class StandardStore implements AdvancedStore {
+class AdvancedStoreImpl implements AdvancedStore {
   private cache = new CacheController()
   private queryHandler = new QueryHandler(this.cache)
   private mutationHandler = new MutationHandler(this.cache)
@@ -213,4 +213,4 @@ class StandardStore implements AdvancedStore {
   }
 }
 
-export default StandardStore
+export default AdvancedStoreImpl

@@ -2,14 +2,17 @@ import {
   NormalizedShape,
   NormalizedType,
 } from "../normalization/NormalizedType"
-import { BaseQuery, QueryUpdateInfoArgument } from "./BaseQuery"
+import { QueryUpdateInfoArgument } from "./BaseQuery"
 import { mergeOptions } from "./helpers"
 import { NormalizedObjectRef } from "../normalization/NormalizedObject"
-import { Store } from "../store/Store"
+import { Store } from "./Store"
+import { Query } from "./Query"
+import { LocalQuery } from "./LocalQuery"
 
 /** Interface exposed for use only in mutations' beforeQueryUpdates() */
-export interface KhoCache {
-  readQuery(query: BaseQuery): any
+export interface CacheFacade {
+  // prettier-ignore
+  readQuery<TResult>(query: Query<TResult, any, any> | LocalQuery<TResult>): TResult
   addObject(type: NormalizedType, data: any): NormalizedObjectRef
   findObjectRef(type: NormalizedType, key: any): NormalizedObjectRef | null
   readObject(ref: NormalizedObjectRef): any
@@ -23,7 +26,7 @@ export interface MutationOptions<TResult, TArguments, TContext> {
   shape?: NormalizedShape
   optimisticResponse?: any
   beforeQueryUpdates?: (
-    cache: KhoCache,
+    cache: CacheFacade,
     info: Omit<QueryUpdateInfoArgument, "context">
   ) => any
   afterQueryUpdates?: (store: Store, info: QueryUpdateInfoArgument) => any

@@ -1,17 +1,17 @@
 export {
+  Store,
   Query,
   QueryOptions,
   LocalQuery,
   Mutation,
   MutationOptions,
-  KhoCache,
+  CacheFacade,
 } from "./common"
 export {
-  Store,
   AdvancedStore,
   RefetchFn,
   FetchMoreFn,
   QueryRegistrationResult,
   LocalQueryRegistrationResult,
-} from "./store/Store"
+} from "./store/AdvancedStore"
 export { createStore } from "./store/createStore"

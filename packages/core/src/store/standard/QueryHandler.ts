@@ -1,4 +1,4 @@
-import { QueryRegistrationResult } from "../Store"
+import { QueryRegistrationResult } from "../AdvancedStore"
 import { Query, CompoundQuery } from "../../common"
 import Fetcher from "../../fetcher/Fetcher"
 import CacheController from "./CacheController"

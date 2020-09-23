@@ -13,7 +13,7 @@ class CompoundQueryKey implements BaseQueryKey {
  * This class is used for the handling of "fetchMore" functionality
  * where we merge data of subsequent queries into the data of the first one.
  */
-class CompoundQuery<TResult, TArguments, TContext>
+export class CompoundQuery<TResult, TArguments, TContext>
   extends BaseQuery
   implements Iterable<Query<TResult, TArguments, TContext>> {
   private queries = new Set<Query<TResult, TArguments, TContext>>()

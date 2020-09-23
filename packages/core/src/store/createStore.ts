@@ -1,6 +1,6 @@
-import { Store } from "./Store"
-import StandardStore from "./standard/StandardStore"
+import { Store } from "../common"
+import AdvancedStoreImpl from "./standard/AdvancedStoreImpl"
 
 export function createStore(): Store {
-  return new StandardStore()
+  return new AdvancedStoreImpl()
 }

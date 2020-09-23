@@ -1,4 +1,4 @@
-import StandardStore from "./StandardStore"
+import AdvancedStoreImpl from "./AdvancedStoreImpl"
 import { Query } from "../../common"
 import { NormalizedType } from "../../normalization/NormalizedType"
 
@@ -15,7 +15,7 @@ describe("fetchPolicy", () => {
     const q1 = new Query("GetData", () => Promise.resolve(++count))
     const q2 = q1.clone()
 
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { unregister } = store.registerQuery(q1, {
       onData: (data) => {
         expect(data).toBe(1)
@@ -43,7 +43,7 @@ describe("fetchPolicy", () => {
     const q2 = q1.clone()
 
     let times = 0
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { unregister } = store.registerQuery(q1, {
       onData: () => {
         unregister()
@@ -71,7 +71,7 @@ describe("fetchPolicy", () => {
     const q1 = new Query("GetData", () => Promise.resolve(++count))
     const q2 = q1.withOptions({ fetchPolicy: "network-only" })
 
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { unregister } = store.registerQuery(q1, {
       onData: (data) => {
         expect(data).toBe(1) // value fetched and cached
@@ -95,7 +95,7 @@ describe("fetchPolicy", () => {
       () => new Promise<number>((r) => setTimeout(() => r(++count)))
     )
 
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     store.registerQuery(query, {
       onData: jest.fn(),
       onRequest: () =>
@@ -118,7 +118,7 @@ describe("fetchMore", () => {
   it("should throw error if merge() not defined", (done) => {
     expect.assertions(1)
     const query = new Query("GetData", () => Promise.resolve("Hello"))
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { fetchMore } = store.registerQuery(query, {
       onData: () => {
         setTimeout(() => {
@@ -139,7 +139,7 @@ describe("fetchMore", () => {
     const query = new Query("GetData", () => Promise.resolve(`*${++count}*`), {
       merge: (existingData, newData) => `${existingData}${newData}`,
     })
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { fetchMore } = store.registerQuery(query, {
       onData: (data) => {
         if (data === "*1*") {
@@ -165,7 +165,7 @@ describe("fetchMore", () => {
           `${existingData}${newData}`.replace("**", "*"),
       }
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { fetchMore } = store.registerQuery(query, {
       onData: (data) => {
         if (data === "*1*") {
@@ -188,7 +188,7 @@ describe("fetchMore", () => {
         merge: (e, n) => e + n,
       }
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { fetchMore } = store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -215,7 +215,7 @@ describe("fetchMore", () => {
         fetchPolicy: "network-only",
       }
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { fetchMore } = store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -238,7 +238,7 @@ describe("refetch", () => {
   it("should callback with updated data", (done) => {
     let count = 0
     const query = new Query("GetData", () => Promise.resolve(`*${++count}*`))
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { refetch } = store.registerQuery(query, {
       onData: (data) => {
         if (data === "*1*") {
@@ -263,7 +263,7 @@ describe("refetch", () => {
           `${existingData}${newData}`.replace("**", "*"),
       }
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const onRequest = jest.fn()
     const onComplete = jest.fn()
     const { fetchMore, refetch } = store.registerQuery(query, {
@@ -292,7 +292,7 @@ describe("refetch", () => {
       merge: (existingData, newData) =>
         `${existingData}${newData}`.replace("**", "*"),
     })
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { refetch } = store.registerQuery(query, {
       onData: (data) => {
         if (data === "*1*") {
@@ -315,7 +315,7 @@ describe("refetch", () => {
       }
     )
 
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { fetchMore, refetch } = store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -337,7 +337,7 @@ describe("refetch", () => {
       "GetData",
       () => new Promise((r) => setTimeout(() => r(++count)))
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -364,7 +364,7 @@ describe("polling", () => {
     const query = new Query("GetData", () => Promise.resolve(`*${++count}*`), {
       pollInterval: intervalMs,
     })
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     jest.useFakeTimers()
     const { stopPolling } = store.registerQuery(query, {
@@ -384,7 +384,7 @@ describe("polling", () => {
     const query = new Query("GetData", () => Promise.resolve(), {
       pollInterval: intervalMs,
     })
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     let counter = 0
     jest.useFakeTimers()
@@ -413,7 +413,7 @@ describe("polling", () => {
       pollInterval: intervalMs,
       fetchPolicy: "network-only",
     })
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     jest.useFakeTimers()
     const { stopPolling } = store.registerQuery(query, {
@@ -435,7 +435,7 @@ describe("polling", () => {
       pollInterval: intervalMs,
       fetchPolicy: "network-only",
     })
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     let counter = 0
     jest.useFakeTimers()

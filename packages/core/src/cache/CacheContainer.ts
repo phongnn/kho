@@ -2,7 +2,7 @@ import {
   Query,
   BaseQuery,
   QueryUpdateInfoArgument,
-  KhoCache,
+  CacheFacade,
   Mutation,
 } from "../common"
 // prettier-ignore
@@ -17,7 +17,7 @@ import { extractPlainKey, getActualQuery } from "../common/helpers"
 
 export { CacheKey } from "./QueryBucket"
 
-class CacheContainer implements KhoCache {
+class CacheContainer implements CacheFacade {
   private queryBucket = new QueryBucket()
   private objectBucket = new ObjectBucket()
 
@@ -105,7 +105,7 @@ class CacheContainer implements KhoCache {
     this.queryBucket.clear()
   }
 
-  //============= KhoCache methods (called only from mutation's update()) =========
+  //============= CacheFacade methods (called only from mutation's beforeQueryUpdates()) =========
 
   readQuery(query: BaseQuery) {
     const actualQuery = query instanceof Query ? getActualQuery(query) : query

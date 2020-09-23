@@ -158,4 +158,4 @@ describe("request dedup", () => {
   })
 })
 
-/** fetching CompoundQuery: see StandardStore test cases */
+/** fetching CompoundQuery: see AdvancedStoreImpl test cases */

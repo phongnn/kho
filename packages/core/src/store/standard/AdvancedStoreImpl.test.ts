@@ -1,5 +1,5 @@
 import { Query, LocalQuery, Mutation } from "../../common"
-import StandardStore from "./StandardStore"
+import AdvancedStoreImpl from "./AdvancedStoreImpl"
 import { NormalizedType } from "../../normalization/NormalizedType"
 
 afterEach(() => {
@@ -23,7 +23,7 @@ describe("LocalQuery", () => {
         UpdateData: (_, { mutationResult }) => mutationResult,
       },
     })
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     store.registerLocalQuery(query, {
       onData: (data) => {
         if (data === initialValue) {
@@ -40,7 +40,7 @@ describe("LocalQuery", () => {
 describe("query()", () => {
   it("should load and return data", async () => {
     const query = new Query("GetData", jest.fn().mockResolvedValue("hello"))
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const result = await store.query(query)
     expect(result).toBe("hello")
   })
@@ -48,7 +48,7 @@ describe("query()", () => {
   it("should load and return error", async () => {
     // prettier-ignore
     const query = new Query("GetData", jest.fn().mockRejectedValue("strange error"))
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     jest.spyOn(console, "error").mockImplementation(() => {})
     expect.assertions(1)
@@ -65,7 +65,7 @@ describe("query()", () => {
       "GetData",
       () => new Promise((r) => setTimeout(() => r(++count)))
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     store.registerQuery(query, {
       onData: () => {
@@ -84,7 +84,7 @@ describe("query()", () => {
       "GetData",
       () => new Promise((r) => setTimeout(() => r(++count)))
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     const { unregister } = store.registerQuery(query, {
       onData: () => {
@@ -107,7 +107,7 @@ describe("query()", () => {
       () => new Promise((r) => setTimeout(() => r(++count))),
       { merge: (e, n) => e + n }
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     store.registerQuery(query, {
       onData: () => {
@@ -127,7 +127,7 @@ describe("query()", () => {
       () => new Promise((r) => setTimeout(() => r(++count))),
       { merge: (e, n) => e + n }
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     store.query(query).then(() => {
       store.registerQuery(query, {
@@ -145,7 +145,7 @@ describe("query()", () => {
       "GetData",
       () => new Promise((r) => setTimeout(() => r(++count)))
     )
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
 
     store.registerQuery(query, {
       onRequest: () => {
@@ -172,7 +172,7 @@ describe("mutate()", () => {
       syncMode: true,
     })
 
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     await store.mutate(mutation, { arguments: args })
 
     expect(mutateFn).toBeCalledWith(args, {})
@@ -201,7 +201,7 @@ describe("refetchQueries()", () => {
       }
     )
 
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     store.registerQuery(q1, {
       onData: (countValue) => {
         if (countValue > 2) {
@@ -240,7 +240,7 @@ describe("refetchQueries()", () => {
 
     let mutationTriggered = false
     let mutationCompleted = false
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { fetchMore } = store.registerQuery(
       query.withOptions({ arguments: { x: 1 } }),
       {
@@ -278,7 +278,7 @@ describe("refetchQueries()", () => {
       }
     )
 
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { unregister } = store.registerQuery(query, {
       onData: () => {
         unregister() // make the query inactive
@@ -313,7 +313,7 @@ describe("setQueryData()", () => {
       { shape: [UserType] }
     )
 
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     store.registerQuery(query, {
       onData: (data) => {
         if (data.length === 1) {
@@ -333,7 +333,7 @@ describe("setQueryData()", () => {
     const query = new Query("GetData", () => Promise.resolve(1), {
       merge: (e, n) => e + n,
     })
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { fetchMore } = store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -353,7 +353,7 @@ describe("deleteQuery()", () => {
   it("should refetch active query", (done) => {
     let count = 0
     const query = new Query("GetX", () => Promise.resolve(++count))
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -370,7 +370,7 @@ describe("deleteQuery()", () => {
     let count = 0
     // prettier-ignore
     const query = new Query("GetY", () => Promise.resolve(++count), { merge: (e, n) => e + n })
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     const { fetchMore } = store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -396,7 +396,7 @@ describe("deleteQuery()", () => {
     // prettier-ignore
     const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
 
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     let valueSet = false
     store.registerLocalQuery(query, {
       onData: (data) => {
@@ -418,7 +418,7 @@ describe("resetStore()", () => {
   it("should reset cache and refetch active query", (done) => {
     let count = 0
     const query = new Query("GetData", () => Promise.resolve(++count))
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -440,7 +440,7 @@ describe("resetStore()", () => {
     })
     // prettier-ignore
     const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
-    const store = new StandardStore()
+    const store = new AdvancedStoreImpl()
     let valueSet = false
     store.registerLocalQuery(query, {
       onData: (data) => {
