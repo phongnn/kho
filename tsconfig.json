@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2015",
+    "module": "commonjs",
+    // "declaration": true,
+    "sourceMap": true,
+    // "lib": ["es2015"],
+    "rootDir": "./src",
+    // "outDir": "./lib",
+    "removeComments": true,
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["**/__tests__/*", "**/*.test.ts", "lib", "node_modules"]
+}

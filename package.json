@@ -1,13 +1,49 @@
 {
-  "name": "root",
-  "private": true,
+  "name": "kho",
+  "description": "A library that fetches, normalizes and caches data for your front-end application.",
+  "author": "Nguyen Nam Phong <phongnn@gmail.com>",
+  "version": "0.0.1",
   "license": "MIT",
-  "devDependencies": {
-    "lerna": "^3.22.1",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+  "keywords": [
+    "kho",
+    "state",
+    "fetch",
+    "normalize",
+    "cache"
+  ],
+  "homepage": "https://github.com/phongnn/kho",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phongnn/kho.git"
   },
-  "workspaces": [
-    "packages/*"
-  ]
+  "bugs": {
+    "url": "https://github.com/phongnn/kho/issues"
+  },
+  "main": "lib/index.js",
+  "module": "lib/index.esm.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "clean": "rimraf lib",
+    "tsc": "tsc --outDir lib --declaration true",
+    "build": "npm run clean && npm run tsc && rollup -c",
+    "prepublish": "npm run build"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^6.0.0",
+    "@types/jest": "^26.0.10",
+    "@types/node": "^14.6.0",
+    "eslint": "^7.7.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "jest": "^26.4.2",
+    "prettier": "^2.1.0",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.28.1",
+    "ts-jest": "^26.2.0",
+    "tslib": "^2.0.1",
+    "typescript": "^4.0.2"
+  },
+  "sideEffects": false
 }
