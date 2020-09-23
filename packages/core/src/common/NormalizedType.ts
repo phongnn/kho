@@ -1,17 +1,6 @@
-export interface RecordOf<T> {
+interface RecordOf<T> {
   [k: string]: T
 }
-
-type NormalizedTypeShape = RecordOf<NormalizedTypeShapeValue>
-export type NormalizedTypeShapeValue =
-  | NormalizedType
-  | NormalizedTypePlaceholder
-  | RecordOf<NormalizedTypeShapeValue>
-  | [
-      | NormalizedType
-      | NormalizedTypePlaceholder
-      | RecordOf<NormalizedTypeShapeValue>
-    ]
 
 export class NormalizedTypePlaceholder {
   constructor(readonly name: string, readonly getType: () => NormalizedType) {}
@@ -55,6 +44,13 @@ export class NormalizedType {
     readonly shape?: NormalizedTypeShape
   ) {}
 }
+
+export type NormalizedTypeShape = RecordOf<NormalizedTypeShapeValue>
+type NormalizedTypeShapeValue =
+  | NormalizedType
+  | NormalizedTypePlaceholder
+  | NormalizedTypeShape
+  | [NormalizedType | NormalizedTypePlaceholder | NormalizedTypeShape]
 
 /** Shape of a query's result */
 export type NormalizedShape =

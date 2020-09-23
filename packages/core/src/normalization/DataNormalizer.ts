@@ -1,10 +1,9 @@
 import {
   NormalizedType,
-  NormalizedTypeShapeValue,
   NormalizedTypePlaceholder,
-  RecordOf,
   NormalizedObjectKey,
   NormalizedObjectRef,
+  NormalizedTypeShape,
 } from "../common"
 import { extractPlainKey } from "../common/helpers"
 import Selector from "./Selector"
@@ -24,7 +23,14 @@ export default class DataNormalizer {
     ) => NormalizedObjectKey | null
   ) {}
 
-  normalize(data: any, shape: NormalizedTypeShapeValue) {
+  normalize(
+    data: any,
+    shape:
+      | NormalizedType
+      | NormalizedTypePlaceholder
+      | NormalizedTypeShape
+      | [NormalizedType | NormalizedTypePlaceholder | NormalizedTypeShape]
+  ) {
     if (Array.isArray(shape)) {
       if (shape.length !== 1) {
         throw new Error(
@@ -39,10 +45,7 @@ export default class DataNormalizer {
 
   private normalizeObject(
     data: any,
-    shape:
-      | NormalizedType
-      | NormalizedTypePlaceholder
-      | RecordOf<NormalizedTypeShapeValue>
+    shape: NormalizedType | NormalizedTypePlaceholder | NormalizedTypeShape
   ) {
     if (!data) {
       return {
@@ -93,10 +96,7 @@ export default class DataNormalizer {
     }
   }
 
-  private normalizeUntypedObject(
-    data: any,
-    shape: RecordOf<NormalizedTypeShapeValue>
-  ) {
+  private normalizeUntypedObject(data: any, shape: NormalizedTypeShape) {
     let result: NormalizedStructure = {}
     const objects: NormalizedObjects = new Map()
     const selector = new Selector()
@@ -120,10 +120,7 @@ export default class DataNormalizer {
 
   private normalizeArray(
     data: any[],
-    itemType:
-      | NormalizedType
-      | NormalizedTypePlaceholder
-      | RecordOf<NormalizedTypeShapeValue>
+    itemType: NormalizedType | NormalizedTypePlaceholder | NormalizedTypeShape
   ) {
     if (data && !Array.isArray(data)) {
       const typeName =

@@ -6,6 +6,9 @@ export {
   Mutation,
   MutationOptions,
   CacheFacade,
+  NormalizedObjectRef,
+  NormalizedType,
+  NormalizedShape,
 } from "./common"
 
 export {

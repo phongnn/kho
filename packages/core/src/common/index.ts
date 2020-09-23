@@ -11,10 +11,9 @@ export { CompoundQuery } from "./CompoundQuery"
 export { Mutation, MutationOptions, CacheFacade } from "./Mutation"
 
 export {
-  NormalizedType,
-  NormalizedTypeShapeValue,
   NormalizedTypePlaceholder,
-  RecordOf,
+  NormalizedType,
+  NormalizedTypeShape,
   NormalizedShape,
 } from "./NormalizedType"
 export { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"
