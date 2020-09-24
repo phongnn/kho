@@ -10,7 +10,7 @@
     "outDir": "./lib",
     "declaration": false,
     "sourceMap": true,
-    "removeComments": true,
+    "removeComments": false,
     "importHelpers": true,
     "downlevelIteration": true,
     "strict": true,

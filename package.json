@@ -4,7 +4,7 @@
   "author": "Nguyen Nam Phong <phongnn@gmail.com>",
   "version": "0.0.1",
   "license": "MIT",
-  "keywords": [ "kho", "state", "fetch", "normalize", "cache" ],
+  "keywords": ["kho", "state", "fetch", "normalize", "cache"],
   "homepage": "https://github.com/phongnn/kho",
   "repository": {
     "type": "git",
@@ -16,14 +16,15 @@
   "main": "lib/index.js",
   "module": "esm/index.js",
   "types": "types/index.d.ts",
-  "files": [ "lib", "esm", "types" ],
+  "files": ["lib", "esm", "types", "dist", "src"],
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "clean": "rimraf lib esm types",
+    "clean": "rimraf lib esm types dist",
+    "build:cjs": "tsc",
     "build:esm": "tsc --module ES6 --outDir esm --declaration true --declarationDir types",
-    "build:cjs": "ncc build src/index.ts -o lib -m",
-    "build": "npm run clean && npm run build:esm && npm run build:cjs"
+    "build:dist": "ncc build src/index.ts -o dist -m",
+    "build": "npm run clean && npm run build:cjs && npm run build:esm && npm run build:dist"
   },
   "devDependencies": {
     "@types/jest": "^26.0.10",
