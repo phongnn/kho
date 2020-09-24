@@ -5,7 +5,7 @@
     "esModuleInterop": true,
     "moduleResolution": "Node",
     "lib": ["ES2015", "DOM"],
-    "types": ["node"],
+    "types": ["node", "jest"],
     "rootDir": "./src",
     "outDir": "./lib",
     "declaration": false,
@@ -14,7 +14,7 @@
     "importHelpers": true,
     "downlevelIteration": true,
     "strict": true,
-    "noImplicitAny": true,
+    "noImplicitAny": true
   },
   "include": ["./src/**/*.ts"],
   "exclude": ["__tests__", "**/*.test.ts"]
