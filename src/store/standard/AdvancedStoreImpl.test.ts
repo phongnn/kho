@@ -174,7 +174,7 @@ describe("mutate()", () => {
     const store = new AdvancedStoreImpl()
     await store.mutate(mutation, { arguments: args })
 
-    expect(mutateFn).toBeCalledWith(args, {})
+    expect(mutateFn).toBeCalledWith(args, {}, store)
     expect(fn1).toBeCalled()
     expect(fn2).toBeCalled()
   })

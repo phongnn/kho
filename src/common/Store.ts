@@ -18,7 +18,11 @@ export interface Store {
       MutationOptions<TResult, TArguments, TContext>,
       "arguments" | "context" | "optimisticResponse"
     >
-  ): Promise<void>
+  ): Promise<TResult>
+
+  getQueryData<TResult>(
+    query: Query<TResult, any, any> | LocalQuery<TResult>
+  ): TResult | undefined
 
   setQueryData<TResult>(
     query: Query<TResult, any, any> | LocalQuery<TResult>,

@@ -1,17 +1,17 @@
 import CacheController from "./CacheController"
-import { Mutation, QueryUpdateInfoArgument } from "../../common"
+import { Store, Mutation } from "../../common"
 import { isProduction } from "../../common/helpers"
 
 class MutationHandler {
-  constructor(private cache: CacheController) {}
+  constructor(private store: Store, private cache: CacheController) {}
 
   processMutation<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
     callbacks: {
       onRequest?: () => void
       onError?: (err: Error) => void
-      onComplete: (info: QueryUpdateInfoArgument) => void
-    }
+      onComplete?: (data: TResult) => void
+    } = {}
   ) {
     const { fn, options } = mutation
     const { onRequest, onError, onComplete } = callbacks
@@ -25,22 +25,53 @@ class MutationHandler {
     let done = false
 
     if (options.optimisticResponse) {
-      setTimeout(
-        () =>
-          !done &&
-          this.cache.storeMutationResult(
-            mutation,
-            options.optimisticResponse,
-            true
-          )
-      )
+      setTimeout(() => {
+        if (done) {
+          return
+        }
+
+        this.cache.storeMutationResult(
+          mutation,
+          options.optimisticResponse,
+          true
+        )
+
+        if (options.afterQueryUpdates) {
+          options.afterQueryUpdates(this.store, {
+            mutationResult: options.optimisticResponse,
+            mutationArgs: options.arguments!,
+            optimistic: true,
+          })
+        }
+      })
     }
 
-    fn(options.arguments!, options.context as TContext)
+    fn(options.arguments!, options.context as TContext, this.store)
       .then((data) => {
         done = true // note: we can't use finally clause for this
-        const info = this.cache.storeMutationResult(mutation, data)
-        onComplete(info)
+        this.cache.storeMutationResult(mutation, data)
+
+        const { afterQueryUpdates, syncMode = false } = options
+        if (afterQueryUpdates) {
+          const info = {
+            mutationResult: data,
+            mutationArgs: options.arguments!,
+            optimistic: false,
+          }
+
+          if (!syncMode) {
+            setTimeout(() => afterQueryUpdates(this.store, info))
+          } else {
+            const x = afterQueryUpdates(this.store, info)
+            if (x && x.then) {
+              return x.then(onComplete, onError)
+            }
+          }
+        }
+
+        if (onComplete) {
+          onComplete(data)
+        }
       })
       .catch((e) => {
         done = true // note: we can't use finally clause for this

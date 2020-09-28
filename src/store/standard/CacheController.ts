@@ -83,7 +83,7 @@ class CacheController {
 
   storeMutationResult<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
-    data: any,
+    data: TResult,
     optimistic: boolean = false
   ) {
     const { shape, beforeQueryUpdates } = mutation.options
@@ -93,19 +93,16 @@ class CacheController {
 
     const info = {
       mutationResult: normalizedData ?? data,
-      mutationArgs: mutation.options.arguments,
+      mutationArgs: mutation.options.arguments!,
       optimistic,
     }
-    const queryUpdateContext = beforeQueryUpdates
-      ? beforeQueryUpdates(this.cache, info)
-      : undefined
 
-    const infoWithContext = { ...info, context: queryUpdateContext }
-    this.cache.updateRelatedQueries(mutation, infoWithContext)
+    if (beforeQueryUpdates) {
+      beforeQueryUpdates(this.cache, info)
+    }
+    this.cache.updateRelatedQueries(mutation, info)
 
     this.notifyActiveQueries()
-
-    return infoWithContext // for afterQueryUpdates() processing
   }
 
   removeInactiveQueries(inactiveQueries: BaseQuery[]) {

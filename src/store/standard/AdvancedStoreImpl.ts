@@ -5,7 +5,6 @@ import {
   CompoundQuery,
   Mutation,
   MutationOptions,
-  QueryUpdateInfoArgument,
 } from "../../common"
 import { getActualQuery } from "../../common/helpers"
 import { AdvancedStore } from "../AdvancedStore"
@@ -16,7 +15,7 @@ import MutationHandler from "./MutationHandler"
 class AdvancedStoreImpl implements AdvancedStore {
   private cache = new CacheController()
   private queryHandler = new QueryHandler(this.cache)
-  private mutationHandler = new MutationHandler(this.cache)
+  private mutationHandler = new MutationHandler(this, this.cache)
 
   //========== AdvancedStore interface's methods =============
 
@@ -51,30 +50,10 @@ class AdvancedStoreImpl implements AdvancedStore {
     callbacks: {
       onRequest?: () => void
       onError?: (err: Error) => void
-      onComplete?: () => void
+      onComplete?: (data: TResult) => void
     } = {}
   ) {
-    const { onRequest, onError, onComplete } = callbacks
-    this.mutationHandler.processMutation(mutation, {
-      onRequest,
-      onError,
-      onComplete: (info: QueryUpdateInfoArgument) => {
-        const { afterQueryUpdates, syncMode = false } = mutation.options
-        if (afterQueryUpdates) {
-          if (!syncMode) {
-            setTimeout(() => afterQueryUpdates(this, info))
-          } else {
-            const x = afterQueryUpdates(this, info)
-            if (x && x.then) {
-              return x.then(onComplete, onError)
-            }
-          }
-        }
-        if (onComplete) {
-          onComplete()
-        }
-      },
-    })
+    this.mutationHandler.processMutation(mutation, callbacks)
   }
 
   //========== Store interface's methods =============
@@ -101,12 +80,17 @@ class AdvancedStoreImpl implements AdvancedStore {
     > = {}
   ) {
     const actualMutation = mutation.withOptions(options)
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<TResult>((resolve, reject) => {
       this.processMutation(actualMutation, {
         onComplete: resolve,
         onError: reject,
       })
     })
+  }
+
+  getQueryData<TResult>(query: Query<TResult, any, any> | LocalQuery<TResult>) {
+    const actualQuery = query instanceof Query ? getActualQuery(query) : query
+    return this.cache.retrieveQueryData(actualQuery) as TResult | undefined
   }
 
   setQueryData<TResult>(

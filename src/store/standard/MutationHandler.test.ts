@@ -29,9 +29,10 @@ describe("callbacks", () => {
     const store = new AdvancedStoreImpl()
     store.processMutation(mutation, {
       onRequest,
-      onComplete: () => {
+      onComplete: (data) => {
         expect(onRequest).toBeCalled()
-        expect(fn).toBeCalledWith(args, context)
+        expect(fn).toBeCalledWith(args, context, store)
+        expect(data).toBe(result)
         done()
       },
     })
@@ -192,17 +193,17 @@ describe("beforeQueryUpdates()", () => {
         shape: [UserType],
         mutations: {
           // prettier-ignore
-          AddUser: (currentValue, { context: { newUserRef } }) => [...currentValue, newUserRef],
+          AddUser: (currentValue, { mutationResult: newUserRef }) => [...currentValue, newUserRef],
         },
       }
     )
-    const mutation = new Mutation("AddUser", () => Promise.resolve(), {
-      beforeQueryUpdates: (cache) => {
-        // prettier-ignore
-        const ref = cache.addObject(UserType, { username: "y", email: "y@t.s", avatar: "http" })
-        return { newUserRef: ref }
-      },
-    })
+    const mutation = new Mutation(
+      "AddUser",
+      () => Promise.resolve({ username: "y", email: "y@t.s", avatar: "http" }),
+      {
+        shape: UserType,
+      }
+    )
     const store = new AdvancedStoreImpl()
     store.registerQuery(query, {
       onData: (data) => {
@@ -364,7 +365,9 @@ describe("syncMode", () => {
       "UpdateData",
       jest.fn().mockResolvedValue(null),
       {
-        afterQueryUpdates: () => (happened = true),
+        afterQueryUpdates: () => {
+          happened = true
+        },
         syncMode: true,
       }
     )

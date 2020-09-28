@@ -1,7 +1,6 @@
 import { Store } from "../Store"
 import { Query } from "./Query"
 import { LocalQuery } from "./LocalQuery"
-import { QueryUpdateInfoArgument } from "./BaseQuery"
 import { NormalizedShape, NormalizedType } from "../NormalizedType"
 import { NormalizedObjectRef } from "../NormalizedObject"
 import { mergeOptions } from "../helpers"
@@ -22,11 +21,25 @@ export interface MutationOptions<TResult, TArguments, TContext> {
   context?: Partial<TContext>
   shape?: NormalizedShape
   optimisticResponse?: any
+
   beforeQueryUpdates?: (
     cache: CacheFacade,
-    info: Omit<QueryUpdateInfoArgument, "context">
-  ) => any
-  afterQueryUpdates?: (store: Store, info: QueryUpdateInfoArgument) => any
+    info: {
+      mutationResult: any // normalized data
+      mutationArgs: TArguments
+      optimistic: boolean
+    }
+  ) => void
+
+  afterQueryUpdates?: (
+    store: Store,
+    info: {
+      mutationResult: TResult // original, not normalized data
+      mutationArgs: TArguments
+      optimistic: boolean
+    }
+  ) => void | Promise<any>
+
   syncMode?: boolean
 }
 
@@ -35,7 +48,11 @@ export class Mutation<TResult, TArguments, TContext> {
 
   constructor(
     readonly name: string,
-    readonly fn: (args: TArguments, ctx: TContext) => Promise<TResult>,
+    readonly fn: (
+      args: TArguments,
+      ctx: TContext,
+      store?: Store
+    ) => Promise<TResult>,
     readonly options: MutationOptions<TResult, TArguments, TContext> = {}
   ) {
     this.options.syncMode = options.syncMode ?? false

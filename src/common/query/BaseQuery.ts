@@ -8,7 +8,6 @@ export interface QueryUpdateInfoArgument {
   mutationResult: any
   mutationArgs: any
   optimistic: boolean
-  context: any
 }
 
 export interface QueryUpdateFn {
