@@ -19,7 +19,10 @@ export class CompoundQuery<TResult, TArguments, TContext>
   private queries = new Set<Query<TResult, TArguments, TContext>>()
 
   constructor(readonly original: Query<TResult, TArguments, TContext>) {
-    super(new CompoundQueryKey(original.name), original.options)
+    super(new CompoundQueryKey(original.name), {
+      ...original.options,
+      arguments: undefined,
+    })
     this.queries.add(original)
   }
 

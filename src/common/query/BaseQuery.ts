@@ -4,14 +4,16 @@ export interface BaseQueryKey {
   matches(qk: BaseQueryKey): boolean
 }
 
-export interface QueryUpdateInfoArgument {
-  mutationResult: any
-  mutationArgs: any
-  optimistic: boolean
-}
-
 export interface QueryUpdateFn {
-  (currentValue: any, info: QueryUpdateInfoArgument): any
+  (
+    currentValue: any,
+    info: {
+      mutationResult: any
+      mutationArgs: any
+      optimistic: boolean
+      queryArgs: any
+    }
+  ): any
 }
 
 export abstract class BaseQuery {
@@ -20,6 +22,7 @@ export abstract class BaseQuery {
     readonly options: {
       shape?: NormalizedShape
       mutations?: Record<string, QueryUpdateFn>
+      arguments?: any
     } = {}
   ) {}
 }

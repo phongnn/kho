@@ -1,7 +1,6 @@
 import {
   Query,
   BaseQuery,
-  QueryUpdateInfoArgument,
   CacheFacade,
   Mutation,
   NormalizedType,
@@ -92,7 +91,11 @@ class CacheContainer implements CacheFacade {
 
   updateRelatedQueries<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
-    info: QueryUpdateInfoArgument
+    info: {
+      mutationResult: any
+      mutationArgs: any
+      optimistic: boolean
+    }
   ) {
     this.queryBucket.updateRelatedQueries(mutation, info)
   }

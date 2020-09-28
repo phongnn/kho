@@ -1,10 +1,4 @@
-import {
-  BaseQuery,
-  BaseQueryKey,
-  QueryUpdateFn,
-  QueryUpdateInfoArgument,
-  Mutation,
-} from "../common"
+import { BaseQuery, BaseQueryKey, QueryUpdateFn, Mutation } from "../common"
 import { Selector } from "../normalization"
 
 // Equivalent query keys will share the same cache key
@@ -81,13 +75,21 @@ class QueryBucket {
 
   updateRelatedQueries<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
-    info: QueryUpdateInfoArgument
+    info: {
+      mutationResult: any
+      mutationArgs: any
+      optimistic: boolean
+    }
   ) {
     const updateFunctions = this.updateFunctions.get(mutation.name)
     if (updateFunctions) {
       for (const [cacheKey, updateFn] of updateFunctions) {
         const item = this.queryData.get(cacheKey)!
-        item.data = updateFn(item.data, info)
+        const { data: currentData, query } = item
+        item.data = updateFn(currentData, {
+          ...info,
+          queryArgs: query.options.arguments,
+        })
       }
     }
     // for (const item of this.queryData.values()) {
