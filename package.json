@@ -16,7 +16,7 @@
   "main": "lib/index.js",
   "module": "esm/index.js",
   "types": "types/index.d.ts",
-  "files": ["lib", "esm", "types", "dist", "src"],
+  "files": ["/lib", "/esm", "/types", "/dist", "/src", "!*.test.ts", "!__tests__"],
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",

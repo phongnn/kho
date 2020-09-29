@@ -73,3 +73,15 @@ it("should return null when local data not set", () => {
   const cacheKey = cache.saveQueryData(localQuery, null)
   expect(cache.get(cacheKey!)).toBe(null)
 })
+
+it("should retain null values in query results", () => {
+  const data = {
+    username: "x",
+    avatar: null,
+    extra: { info: null, array: [1, 2, null, 4] },
+  }
+  const localQuery = new LocalQuery("SignedInUser", { shape: UserType })
+  const cache = new CacheContainer()
+  const cacheKey = cache.saveQueryData(localQuery, data)
+  expect(cache.get(cacheKey!)).toStrictEqual(data)
+})
