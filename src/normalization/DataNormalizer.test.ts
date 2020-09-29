@@ -44,7 +44,7 @@ describe("Single typed object", () => {
     expect(type).toBe(UserType)
     expect(key.matches("x")).toBe(true)
 
-    expect(selector.plain()).toStrictEqual(["username", "email", "age"])
+    expect(selector!.plain()).toStrictEqual(["username", "email", "age"])
     expect(objects.get(UserType)).toStrictEqual([[key, input]])
   })
 
@@ -64,7 +64,7 @@ describe("Single typed object", () => {
     const { result, selector, objects } = normalize(null, UserType)
     expect(result).toBeNull()
     expect(objects.size).toBe(0)
-    expect(selector.plain()).toStrictEqual([])
+    expect(selector).toBeNull()
   })
 })
 
@@ -83,7 +83,7 @@ describe("Nested typed objects", () => {
     expect(commentKey.matches("xyz")).toBe(true)
 
     // verify selector
-    expect(selector.plain()).toStrictEqual([
+    expect(selector!.plain()).toStrictEqual([
       "id",
       "body",
       ["user", ["username", "avatar"]],
@@ -141,7 +141,7 @@ describe("Untyped object", () => {
     ])
 
     // verify selector
-    expect(selector.plain()).toStrictEqual([
+    expect(selector!.plain()).toStrictEqual([
       ["author", ["username", "email"]],
       ["articles", ["slug", "title"]],
       "extra", // no sub-selector
@@ -168,7 +168,7 @@ describe("Array", () => {
     expect(userObjects).toContainEqual([result![1].key, input[1]])
 
     // verify selector
-    expect(selector.plain()).toStrictEqual(["username", "email", "age"])
+    expect(selector!.plain()).toStrictEqual(["username", "email", "age"])
   })
 
   it("should combine selectors", () => {
@@ -177,7 +177,7 @@ describe("Array", () => {
       { username: "y", email: "y@test.co", avatar: "http://" },
     ]
     const { selector } = normalize(input, [UserType])
-    expect(selector.plain()).toStrictEqual([
+    expect(selector!.plain()).toStrictEqual([
       "username",
       "email",
       "age",
@@ -199,7 +199,7 @@ describe("Array", () => {
     const { result, selector, objects } = normalize(null, [UserType])
     expect(result).toStrictEqual([])
     expect(objects.size).toBe(0)
-    expect(selector.plain()).toStrictEqual([])
+    expect(selector!.plain()).toStrictEqual([])
   })
 })
 
@@ -227,7 +227,7 @@ describe("Nested arrays", () => {
       },
     ]
     const { selector } = normalize(input, [ArticleType])
-    expect(selector.plain()).toStrictEqual([
+    expect(selector!.plain()).toStrictEqual([
       "slug",
       "title",
       ["comments", ["id", "body", ["user", ["username", "avatar", "email"]]]],

@@ -51,7 +51,7 @@ export default class DataNormalizer {
       return {
         result: null,
         objects: new Map() as NormalizedObjects,
-        selector: new Selector(),
+        selector: null,
       }
     }
 
@@ -80,7 +80,9 @@ export default class DataNormalizer {
       } else {
         const child = this.normalize(data[prop], type.shape[prop])
         normalizedObj[prop] = child.result
-        selector.push([prop, child.selector])
+        if (child.selector) {
+          selector.push([prop, child.selector])
+        }
         for (const [childObjType, childObjects] of child.objects) {
           addNormalizedObjects(childObjType, childObjects, objects)
         }
@@ -108,7 +110,9 @@ export default class DataNormalizer {
       } else {
         const child = this.normalize(data[prop], shape[prop])
         result[prop] = child.result
-        selector.push([prop, child.selector])
+        if (child.selector) {
+          selector.push([prop, child.selector])
+        }
         for (const [childObjType, childObjects] of child.objects) {
           addNormalizedObjects(childObjType, childObjects, objects)
         }
@@ -146,8 +150,10 @@ export default class DataNormalizer {
         return
       }
       result.push(child.result)
+      if (child.selector) {
+        selector.merge(child.selector)
+      }
       mergeNormalizedObjects(child.objects, objects)
-      selector.merge(child.selector)
     })
 
     return { result, objects, selector }

@@ -1,5 +1,5 @@
 import CacheContainer from "./CacheContainer"
-import { Query, NormalizedType } from "../common"
+import { Query, NormalizedType, LocalQuery } from "../common"
 
 afterAll(() => {
   // @ts-ignore
@@ -65,4 +65,11 @@ it("should return latest data", () => {
     },
     { id: "c2", body: "c2...", user: { username: "y", email: "y@xy.z" } },
   ])
+})
+
+it("should return null when local data not set", () => {
+  const localQuery = new LocalQuery("SignedInUser", { shape: UserType })
+  const cache = new CacheContainer()
+  const cacheKey = cache.saveQueryData(localQuery, null)
+  expect(cache.get(cacheKey!)).toBe(null)
 })

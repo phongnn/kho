@@ -77,7 +77,9 @@ class CacheContainer implements CacheFacade {
       // prettier-ignore
       const { result, objects, selector: newSelector } = normalizer.normalize(newData, shape)
       this.objectBucket.addObjects(objects)
-      existingSelector!.merge(newSelector)
+      if (newSelector) {
+        existingSelector!.merge(newSelector)
+      }
       existingItem.data = mergeFn(existingData, result)
     }
   }
