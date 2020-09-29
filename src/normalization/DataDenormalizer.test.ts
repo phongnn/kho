@@ -228,3 +228,101 @@ it("should return an untyped object", () => {
     extraArray: [],
   })
 })
+
+it("should transform data", () => {
+  const CustomerType = NormalizedType.register("Customer")
+  const ProductType = NormalizedType.register("Product", {
+    transform: {
+      brand: (val) => val.toUpperCase(),
+    },
+  })
+  const OrderType = NormalizedType.register("Order", {
+    transform: {
+      createdDate: (timestamp) => new Date(timestamp),
+    },
+  })
+
+  const now = new Date()
+  const productObjects = [
+    { id: "p1", name: "Laptop", brand: "Dell" },
+    { id: "p2", name: "Phone", brand: "Apple" },
+  ]
+  const customerObjects = [{ id: "x", name: "X", email: "x@test.com" }]
+  const orderObjects = [
+    {
+      id: "Order-123",
+      customer: new NormalizedObjectRef(
+        CustomerType,
+        new NormalizedObjectKey("x")
+      ),
+      createdDate: now.getTime(),
+      shippingAddress: "123 High Street",
+      items: [
+        {
+          product: new NormalizedObjectRef(
+            ProductType,
+            new NormalizedObjectKey("p1")
+          ),
+          quantity: 1,
+        },
+        {
+          product: new NormalizedObjectRef(
+            ProductType,
+            new NormalizedObjectKey("p2")
+          ),
+          quantity: 2,
+        },
+      ],
+    },
+  ]
+
+  const data = {
+    order: new NormalizedObjectRef(
+      OrderType,
+      new NormalizedObjectKey("Order-123")
+    ),
+    notes: "blah",
+  }
+
+  const selector = Selector.from([
+    [
+      "order",
+      [
+        "id",
+        ["customer", ["id", "name", "email"]],
+        "createdDate",
+        "shippingAddress",
+        ["items", [["product", ["id", "name", "brand"]], "quantity"]],
+      ],
+    ],
+    "notes",
+  ])
+
+  const denormalizer = new DataDenormalizer((type, key) => {
+    return type === CustomerType
+      ? customerObjects.find((c) => key.matches(c.id))
+      : type === ProductType
+      ? productObjects.find((p) => key.matches(p.id))
+      : type === OrderType
+      ? orderObjects.find((o) => key.matches(o.id))
+      : null
+  })
+  const result = denormalizer.denormalize(data, selector, {
+    notes: (val) => val.toUpperCase(),
+  })
+
+  expect(result).toStrictEqual({
+    order: {
+      id: "Order-123",
+      customer: { id: "x", name: "X", email: "x@test.com" },
+      createdDate: now, // transformed from timestamp to Date
+      shippingAddress: "123 High Street",
+      // brands are converted to uppercase
+      items: [
+        { product: { id: "p1", name: "Laptop", brand: "DELL" }, quantity: 1 },
+        { product: { id: "p2", name: "Phone", brand: "APPLE" }, quantity: 2 },
+      ],
+    },
+    notes: "BLAH", // converted to uppercase
+  })
+})

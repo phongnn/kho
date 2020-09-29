@@ -14,6 +14,7 @@ export class NormalizedType {
     settings: {
       shape?: NormalizedTypeShape
       keyFields?: string[]
+      transform?: RecordOf<TransformShape>
     } = {}
   ) {
     if (this.registry.has(name)) {
@@ -22,7 +23,8 @@ export class NormalizedType {
     const newType = new NormalizedType(
       name,
       settings.keyFields || ["id"],
-      settings.shape
+      settings.shape,
+      settings.transform
     )
     this.registry.set(name, newType)
     return newType
@@ -41,7 +43,8 @@ export class NormalizedType {
   private constructor(
     readonly name: string,
     readonly keyFields: string[],
-    readonly shape?: NormalizedTypeShape
+    readonly shape?: NormalizedTypeShape,
+    readonly transform?: RecordOf<TransformShape>
   ) {}
 }
 
@@ -57,3 +60,10 @@ export type NormalizedShape =
   | NormalizedType
   | RecordOf<NormalizedShape>
   | [NormalizedType | RecordOf<NormalizedShape>]
+
+/** Cache -> UI data transformation rules */
+type TransformFn = (value: any) => any
+export type TransformShape =
+  | TransformFn
+  | RecordOf<TransformFn | TransformShape>
+  | [TransformFn | RecordOf<TransformFn | TransformShape>]

@@ -1,4 +1,4 @@
-import { NormalizedShape } from "../NormalizedType"
+import { NormalizedShape, TransformShape } from "../NormalizedType"
 
 export interface BaseQueryKey {
   matches(qk: BaseQueryKey): boolean
@@ -21,6 +21,7 @@ export abstract class BaseQuery {
     readonly key: BaseQueryKey,
     readonly options: {
       shape?: NormalizedShape
+      transform?: TransformShape
       mutations?: Record<string, QueryUpdateFn>
       arguments?: any
     } = {}

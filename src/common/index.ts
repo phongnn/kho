@@ -9,5 +9,6 @@ export {
   NormalizedType,
   NormalizedTypeShape,
   NormalizedShape,
+  TransformShape,
 } from "./NormalizedType"
 export { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"

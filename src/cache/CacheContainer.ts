@@ -27,7 +27,7 @@ class CacheContainer implements CacheFacade {
       return null
     }
 
-    const { data, selector } = cacheEntry
+    const { data, selector, query } = cacheEntry
     if (!selector) {
       return data
     }
@@ -36,7 +36,7 @@ class CacheContainer implements CacheFacade {
       this.objectBucket.get(type, key)
     )
 
-    return denormalizer.denormalize(data, selector)
+    return denormalizer.denormalize(data, selector, query.options.transform)
   }
 
   saveQueryData(query: BaseQuery, data: any) {

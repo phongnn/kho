@@ -1,11 +1,12 @@
 import { deepEqual, mergeOptions } from "../helpers"
-import { NormalizedShape } from "../NormalizedType"
+import { NormalizedShape, TransformShape } from "../NormalizedType"
 import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
 
 export interface QueryOptions<TResult, TArguments, TContext> {
   arguments?: TArguments
   context?: Partial<TContext>
   shape?: NormalizedShape
+  transform?: TransformShape
   merge?: (
     existingData: any,
     newData: any,
