@@ -135,6 +135,10 @@ class AdvancedStoreImpl implements AdvancedStore {
   resetStore() {
     return new Promise<void>((resolve) => {
       this.cache.reset((queriesToRefetch) => {
+        if (queriesToRefetch.length === 0) {
+          return resolve()
+        }
+
         let doneCount = 0
         const cbHandler = () => {
           doneCount++
