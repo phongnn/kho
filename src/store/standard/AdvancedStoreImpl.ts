@@ -102,22 +102,37 @@ class AdvancedStoreImpl implements AdvancedStore {
   }
 
   refetchQueries(queries: Query<any, any, any>[]) {
+    const activeQueries = this.cache.purgeInactiveQueries(
+      queries.map((q) => getActualQuery(q))
+    )
+    return this.doRefetchQueries(activeQueries)
+  }
+
+  resetStore() {
     return new Promise<void>((resolve, reject) => {
-      const [activeQueries, inactiveQueries] = this.separateInactiveQueries(
-        queries.map((q) => getActualQuery(q))
-      )
-      this.cache.removeInactiveQueries(inactiveQueries)
-      if (activeQueries.length === 0) {
+      this.cache.reset((activeQueries) => {
+        this.doRefetchQueries(activeQueries).then(resolve).catch(reject)
+      })
+    })
+  }
+
+  //========== Private methods =============
+
+  private doRefetchQueries(
+    queries: Array<Query<any, any, any> | CompoundQuery<any, any, any>>
+  ) {
+    return new Promise<void>((resolve, reject) => {
+      if (queries.length === 0) {
         return resolve()
       }
 
       let hasError = false
       let count = 0
-      activeQueries.forEach((query) =>
+      queries.forEach((query) =>
         this.queryHandler.refetch(query, {
           onData: (data) => this.cache.storeQueryData(query, data),
           onComplete: () => {
-            if (++count === activeQueries.length) {
+            if (++count === queries.length) {
               resolve()
             }
           },
@@ -130,52 +145,6 @@ class AdvancedStoreImpl implements AdvancedStore {
         })
       )
     })
-  }
-
-  resetStore() {
-    return new Promise<void>((resolve) => {
-      this.cache.reset((queriesToRefetch) => {
-        if (queriesToRefetch.length === 0) {
-          return resolve()
-        }
-
-        let doneCount = 0
-        const cbHandler = () => {
-          doneCount++
-          if (doneCount === queriesToRefetch.length) {
-            resolve()
-          }
-        }
-
-        for (const query of queriesToRefetch) {
-          this.queryHandler.refetch(query, {
-            onData: (data) => this.cache.storeQueryData(query, data),
-            onComplete: cbHandler,
-            onError: cbHandler,
-          })
-        }
-      })
-    })
-  }
-
-  //========== Private methods =============
-
-  // prettier-ignore
-  private separateInactiveQueries(
-    queries: Array<Query<any, any, any> | CompoundQuery<any, any, any>>
-  ) {
-    const activeQueries: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
-    const inactiveQueries: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
-    queries.forEach((query) => {
-      const activeQuery = this.cache.findActiveQuery(query)
-      if (activeQuery) {
-        // @ts-ignore
-        activeQueries.push(activeQuery)
-      } else {
-        inactiveQueries.push(query)
-      }
-    })
-    return [activeQueries, inactiveQueries]
   }
 }
 

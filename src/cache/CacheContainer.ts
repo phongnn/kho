@@ -21,6 +21,10 @@ class CacheContainer implements CacheFacade {
     return this.queryBucket.findCacheKey(query)
   }
 
+  findSiblingQueries(query: Query<any, any, any>) {
+    return this.queryBucket.findSiblingQueries(query)
+  }
+
   get(cacheKey: CacheKey) {
     const cacheEntry = this.queryBucket.get(cacheKey)
     if (!cacheEntry) {
@@ -53,13 +57,6 @@ class CacheContainer implements CacheFacade {
       this.objectBucket.addObjects(objects)
     }
     return existingCacheKey ? null : cacheKey // return new cache key only
-  }
-
-  removeQueryData(q: BaseQuery): void {
-    const cacheKey = this.findCacheKey(q)
-    if (cacheKey) {
-      this.queryBucket.delete(cacheKey)
-    }
   }
 
   saveAdditionalQueryData(
@@ -100,6 +97,10 @@ class CacheContainer implements CacheFacade {
     }
   ) {
     this.queryBucket.updateRelatedQueries(mutation, info)
+  }
+
+  removeQueries(keys: CacheKey[]) {
+    keys.forEach((k) => this.queryBucket.delete(k))
   }
 
   clear() {

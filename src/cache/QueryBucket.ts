@@ -36,6 +36,17 @@ class QueryBucket {
     return null
   }
 
+  /** same query but with different arguments */
+  findSiblingQueries(baseQuery: BaseQuery) {
+    const result: Array<[BaseQuery, CacheKey]> = []
+    for (const [cacheKey, { query }] of this.queryData) {
+      if (query.isSibling(baseQuery)) {
+        result.push([query, cacheKey])
+      }
+    }
+    return result
+  }
+
   get(cacheKey: CacheKey) {
     return this.queryData.get(cacheKey)
   }

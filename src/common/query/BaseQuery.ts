@@ -26,4 +26,8 @@ export abstract class BaseQuery {
       arguments?: any
     } = {}
   ) {}
+
+  isSibling(query: BaseQuery): boolean {
+    return false
+  }
 }

@@ -296,6 +296,39 @@ describe("refetchQueries()", () => {
       },
     })
   })
+
+  it("should fetch related active queries when arguments not provided", (done) => {
+    let count = 0
+    // prettier-ignore
+    const query = new Query("GetData", (args: { name: string }) => Promise.resolve(++count))
+    const q1 = query.withOptions({ arguments: { name: "x" } })
+    const q2 = query.withOptions({ arguments: { name: "y" } })
+    const q3 = query.withOptions({ arguments: { name: "z" } })
+
+    let refeched = false
+    const store = new AdvancedStoreImpl()
+    const { unregister: unregisterQ1 } = store.registerQuery(q1, {
+      onData: (countValue) => expect(countValue).toBe(1), // should not be refetched
+    })
+    store.registerQuery(q2, {
+      onData: (countValue) => expect(`${countValue}`).toMatch(/[24]/), // 1st fetch: 2 -> refetch: 4
+    })
+    store.registerQuery(q3, {
+      onData: (countValue) => {
+        // 1st fetch: 3
+        if (countValue === 3 && !refeched) {
+          refeched = true
+          unregisterQ1() // make q1 inactive
+          store.refetchQueries([query])
+        } else if (countValue > 3) {
+          // refetched: 5
+          expect(countValue).toBe(5)
+          expect(store.getQueryData(q1)).toBeFalsy() // q1 has been removed from cache
+          done()
+        }
+      },
+    })
+  })
 })
 
 describe("setQueryData()", () => {

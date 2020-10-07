@@ -38,15 +38,6 @@ class CacheController {
     this.activeQueries.delete(query)
   }
 
-  findActiveQuery(query: BaseQuery) {
-    for (const q of this.activeQueries.keys()) {
-      if (q.key.matches(query.key)) {
-        return q
-      }
-    }
-    return null
-  }
-
   storeQueryData(query: BaseQuery, data: any) {
     const newCacheKey = this.cache.saveQueryData(query, data)
     if (newCacheKey) {
@@ -105,8 +96,44 @@ class CacheController {
     this.notifyActiveQueries()
   }
 
-  removeInactiveQueries(inactiveQueries: BaseQuery[]) {
-    inactiveQueries.forEach((q) => this.cache.removeQueryData(q))
+  purgeInactiveQueries(
+    queries: Array<Query<any, any, any> | CompoundQuery<any, any, any>>
+  ) {
+    const inactiveCacheKeys: CacheKey[] = []
+    // prettier-ignore
+    const queriesToRefetch: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
+
+    queries.forEach((query) => {
+      if (query instanceof CompoundQuery || query.options.arguments) {
+        const q = this.findActiveQuery(query)
+        if (q) {
+          queriesToRefetch.push(
+            q as Query<any, any, any> | CompoundQuery<any, any, any>
+          )
+        } else {
+          const cacheKey = this.cache.findCacheKey(query)
+          if (cacheKey) {
+            inactiveCacheKeys.push(cacheKey)
+          }
+        }
+      } else {
+        // query with no arguments provided
+        const siblingQueriesInCache = this.cache.findSiblingQueries(query)
+        for (const [sibling, cacheKey] of siblingQueriesInCache) {
+          const q = this.findActiveQuery(sibling)
+          if (q) {
+            queriesToRefetch.push(
+              q as Query<any, any, any> | CompoundQuery<any, any, any>
+            )
+          } else {
+            inactiveCacheKeys.push(cacheKey)
+          }
+        }
+      }
+    })
+
+    this.cache.removeQueries(inactiveCacheKeys)
+    return queriesToRefetch
   }
 
   /** resets cache then refetches active queries */
@@ -132,6 +159,8 @@ class CacheController {
     this.notifyActiveQueries()
   }
 
+  //========== Private methods =============
+
   // notify active queries of possible state change
   private notifyActiveQueries() {
     for (const [q, qInfo] of this.activeQueries) {
@@ -139,6 +168,15 @@ class CacheController {
         qInfo.onData(this.cache.get(qInfo.cacheKey))
       }
     }
+  }
+
+  private findActiveQuery(query: BaseQuery) {
+    for (const q of this.activeQueries.keys()) {
+      if (q.key.matches(query.key)) {
+        return q
+      }
+    }
+    return null
   }
 }
 

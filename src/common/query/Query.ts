@@ -65,4 +65,8 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
       args.reduce((tmp, opts) => mergeOptions(tmp, opts || {}), this.options)
     )
   }
+
+  isSibling(query: BaseQuery): boolean {
+    return query instanceof Query && query.name === this.name
+  }
 }
