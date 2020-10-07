@@ -30,6 +30,5 @@ export interface Store {
   ): void
 
   refetchQueries(queries: Query<any, any, any>[]): Promise<void>
-  deleteQuery(query: Query<any, any, any> | LocalQuery<any>): Promise<void>
   resetStore(): Promise<void>
 }

@@ -158,28 +158,6 @@ class AdvancedStoreImpl implements AdvancedStore {
     })
   }
 
-  deleteQuery(query: Query<any, any, any> | LocalQuery<any>) {
-    return new Promise<void>((resolve) => {
-      const actualQuery = query instanceof Query ? getActualQuery(query) : query
-      const activeQuery = this.cache.findActiveQuery(actualQuery)
-      if (!activeQuery) {
-        this.cache.removeInactiveQueries([actualQuery])
-        resolve()
-      } else if (activeQuery instanceof LocalQuery) {
-        // prettier-ignore
-        this.cache.storeQueryData(activeQuery, activeQuery.options.initialValue ?? null)
-        resolve()
-      } else {
-        // @ts-ignore
-        this.queryHandler.refetch(activeQuery, {
-          onData: (data) => this.cache.storeQueryData(activeQuery, data),
-          onComplete: resolve,
-          onError: resolve,
-        })
-      }
-    })
-  }
-
   //========== Private methods =============
 
   // prettier-ignore
