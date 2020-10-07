@@ -111,7 +111,10 @@ class AdvancedStoreImpl implements AdvancedStore {
   resetStore() {
     return new Promise<void>((resolve, reject) => {
       this.cache.reset((activeQueries) => {
-        this.doRefetchQueries(activeQueries).then(resolve).catch(reject)
+        const queriesToFetch = activeQueries.map((q) =>
+          q instanceof CompoundQuery ? q.original : q
+        )
+        this.doRefetchQueries(queriesToFetch).then(resolve).catch(reject)
       })
     })
   }

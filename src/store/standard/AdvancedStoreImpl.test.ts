@@ -423,4 +423,36 @@ describe("resetStore()", () => {
       },
     })
   })
+
+  it("should refetch only the original request for compound query", (done) => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      (args: { x: number }) => Promise.resolve(`${args.x}-${++count}`),
+      {
+        merge: (e, n) => n,
+      }
+    )
+    const store = new AdvancedStoreImpl()
+    const { fetchMore } = store.registerQuery(
+      query.withOptions({ arguments: { x: 1 } }),
+      {
+        onData: (data) => {
+          if (data === "1-1") {
+            setTimeout(() =>
+              fetchMore(query.withOptions({ arguments: { x: 2 } }))
+            )
+          } else if (data === "2-2") {
+            setTimeout(async () => {
+              await store.resetStore()
+              expect(count).toBe(3) // only refetch once
+              done()
+            })
+          } else {
+            expect(data).toBe("1-3") // only the 1st request is refetched
+          }
+        },
+      }
+    )
+  })
 })
