@@ -188,18 +188,7 @@ describe("refetchQueries()", () => {
     const q1 = query.withOptions({ arguments: { name: "x" } })
     const q2 = query.withOptions({ arguments: { name: "y" } })
 
-    const mutation = new Mutation(
-      "UpdateData",
-      jest.fn().mockResolvedValue(null),
-      {
-        afterQueryUpdates: (store) => {
-          store.refetchQueries([
-            query.withOptions({ arguments: { name: "x" } }),
-          ])
-        },
-      }
-    )
-
+    let refetched = false
     const store = new AdvancedStoreImpl()
     store.registerQuery(q1, {
       onData: (countValue) => {
@@ -211,13 +200,16 @@ describe("refetchQueries()", () => {
     })
     store.registerQuery(q2, {
       onData: (countValue) => {
-        if (countValue > 2) {
+        if (countValue === 2 && !refetched) {
+          refetched = true
+          store.refetchQueries([
+            query.withOptions({ arguments: { name: "x" } }),
+          ])
+        } else if (countValue !== 2) {
           throw new Error("Query is unexpectedly refetched.")
         }
       },
     })
-
-    store.processMutation(mutation)
   })
 
   it("should refetch active compound query", (done) => {
@@ -268,31 +260,14 @@ describe("refetchQueries()", () => {
       "GetData",
       () => new Promise<number>((r) => setTimeout(() => r(++count)))
     )
-    const mutation = new Mutation(
-      "UpdateData",
-      jest.fn().mockResolvedValue(null),
-      {
-        afterQueryUpdates: (store) => store.refetchQueries([query]),
-        syncMode: true,
-      }
-    )
 
     const store = new AdvancedStoreImpl()
     const { unregister } = store.registerQuery(query, {
-      onData: () => {
+      onData: async () => {
         unregister() // make the query inactive
-        store.processMutation(mutation, {
-          onComplete: () => {
-            const { unregister } = store.registerQuery(query, {
-              onData: (data) => {
-                // refetched value as previous value was already removed from cache
-                expect(data).toBe(2)
-                unregister()
-                done()
-              },
-            })
-          },
-        })
+        await store.refetchQueries([query])
+        expect(store.getQueryData(query)).toBeFalsy()
+        done()
       },
     })
   })
@@ -324,6 +299,40 @@ describe("refetchQueries()", () => {
           // refetched: 5
           expect(countValue).toBe(5)
           expect(store.getQueryData(q1)).toBeFalsy() // q1 has been removed from cache
+          done()
+        }
+      },
+    })
+  })
+
+  it("should fetch related queries when partial arguments provided", (done) => {
+    let count = 0
+    // prettier-ignore
+    const query = new Query("GetData", (args: { name: string, page: number }) => Promise.resolve(++count))
+    const q1 = query.withOptions({ arguments: { name: "x", page: 1 } })
+    const q2 = query.withOptions({ arguments: { name: "y", page: 1 } })
+    const q3 = query.withOptions({ arguments: { name: "y", page: 2 } })
+
+    let refeched = false
+    const store = new AdvancedStoreImpl()
+    store.registerQuery(q1, {
+      onData: (countValue) => expect(countValue).toBe(1), // should not be refetched
+    })
+    store.registerQuery(q2, {
+      onData: (countValue) => expect(`${countValue}`).toMatch(/[24]/), // 1st fetch: 2 -> refetch: 4
+    })
+    store.registerQuery(q3, {
+      onData: (countValue) => {
+        // 1st fetch: 3
+        if (countValue === 3 && !refeched) {
+          refeched = true
+          store.refetchQueries([
+            // @ts-ignore
+            query.withOptions({ arguments: { name: "y" } }),
+          ])
+        } else if (countValue > 3) {
+          // refetched: 5
+          expect(countValue).toBe(5)
           done()
         }
       },

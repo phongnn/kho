@@ -104,7 +104,7 @@ class CacheController {
     const queriesToRefetch: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
 
     queries.forEach((query) => {
-      if (query instanceof CompoundQuery || query.options.arguments) {
+      if (query instanceof CompoundQuery) {
         const q = this.findActiveQuery(query)
         if (q) {
           queriesToRefetch.push(
@@ -117,7 +117,6 @@ class CacheController {
           }
         }
       } else {
-        // query with no arguments provided
         const siblingQueriesInCache = this.cache.findSiblingQueries(query)
         for (const [sibling, cacheKey] of siblingQueriesInCache) {
           const q = this.findActiveQuery(sibling)

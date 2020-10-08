@@ -67,6 +67,23 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
   }
 
   isSibling(query: BaseQuery): boolean {
-    return query instanceof Query && query.name === this.name
+    if (!(query instanceof Query) || query.name !== this.name) {
+      return false
+    }
+
+    const { arguments: partialArgs } = query.options
+    if (!partialArgs || !this.options.arguments) {
+      return true
+    }
+    return deepEqual(partialArgs, this.getPartialArgs(partialArgs))
+  }
+
+  private getPartialArgs(partialArgs: any) {
+    const result: any = {}
+    Object.getOwnPropertyNames(partialArgs).forEach(
+      // @ts-ignore
+      (prop) => (result[prop] = this.options.arguments[prop])
+    )
+    return result
   }
 }
