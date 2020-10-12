@@ -63,7 +63,7 @@ class CacheController {
     }
 
     const { shape } = query.original.options
-    this.cache.saveAdditionalQueryData(cacheKey, newData, shape, mergeFn)
+    this.cache.saveMoreQueryData(cacheKey, newData, shape, mergeFn)
     this.notifyActiveQueries()
   }
 
@@ -117,6 +117,8 @@ class CacheController {
           }
         }
       } else {
+        // query may be specified with partial or no arguments
+        // so we need to find all the matching queries currently in cache
         const siblingQueriesInCache = this.cache.findSiblingQueries(query)
         for (const [sibling, cacheKey] of siblingQueriesInCache) {
           const q = this.findActiveQuery(sibling)

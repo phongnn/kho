@@ -59,7 +59,7 @@ class CacheContainer implements CacheFacade {
     return existingCacheKey ? null : cacheKey // return new cache key only
   }
 
-  saveAdditionalQueryData(
+  saveMoreQueryData(
     cacheKey: CacheKey,
     newData: any,
     shape: NormalizedShape | undefined,
