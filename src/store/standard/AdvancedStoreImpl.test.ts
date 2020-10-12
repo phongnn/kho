@@ -556,4 +556,65 @@ describe("change notification", () => {
       })
     })
   })
+
+  test("saveMoreQueryData()", (done) => {
+    const q1 = new Query(
+      "Q1",
+      () =>
+        new Promise((r) =>
+          setTimeout(() =>
+            r({
+              id: "a1",
+              title: "Article #1",
+              author: { id: 2, name: "Original name" },
+            })
+          )
+        ),
+      { shape: ArticleType }
+    )
+
+    let userCount = 0
+    const q2 = new Query(
+      "Q2",
+      () =>
+        new Promise((r) =>
+          setTimeout(() => r([{ id: ++userCount, name: `U${userCount}` }]))
+        ),
+      {
+        shape: [UserType],
+        merge: (existingData, newData) => [...existingData, ...newData],
+      }
+    )
+
+    expect.assertions(1)
+    let q1Done = false
+    let q2Done = false
+
+    const store = new AdvancedStoreImpl()
+    store.registerQuery(q1, {
+      onData: (data: any) => {
+        if (data.author.name === "U2") {
+          q1Done = true
+          if (q2Done) {
+            done()
+          }
+        } else {
+          expect(data.author.name).toBe("Original name")
+        }
+      },
+    })
+
+    const { fetchMore } = store.registerQuery(q2, {
+      onData: (data: any) => {
+        if (data.length === 1) {
+          setTimeout(() => fetchMore(q2))
+        } else {
+          q2Done = true
+          if (q1Done) {
+            done()
+          }
+        }
+      },
+    })
+  })
 })

@@ -10,7 +10,7 @@ import {
 } from "../common"
 import { extractPlainKey, getActualQuery } from "../common/helpers"
 import { DataNormalizer, DataDenormalizer } from "../normalization"
-import ChangeTracker from './ChangeTracker'
+import ChangeTracker from "./ChangeTracker"
 import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
 
@@ -66,7 +66,7 @@ class CacheContainer implements CacheFacade {
 
     return {
       newCacheKey: existingCacheKey ? null : cacheKey,
-      affectedCacheKeys
+      affectedCacheKeys,
     }
   }
 
@@ -80,6 +80,7 @@ class CacheContainer implements CacheFacade {
     const { data: existingData, selector: existingSelector } = existingItem
     if (!shape) {
       existingItem.data = mergeFn(existingData, newData)
+      return new Set([cacheKey])
     } else {
       const normalizer = this.createNormalizer()
       // prettier-ignore
@@ -89,6 +90,7 @@ class CacheContainer implements CacheFacade {
         existingSelector!.merge(newSelector)
       }
       existingItem.data = mergeFn(existingData, result)
+      return this.changeTracker.saveMoreQueryData(cacheKey, objects) // affected cache keys
     }
   }
 

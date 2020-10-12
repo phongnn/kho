@@ -19,10 +19,26 @@ export default class ChangeTracker {
   ) {
     const newObjKeys = objectsMapToSet(objects)
     this.queryObjectsMap.set(cacheKey, newObjKeys)
+    return this.findAffectedCacheKeys(newObjKeys, cacheKey)
+  }
 
-    const affectedCacheKeys: CacheKey[] = [cacheKey]
+  saveMoreQueryData(
+    cacheKey: CacheKey,
+    objects: Map<NormalizedType, [NormalizedObjectKey, any][]>
+  ) {
+    const newObjKeys = objectsMapToSet(objects)
+    const existingObjKeys = this.queryObjectsMap.get(cacheKey)!
+    newObjKeys.forEach((k) => existingObjKeys.add(k))
+    return this.findAffectedCacheKeys(newObjKeys, cacheKey)
+  }
+
+  private findAffectedCacheKeys(
+    objKeys: Set<NormalizedObjectKey>,
+    cacheKeyInProcess?: CacheKey
+  ) {
+    const result: CacheKey[] = cacheKeyInProcess ? [cacheKeyInProcess] : []
     for (let ck of this.activeQueryCacheKeys) {
-      if (ck === cacheKey) {
+      if (ck === cacheKeyInProcess) {
         continue
       }
 
@@ -31,15 +47,15 @@ export default class ChangeTracker {
         continue
       }
 
-      for (let k of newObjKeys) {
+      for (let k of objKeys) {
         if (ckObjects.has(k)) {
-          affectedCacheKeys.push(ck)
+          result.push(ck)
           break
         }
       }
     }
 
-    return new Set(affectedCacheKeys)
+    return new Set(result)
   }
 }
 

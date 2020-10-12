@@ -82,8 +82,13 @@ class CacheController {
     }
 
     const { shape } = query.original.options
-    this.cache.saveMoreQueryData(cacheKey, newData, shape, mergeFn)
-    this.notifyActiveQueries()
+    const affectedCacheKeys = this.cache.saveMoreQueryData(
+      cacheKey,
+      newData,
+      shape,
+      mergeFn
+    )
+    this.new_notifyActiveQueries(affectedCacheKeys)
   }
 
   retrieveQueryData(query: BaseQuery) {
@@ -165,10 +170,12 @@ class CacheController {
 
     // prettier-ignore
     const queriesToRefetch: Array<Query<any, any, any> | CompoundQuery<any, any, any>> = []
+    const cacheKeysToNotify = new Set<CacheKey>()
     for (const [q, qInfo] of this.activeQueries) {
       if (q instanceof LocalQuery) {
         // prettier-ignore
         qInfo.cacheKey = this.cache.saveQueryData(q, q.options.initialValue ?? null).newCacheKey!
+        cacheKeysToNotify.add(qInfo.cacheKey)
       } else if (q instanceof Query || q instanceof CompoundQuery) {
         qInfo.cacheKey = undefined
         queriesToRefetch.push(q)
@@ -176,7 +183,7 @@ class CacheController {
     }
 
     cb(queriesToRefetch)
-    this.notifyActiveQueries()
+    this.new_notifyActiveQueries(cacheKeysToNotify)
   }
 
   //========== Private methods =============
