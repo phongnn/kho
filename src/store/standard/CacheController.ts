@@ -17,15 +17,23 @@ class CacheController {
     if (cacheKey) {
       // already cached
       this.activeQueries.set(query, { onData, cacheKey })
+      this.cache.changeTracker.track(cacheKey)
+
       const existingData = this.cache.get(cacheKey)
       setTimeout(() => onData(existingData)) // callback right after subscription
       return true
     } else if (query instanceof LocalQuery) {
       const { initialValue = null } = query.options
-      const newCacheKey = this.cache.saveQueryData(query, initialValue)
+      const { newCacheKey, affectedCacheKeys } = this.cache.saveQueryData(
+        query,
+        initialValue
+      )
       this.activeQueries.set(query, { onData, cacheKey: newCacheKey! })
+      this.cache.changeTracker.track(newCacheKey!)
+
       if (initialValue) {
-        setTimeout(() => onData(initialValue))
+        // setTimeout(() => onData(initialValue))
+        setTimeout(() => this.new_notifyActiveQueries(affectedCacheKeys))
       }
       return true
     } else {
@@ -35,12 +43,23 @@ class CacheController {
   }
 
   unsubscribe(query: BaseQuery) {
-    this.activeQueries.delete(query)
+    const queryInfo = this.activeQueries.get(query)
+    if (queryInfo) {
+      this.activeQueries.delete(query)
+      if (queryInfo.cacheKey) {
+        this.cache.changeTracker.untrack(queryInfo.cacheKey)
+      }
+    }
   }
 
   storeQueryData(query: BaseQuery, data: any) {
-    const newCacheKey = this.cache.saveQueryData(query, data)
+    const { newCacheKey, affectedCacheKeys } = this.cache.saveQueryData(
+      query,
+      data
+    )
     if (newCacheKey) {
+      this.cache.changeTracker.track(newCacheKey)
+
       // set cacheKey for those active queries that are pending for data fetching
       for (const [q, qInfo] of this.activeQueries) {
         if (!qInfo.cacheKey && newCacheKey.matches(q)) {
@@ -49,7 +68,7 @@ class CacheController {
       }
     }
 
-    this.notifyActiveQueries()
+    this.new_notifyActiveQueries(affectedCacheKeys)
   }
 
   mergeQueryData<TResult, TArguments, TContext>(
@@ -149,7 +168,7 @@ class CacheController {
     for (const [q, qInfo] of this.activeQueries) {
       if (q instanceof LocalQuery) {
         // prettier-ignore
-        qInfo.cacheKey = this.cache.saveQueryData(q, q.options.initialValue ?? null)!
+        qInfo.cacheKey = this.cache.saveQueryData(q, q.options.initialValue ?? null).newCacheKey!
       } else if (q instanceof Query || q instanceof CompoundQuery) {
         qInfo.cacheKey = undefined
         queriesToRefetch.push(q)
@@ -166,6 +185,15 @@ class CacheController {
   private notifyActiveQueries() {
     for (const [q, qInfo] of this.activeQueries) {
       if (qInfo.cacheKey) {
+        qInfo.onData(this.cache.get(qInfo.cacheKey))
+      }
+    }
+  }
+
+  // notify active queries of possible state change
+  private new_notifyActiveQueries(cacheKeys: Set<CacheKey>) {
+    for (const [q, qInfo] of this.activeQueries) {
+      if (qInfo.cacheKey && cacheKeys.has(qInfo.cacheKey)) {
         qInfo.onData(this.cache.get(qInfo.cacheKey))
       }
     }

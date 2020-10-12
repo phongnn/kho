@@ -41,18 +41,18 @@ const userX = {
 
 it("should read what it wrote", () => {
   const cache = new CacheContainer()
-  const cacheKey = cache.saveQueryData(queryComments, comments)
-  const output = cache.get(cacheKey!)
+  const { newCacheKey } = cache.saveQueryData(queryComments, comments)
+  const output = cache.get(newCacheKey!)
   expect(output).toStrictEqual(comments)
 })
 
 it("should return latest data", () => {
   const cache = new CacheContainer()
 
-  const queryCommentsCacheKey = cache.saveQueryData(queryComments, comments)
+  const { newCacheKey } = cache.saveQueryData(queryComments, comments)
   cache.saveQueryData(queryUser, userX) // update one of the commenters' info
 
-  const output = cache.get(queryCommentsCacheKey!)
+  const output = cache.get(newCacheKey!)
   expect(output).toStrictEqual([
     {
       id: "c1",
@@ -70,8 +70,8 @@ it("should return latest data", () => {
 it("should return null when local data not set", () => {
   const localQuery = new LocalQuery("SignedInUser", { shape: UserType })
   const cache = new CacheContainer()
-  const cacheKey = cache.saveQueryData(localQuery, null)
-  expect(cache.get(cacheKey!)).toBe(null)
+  const { newCacheKey } = cache.saveQueryData(localQuery, null)
+  expect(cache.get(newCacheKey!)).toBe(null)
 })
 
 it("should retain null values in query results", () => {
@@ -82,6 +82,6 @@ it("should retain null values in query results", () => {
   }
   const localQuery = new LocalQuery("SignedInUser", { shape: UserType })
   const cache = new CacheContainer()
-  const cacheKey = cache.saveQueryData(localQuery, data)
-  expect(cache.get(cacheKey!)).toStrictEqual(data)
+  const { newCacheKey } = cache.saveQueryData(localQuery, data)
+  expect(cache.get(newCacheKey!)).toStrictEqual(data)
 })

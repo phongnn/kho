@@ -465,3 +465,95 @@ describe("resetStore()", () => {
     )
   })
 })
+
+describe("change notification", () => {
+  const UserType = NormalizedType.register("User")
+  const ArticleType = NormalizedType.register("Article", {
+    shape: {
+      author: UserType,
+    },
+  })
+
+  describe("saveQueryData()", () => {
+    it("should notify related queries", (done) => {
+      const q1 = new Query(
+        "Q1",
+        () => new Promise((r) => setTimeout(() => r({ id: 1, name: "U1" }))),
+        { shape: UserType }
+      )
+      const q2 = new Query(
+        "Q2",
+        () =>
+          new Promise((r) =>
+            setTimeout(() =>
+              r({
+                id: "a1",
+                title: "Article #1",
+                author: { id: 1, name: "Updated name" },
+              })
+            )
+          ),
+        { shape: ArticleType }
+      )
+
+      expect.assertions(1)
+      let q1Done = false
+      let q2Done = false
+
+      const store = new AdvancedStoreImpl()
+      store.registerQuery(q1, {
+        onData: (data: any) => {
+          if (data.name === "Updated name") {
+            q1Done = true
+            if (q2Done) {
+              done()
+            }
+          } else {
+            expect(data.name).toBe("U1")
+          }
+        },
+      })
+
+      store.registerQuery(q2, {
+        onData: () => {
+          q2Done = true
+          if (q1Done) {
+            done()
+          }
+        },
+      })
+    })
+
+    it("should not notify unrelated queries", (done) => {
+      const q1 = new Query(
+        "Q1",
+        () => new Promise((r) => setTimeout(() => r({ id: 1, name: "U1" }))),
+        { shape: UserType }
+      )
+      const q2 = new Query(
+        "Q2",
+        () =>
+          new Promise((r) =>
+            setTimeout(() =>
+              r({
+                id: "a1",
+                title: "Article #1",
+                author: { id: 2, name: "U2" },
+              })
+            )
+          ),
+        { shape: ArticleType }
+      )
+
+      const q1Handler = jest.fn()
+      const store = new AdvancedStoreImpl()
+      store.registerQuery(q1, { onData: q1Handler })
+      store.registerQuery(q2, {
+        onData: () => {
+          expect(q1Handler).toBeCalledTimes(1)
+          done()
+        },
+      })
+    })
+  })
+})

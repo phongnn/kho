@@ -10,10 +10,12 @@ import {
 } from "../common"
 import { extractPlainKey, getActualQuery } from "../common/helpers"
 import { DataNormalizer, DataDenormalizer } from "../normalization"
+import ChangeTracker from './ChangeTracker'
 import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
 
 class CacheContainer implements CacheFacade {
+  readonly changeTracker = new ChangeTracker()
   private queryBucket = new QueryBucket()
   private objectBucket = new ObjectBucket()
 
@@ -46,17 +48,26 @@ class CacheContainer implements CacheFacade {
   saveQueryData(query: BaseQuery, data: any) {
     const existingCacheKey = this.findCacheKey(query)
     const cacheKey = existingCacheKey || new CacheKey(query)
+    let affectedCacheKeys: Set<CacheKey>
+
     const { shape } = query.options
     if (!shape) {
-      this.queryBucket.set(cacheKey, { query, data, selector: null }) // data not normalized
+      // data not normalized
+      this.queryBucket.set(cacheKey, { query, data, selector: null })
+      affectedCacheKeys = new Set([cacheKey])
     } else {
       const normalizer = this.createNormalizer()
       const { result, objects, selector } = normalizer.normalize(data, shape)
 
       this.queryBucket.set(cacheKey, { query, data: result, selector })
       this.objectBucket.addObjects(objects)
+      affectedCacheKeys = this.changeTracker.saveQueryData(cacheKey, objects)
     }
-    return existingCacheKey ? null : cacheKey // return new cache key only
+
+    return {
+      newCacheKey: existingCacheKey ? null : cacheKey,
+      affectedCacheKeys
+    }
   }
 
   saveMoreQueryData(
