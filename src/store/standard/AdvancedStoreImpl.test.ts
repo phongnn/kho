@@ -617,4 +617,51 @@ describe("change notification", () => {
       },
     })
   })
+
+  test("updateMutationResult()", (done) => {
+    const q1 = new Query(
+      "Q1",
+      () => new Promise((r) => setTimeout(() => r({ id: 1, name: "User 1" }))),
+      { shape: UserType }
+    )
+
+    const q2 = new Query(
+      "Q2",
+      () =>
+        new Promise((r) =>
+          setTimeout(() =>
+            r({
+              id: "a1",
+              title: "Article #1",
+              author: { id: 2, name: "User 2" },
+            })
+          )
+        ),
+      { shape: ArticleType }
+    )
+
+    const updateUser2Mutation = new Mutation(
+      "UpdateUser",
+      () => Promise.resolve({ id: 2, name: "U2 Updated" }),
+      { shape: UserType }
+    )
+
+    const q1Handler = jest.fn()
+    const store = new AdvancedStoreImpl()
+    store.registerQuery(q1, {
+      onData: q1Handler,
+    })
+
+    store.registerQuery(q2, {
+      onData: (data: any) => {
+        if (data.author.name === "User 2") {
+          setTimeout(() => store.processMutation(updateUser2Mutation))
+        } else {
+          expect(data.author.name).toBe("U2 Updated")
+          expect(q1Handler).toBeCalledTimes(1)
+          done()
+        }
+      },
+    })
+  })
 })

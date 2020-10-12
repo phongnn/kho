@@ -98,7 +98,11 @@ class CacheContainer implements CacheFacade {
     const normalizer = this.createNormalizer()
     const { result, objects } = normalizer.normalize(data, shape)
     this.objectBucket.addObjects(objects)
-    return result // normalized data
+    const affectedCacheKeys = this.changeTracker.findAffectedCacheKeys(objects)
+    return {
+      normalizedData: result,
+      affectedCacheKeys,
+    }
   }
 
   updateRelatedQueries<TResult, TArguments, TContext>(
@@ -109,7 +113,8 @@ class CacheContainer implements CacheFacade {
       optimistic: boolean
     }
   ) {
-    this.queryBucket.updateRelatedQueries(mutation, info)
+    // return set of updated cache keys
+    return this.queryBucket.updateRelatedQueries(mutation, info)
   }
 
   removeQueries(keys: CacheKey[]) {

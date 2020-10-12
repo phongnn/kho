@@ -5,6 +5,14 @@ import { NormalizedType } from "../NormalizedType"
 export const env = process.env.NODE_ENV
 export const isProduction = env === "production"
 
+export function mergeSets<T>(...args: Array<Set<T>>) {
+  const result = new Set<T>(args[0])
+  for (let i = 1; i < args.length; i++) {
+    args[i].forEach((val) => result.add(val))
+  }
+  return result
+}
+
 export function deepEqual(a: any, b: any) {
   if (a === b || (!a && !b)) {
     return true

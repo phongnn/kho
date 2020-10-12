@@ -1,6 +1,7 @@
 // prettier-ignore
 import { BaseQuery, Query, LocalQuery, CompoundQuery, Mutation } from "../../common"
 import { CacheContainer, CacheKey } from "../../cache"
+import { mergeSets } from "../../common/helpers"
 
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void
@@ -33,7 +34,7 @@ class CacheController {
 
       if (initialValue) {
         // setTimeout(() => onData(initialValue))
-        setTimeout(() => this.new_notifyActiveQueries(affectedCacheKeys))
+        setTimeout(() => this.notifyActiveQueries(affectedCacheKeys))
       }
       return true
     } else {
@@ -68,7 +69,7 @@ class CacheController {
       }
     }
 
-    this.new_notifyActiveQueries(affectedCacheKeys)
+    this.notifyActiveQueries(affectedCacheKeys)
   }
 
   mergeQueryData<TResult, TArguments, TContext>(
@@ -88,7 +89,7 @@ class CacheController {
       shape,
       mergeFn
     )
-    this.new_notifyActiveQueries(affectedCacheKeys)
+    this.notifyActiveQueries(affectedCacheKeys)
   }
 
   retrieveQueryData(query: BaseQuery) {
@@ -102,9 +103,14 @@ class CacheController {
     optimistic: boolean = false
   ) {
     const { shape, beforeQueryUpdates } = mutation.options
+    let normalizedData: any = null
+    let cacheKeys_1 = new Set<CacheKey>()
 
-    const normalizedData =
-      data && shape ? this.cache.saveMutationResult(data, shape) : null
+    if (data && shape) {
+      const tmp = this.cache.saveMutationResult(data, shape)
+      normalizedData = tmp.normalizedData
+      cacheKeys_1 = tmp.affectedCacheKeys
+    }
 
     const info = {
       mutationResult: normalizedData ?? data,
@@ -115,9 +121,11 @@ class CacheController {
     if (beforeQueryUpdates) {
       beforeQueryUpdates(this.cache, info)
     }
-    this.cache.updateRelatedQueries(mutation, info)
 
-    this.notifyActiveQueries()
+    const cacheKeys_3 = this.cache.updateRelatedQueries(mutation, info)
+    const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_3)
+
+    this.notifyActiveQueries(affectedCacheKeys)
   }
 
   purgeInactiveQueries(
@@ -183,22 +191,13 @@ class CacheController {
     }
 
     cb(queriesToRefetch)
-    this.new_notifyActiveQueries(cacheKeysToNotify)
+    this.notifyActiveQueries(cacheKeysToNotify)
   }
 
   //========== Private methods =============
 
   // notify active queries of possible state change
-  private notifyActiveQueries() {
-    for (const [q, qInfo] of this.activeQueries) {
-      if (qInfo.cacheKey) {
-        qInfo.onData(this.cache.get(qInfo.cacheKey))
-      }
-    }
-  }
-
-  // notify active queries of possible state change
-  private new_notifyActiveQueries(cacheKeys: Set<CacheKey>) {
+  private notifyActiveQueries(cacheKeys: Set<CacheKey>) {
     for (const [q, qInfo] of this.activeQueries) {
       if (qInfo.cacheKey && cacheKeys.has(qInfo.cacheKey)) {
         qInfo.onData(this.cache.get(qInfo.cacheKey))

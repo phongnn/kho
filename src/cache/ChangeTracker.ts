@@ -13,13 +13,19 @@ export default class ChangeTracker {
     this.activeQueryCacheKeys.delete(cacheKey)
   }
 
+  findAffectedCacheKeys(
+    objects: Map<NormalizedType, [NormalizedObjectKey, any][]>
+  ) {
+    return this._findAffectedCacheKeys(objectsMapToSet(objects))
+  }
+
   saveQueryData(
     cacheKey: CacheKey,
     objects: Map<NormalizedType, [NormalizedObjectKey, any][]>
   ) {
     const newObjKeys = objectsMapToSet(objects)
     this.queryObjectsMap.set(cacheKey, newObjKeys)
-    return this.findAffectedCacheKeys(newObjKeys, cacheKey)
+    return this._findAffectedCacheKeys(newObjKeys, cacheKey)
   }
 
   saveMoreQueryData(
@@ -29,10 +35,10 @@ export default class ChangeTracker {
     const newObjKeys = objectsMapToSet(objects)
     const existingObjKeys = this.queryObjectsMap.get(cacheKey)!
     newObjKeys.forEach((k) => existingObjKeys.add(k))
-    return this.findAffectedCacheKeys(newObjKeys, cacheKey)
+    return this._findAffectedCacheKeys(newObjKeys, cacheKey)
   }
 
-  private findAffectedCacheKeys(
+  private _findAffectedCacheKeys(
     objKeys: Set<NormalizedObjectKey>,
     cacheKeyInProcess?: CacheKey
   ) {

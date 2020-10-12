@@ -25,7 +25,7 @@ interface QueryBucketItem {
 
 class QueryBucket {
   private queryData = new Map<CacheKey, QueryBucketItem>()
-  private updateFunctions = new Map<string, Map<CacheKey, QueryUpdateFn>>()
+  // private updateFunctions = new Map<string, Map<CacheKey, QueryUpdateFn>>()
 
   findCacheKey(query: BaseQuery) {
     for (const key of this.queryData.keys()) {
@@ -52,36 +52,36 @@ class QueryBucket {
   }
 
   set(cacheKey: CacheKey, value: QueryBucketItem) {
-    const isNewQuery = !this.queryData.get(cacheKey)
+    // const isNewQuery = !this.queryData.get(cacheKey)
     this.queryData.set(cacheKey, value)
 
-    if (isNewQuery) {
-      const { mutations = {} } = value.query.options
-      Object.entries(mutations).forEach(([mutationName, updateFn]) => {
-        const existingFunctions = this.updateFunctions.get(mutationName)
-        if (existingFunctions) {
-          existingFunctions.set(cacheKey, updateFn)
-        } else {
-          this.updateFunctions.set(
-            mutationName,
-            new Map<CacheKey, QueryUpdateFn>([[cacheKey, updateFn]])
-          )
-        }
-      })
-    }
+    // if (isNewQuery) {
+    //   const { mutations = {} } = value.query.options
+    //   Object.entries(mutations).forEach(([mutationName, updateFn]) => {
+    //     const existingFunctions = this.updateFunctions.get(mutationName)
+    //     if (existingFunctions) {
+    //       existingFunctions.set(cacheKey, updateFn)
+    //     } else {
+    //       this.updateFunctions.set(
+    //         mutationName,
+    //         new Map<CacheKey, QueryUpdateFn>([[cacheKey, updateFn]])
+    //       )
+    //     }
+    //   })
+    // }
   }
 
   delete(cacheKey: CacheKey) {
     this.queryData.delete(cacheKey)
 
-    for (const fnList of this.updateFunctions.values()) {
-      fnList.delete(cacheKey)
-    }
+    // for (const fnList of this.updateFunctions.values()) {
+    //   fnList.delete(cacheKey)
+    // }
   }
 
   clear() {
     this.queryData.clear()
-    this.updateFunctions.clear()
+    // this.updateFunctions.clear()
   }
 
   updateRelatedQueries<TResult, TArguments, TContext>(
@@ -92,24 +92,32 @@ class QueryBucket {
       optimistic: boolean
     }
   ) {
-    const updateFunctions = this.updateFunctions.get(mutation.name)
-    if (updateFunctions) {
-      for (const [cacheKey, updateFn] of updateFunctions) {
-        const item = this.queryData.get(cacheKey)!
-        const { data: currentData, query } = item
-        item.data = updateFn(currentData, {
-          ...info,
-          queryArgs: query.options.arguments,
-        })
-      }
-    }
-    // for (const item of this.queryData.values()) {
-    //   const { mutations = {} } = item.query.options
-    //   const updateFn = mutations[mutation.name]
-    //   if (updateFn) {
-    //     item.data = updateFn(item.data, info)
+    // const updateFunctions = this.updateFunctions.get(mutation.name)
+    // if (updateFunctions) {
+    //   for (const [cacheKey, updateFn] of updateFunctions) {
+    //     const item = this.queryData.get(cacheKey)!
+    //     const { data: currentData, query } = item
+    //     item.data = updateFn(currentData, {
+    //       ...info,
+    //       queryArgs: query.options.arguments,
+    //     })
     //   }
     // }
+
+    const updatedCacheKeys: CacheKey[] = []
+    for (const [cacheKey, item] of this.queryData) {
+      const { data: currentData, query } = item
+      const { mutations = {}, arguments: queryArgs } = query.options
+      const updateFn = mutations[mutation.name]
+      if (updateFn) {
+        item.data = updateFn(currentData, {
+          ...info,
+          queryArgs,
+        })
+        updatedCacheKeys.push(cacheKey)
+      }
+    }
+    return new Set(updatedCacheKeys)
   }
 }
 
