@@ -2,6 +2,7 @@
 import { BaseQuery, Query, LocalQuery, CompoundQuery, Mutation } from "../../common"
 import { CacheContainer, CacheKey } from "../../cache"
 import { mergeSets } from "../../common/helpers"
+import CacheProxy from "./CacheProxy"
 
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void
@@ -25,10 +26,8 @@ class CacheController {
       return true
     } else if (query instanceof LocalQuery) {
       const { initialValue = null } = query.options
-      const { newCacheKey, affectedCacheKeys } = this.cache.saveQueryData(
-        query,
-        initialValue
-      )
+      // prettier-ignore
+      const { newCacheKey, affectedCacheKeys } = this.cache.saveQueryData(query, initialValue)
       this.activeQueries.set(query, { onData, cacheKey: newCacheKey! })
       this.cache.changeTracker.track(newCacheKey!)
 
@@ -54,10 +53,8 @@ class CacheController {
   }
 
   storeQueryData(query: BaseQuery, data: any) {
-    const { newCacheKey, affectedCacheKeys } = this.cache.saveQueryData(
-      query,
-      data
-    )
+    // prettier-ignore
+    const { newCacheKey, affectedCacheKeys } = this.cache.saveQueryData(query, data)
     if (newCacheKey) {
       this.cache.changeTracker.track(newCacheKey)
 
@@ -83,12 +80,8 @@ class CacheController {
     }
 
     const { shape } = query.original.options
-    const affectedCacheKeys = this.cache.saveMoreQueryData(
-      cacheKey,
-      newData,
-      shape,
-      mergeFn
-    )
+    // prettier-ignore
+    const affectedCacheKeys = this.cache.saveMoreQueryData(cacheKey, newData, shape, mergeFn)
     this.notifyActiveQueries(affectedCacheKeys)
   }
 
@@ -118,12 +111,16 @@ class CacheController {
       optimistic,
     }
 
+    let cacheKeys_2 = new Set<CacheKey>()
     if (beforeQueryUpdates) {
-      beforeQueryUpdates(this.cache, info)
+      const cacheProxy = new CacheProxy(this.cache)
+      beforeQueryUpdates(cacheProxy, info)
+      // prettier-ignore
+      cacheKeys_2 = this.cache.changeTracker.findAffectedCacheKeys(cacheProxy.changedObjectKeys)
     }
 
     const cacheKeys_3 = this.cache.updateRelatedQueries(mutation, info)
-    const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_3)
+    const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2, cacheKeys_3)
 
     this.notifyActiveQueries(affectedCacheKeys)
   }

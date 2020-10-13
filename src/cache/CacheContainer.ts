@@ -1,20 +1,19 @@
 import {
   Query,
   BaseQuery,
-  CacheFacade,
   Mutation,
   NormalizedType,
   NormalizedShape,
   NormalizedObjectKey,
   NormalizedObjectRef,
 } from "../common"
-import { extractPlainKey, getActualQuery } from "../common/helpers"
+import { extractPlainKey } from "../common/helpers"
 import { DataNormalizer, DataDenormalizer } from "../normalization"
 import ChangeTracker from "./ChangeTracker"
 import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
 
-class CacheContainer implements CacheFacade {
+class CacheContainer {
   readonly changeTracker = new ChangeTracker()
   private queryBucket = new QueryBucket()
   private objectBucket = new ObjectBucket()
@@ -61,7 +60,10 @@ class CacheContainer implements CacheFacade {
 
       this.queryBucket.set(cacheKey, { query, data: result, selector })
       this.objectBucket.addObjects(objects)
-      affectedCacheKeys = this.changeTracker.saveQueryData(cacheKey, objects)
+      affectedCacheKeys = this.changeTracker.saveQueryData(
+        cacheKey,
+        toObjectKeysSet(objects)
+      )
     }
 
     return {
@@ -90,7 +92,11 @@ class CacheContainer implements CacheFacade {
         existingSelector!.merge(newSelector)
       }
       existingItem.data = mergeFn(existingData, result)
-      return this.changeTracker.saveMoreQueryData(cacheKey, objects) // affected cache keys
+      // return affected cache keys
+      return this.changeTracker.saveMoreQueryData(
+        cacheKey,
+        toObjectKeysSet(objects)
+      )
     }
   }
 
@@ -98,7 +104,9 @@ class CacheContainer implements CacheFacade {
     const normalizer = this.createNormalizer()
     const { result, objects } = normalizer.normalize(data, shape)
     this.objectBucket.addObjects(objects)
-    const affectedCacheKeys = this.changeTracker.findAffectedCacheKeys(objects)
+    const affectedCacheKeys = this.changeTracker.findAffectedCacheKeys(
+      toObjectKeysSet(objects)
+    )
     return {
       normalizedData: result,
       affectedCacheKeys,
@@ -126,11 +134,10 @@ class CacheContainer implements CacheFacade {
     this.queryBucket.clear()
   }
 
-  //============= CacheFacade methods (called only from mutation's beforeQueryUpdates()) =========
+  //============= methods called by CacheProxy (which implements CacheFacade interface) =========
 
   readQuery(query: BaseQuery) {
-    const actualQuery = query instanceof Query ? getActualQuery(query) : query
-    const cacheKey = this.findCacheKey(actualQuery)
+    const cacheKey = this.findCacheKey(query)
     return cacheKey ? this.queryBucket.get(cacheKey)!.data : null
   }
 
@@ -169,6 +176,15 @@ class CacheContainer implements CacheFacade {
       this.objectBucket.findObjectKey(type, plainKey)
     )
   }
+}
+
+// prettier-ignore
+function toObjectKeysSet(objects: Map<NormalizedType, [NormalizedObjectKey, any][]>) {
+  const objKeys: NormalizedObjectKey[] = []
+  objects.forEach((objectsByType) => {
+    objectsByType.forEach(([oKey]) => objKeys.push(oKey))
+  })
+  return new Set<NormalizedObjectKey>(objKeys)
 }
 
 export default CacheContainer

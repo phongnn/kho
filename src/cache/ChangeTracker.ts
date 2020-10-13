@@ -1,4 +1,4 @@
-import { NormalizedObjectKey, NormalizedType } from "../common"
+import { NormalizedObjectKey } from "../common"
 import { CacheKey } from "./QueryBucket"
 
 export default class ChangeTracker {
@@ -13,32 +13,18 @@ export default class ChangeTracker {
     this.activeQueryCacheKeys.delete(cacheKey)
   }
 
-  findAffectedCacheKeys(
-    objects: Map<NormalizedType, [NormalizedObjectKey, any][]>
-  ) {
-    return this._findAffectedCacheKeys(objectsMapToSet(objects))
+  saveQueryData(cacheKey: CacheKey, objKeys: Set<NormalizedObjectKey>) {
+    this.queryObjectsMap.set(cacheKey, objKeys)
+    return this.findAffectedCacheKeys(objKeys, cacheKey)
   }
 
-  saveQueryData(
-    cacheKey: CacheKey,
-    objects: Map<NormalizedType, [NormalizedObjectKey, any][]>
-  ) {
-    const newObjKeys = objectsMapToSet(objects)
-    this.queryObjectsMap.set(cacheKey, newObjKeys)
-    return this._findAffectedCacheKeys(newObjKeys, cacheKey)
-  }
-
-  saveMoreQueryData(
-    cacheKey: CacheKey,
-    objects: Map<NormalizedType, [NormalizedObjectKey, any][]>
-  ) {
-    const newObjKeys = objectsMapToSet(objects)
+  saveMoreQueryData(cacheKey: CacheKey, objKeys: Set<NormalizedObjectKey>) {
     const existingObjKeys = this.queryObjectsMap.get(cacheKey)!
-    newObjKeys.forEach((k) => existingObjKeys.add(k))
-    return this._findAffectedCacheKeys(newObjKeys, cacheKey)
+    objKeys.forEach((k) => existingObjKeys.add(k))
+    return this.findAffectedCacheKeys(objKeys, cacheKey)
   }
 
-  private _findAffectedCacheKeys(
+  findAffectedCacheKeys(
     objKeys: Set<NormalizedObjectKey>,
     cacheKeyInProcess?: CacheKey
   ) {
@@ -63,13 +49,4 @@ export default class ChangeTracker {
 
     return new Set(result)
   }
-}
-
-// prettier-ignore
-function objectsMapToSet(objects: Map<NormalizedType, [NormalizedObjectKey, any][]>) {
-  const objKeys: NormalizedObjectKey[] = []
-  objects.forEach((objectsByType) => {
-    objectsByType.forEach(([oKey]) => objKeys.push(oKey))
-  })
-  return new Set<NormalizedObjectKey>(objKeys)
 }
