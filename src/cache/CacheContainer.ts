@@ -14,7 +14,7 @@ import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
 
 class CacheContainer {
-  readonly changeTracker = new ChangeTracker()
+  readonly changeTracker = new ChangeTracker(this)
   private queryBucket = new QueryBucket()
   private objectBucket = new ObjectBucket()
 
@@ -122,7 +122,12 @@ class CacheContainer {
     }
   ) {
     // return set of updated cache keys
-    return this.queryBucket.updateRelatedQueries(mutation, info)
+    return this.queryBucket.updateRelatedQueries(
+      mutation,
+      info,
+      (cacheKey, data, selector) =>
+        this.changeTracker.updateQueryData(cacheKey, data, selector)
+    )
   }
 
   removeQueries(keys: CacheKey[]) {

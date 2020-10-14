@@ -1,9 +1,13 @@
-import { NormalizedObjectKey } from "../common"
+import { NormalizedObjectKey, NormalizedObjectRef } from "../common"
+import { Selector } from "../normalization"
+import CacheContainer from "./CacheContainer"
 import { CacheKey } from "./QueryBucket"
 
 export default class ChangeTracker {
   private activeQueryCacheKeys = new Set<CacheKey>()
   private queryObjectsMap = new Map<CacheKey, Set<NormalizedObjectKey>>()
+
+  constructor(private cache: CacheContainer) {}
 
   track(cacheKey: CacheKey) {
     this.activeQueryCacheKeys.add(cacheKey)
@@ -48,5 +52,39 @@ export default class ChangeTracker {
     }
 
     return new Set(result)
+  }
+
+  updateQueryData(cacheKey: CacheKey, data: any, selector: Selector) {
+    const objKeys =
+      this.queryObjectsMap.get(cacheKey) || new Set<NormalizedObjectKey>()
+    this.parseObjectTree(data, selector, objKeys) // update object keys for this cache key
+  }
+
+  private parseObjectTree(
+    tree: any,
+    selector: Selector,
+    objKeys: Set<NormalizedObjectKey>
+  ) {
+    if (!tree) {
+      return
+    } else if (Array.isArray(tree)) {
+      tree.forEach((item) => this.parseObjectTree(item, selector, objKeys))
+    } else if (tree instanceof NormalizedObjectRef) {
+      const oKey = tree.key
+      if (!objKeys.has(oKey)) {
+        objKeys.add(oKey)
+        const obj = this.cache.readObject(tree)
+        if (obj) {
+          this.parseObjectTree(obj, selector, objKeys)
+        }
+      }
+    } else {
+      for (let item of selector.iterator()) {
+        if (Array.isArray(item)) {
+          const [propName, subSelector] = item
+          this.parseObjectTree(tree[propName], subSelector, objKeys)
+        }
+      }
+    }
   }
 }

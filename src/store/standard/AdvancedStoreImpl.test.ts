@@ -664,4 +664,102 @@ describe("change notification", () => {
       },
     })
   })
+
+  test("updateRelatedQueries()", (done) => {
+    const query = new Query(
+      "UsersQuery",
+      () =>
+        new Promise((r) => setTimeout(() => r([{ id: 1, name: "User 1" }]))),
+      {
+        shape: [UserType],
+        mutations: {
+          AddUser: (currentList, { mutationResult: newUserRef }) => [
+            ...currentList,
+            newUserRef,
+          ],
+        },
+      }
+    )
+    const addUserMutation = new Mutation(
+      "AddUser",
+      () => Promise.resolve({ id: 2, name: "User 2" }),
+      { shape: UserType }
+    )
+    const updateUserMutation = new Mutation(
+      "UpdateUser",
+      () => Promise.resolve({ id: 2, name: "Updated Name" }),
+      { shape: UserType }
+    )
+
+    const store = new AdvancedStoreImpl()
+    store.registerQuery(query, {
+      onData: (data: any) => {
+        if (data.length === 1) {
+          setTimeout(() => store.processMutation(addUserMutation))
+        } else {
+          const user2 = data[1]
+          if (user2.name === "User 2") {
+            setTimeout(() => store.processMutation(updateUserMutation))
+          } else {
+            expect(user2.name).toBe("Updated Name")
+            done()
+          }
+        }
+      },
+    })
+  })
+
+  test("updateRelatedQueries() nested objects", (done) => {
+    const query = new Query(
+      "ArticlesQuery",
+      () =>
+        new Promise((r) =>
+          setTimeout(() =>
+            // prettier-ignore
+            r([{ id: "a1", title: "Article 1", author: { id: 1, name: "User 1" } }])
+          )
+        ),
+      {
+        shape: [ArticleType],
+        mutations: {
+          AddArticle: (currentList, { mutationResult: newArticleRef }) => [
+            ...currentList,
+            newArticleRef,
+          ],
+        },
+      }
+    )
+    const addArticleMutation = new Mutation(
+      "AddArticle",
+      () =>
+        Promise.resolve({
+          id: "a2",
+          title: "Article 2",
+          author: { id: 2, name: "User 2" },
+        }),
+      { shape: ArticleType }
+    )
+    const updateUserMutation = new Mutation(
+      "UpdateUser",
+      () => Promise.resolve({ id: 2, name: "Updated Name" }),
+      { shape: UserType }
+    )
+
+    const store = new AdvancedStoreImpl()
+    store.registerQuery(query, {
+      onData: (data: any) => {
+        if (data.length === 1) {
+          setTimeout(() => store.processMutation(addArticleMutation))
+        } else {
+          const { author } = data[1]
+          if (author.name === "User 2") {
+            setTimeout(() => store.processMutation(updateUserMutation))
+          } else {
+            expect(author.name).toBe("Updated Name")
+            done()
+          }
+        }
+      },
+    })
+  })
 })
