@@ -12,3 +12,4 @@ export {
   TransformShape,
 } from "./NormalizedType"
 export { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"
+export { Selector } from "./Selector"

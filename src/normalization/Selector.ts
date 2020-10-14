@@ -1,4 +1,4 @@
-type PlainSelector = Array<string | [string, PlainSelector]>
+import { Selector as PlainSelector } from "../common"
 
 export default class Selector {
   private items = new Set<string | [string, Selector]>()

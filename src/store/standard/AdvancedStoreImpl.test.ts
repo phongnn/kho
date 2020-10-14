@@ -763,3 +763,38 @@ describe("change notification", () => {
     })
   })
 })
+
+test("user-provided selector", (done) => {
+  const ProductType = NormalizedType.register("Product")
+  const query = new Query(
+    "Products",
+    () => new Promise((r) => setTimeout(() => r([]))),
+    {
+      shape: [ProductType],
+      selector: ["id", "name"],
+      mutations: {
+        AddProduct: (currentList, { mutationResult: newProductRef }) => [
+          ...currentList,
+          newProductRef,
+        ],
+      },
+    }
+  )
+  const mutation = new Mutation(
+    "AddProduct",
+    () => new Promise((r) => setTimeout(() => r({ id: 1, name: "Product A" }))),
+    { shape: ProductType }
+  )
+
+  const store = new AdvancedStoreImpl()
+  store.registerQuery(query, {
+    onData: (data: any) => {
+      if (data.length === 0) {
+        setTimeout(() => store.processMutation(mutation))
+      } else {
+        expect(data[0]).toStrictEqual({ id: 1, name: "Product A" })
+        done()
+      }
+    },
+  })
+})

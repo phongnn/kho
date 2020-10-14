@@ -1,4 +1,5 @@
 import { NormalizedShape, TransformShape } from "../NormalizedType"
+import { Selector } from "../Selector"
 
 export interface BaseQueryKey {
   matches(qk: BaseQueryKey): boolean
@@ -24,6 +25,7 @@ export abstract class BaseQuery {
       transform?: TransformShape
       mutations?: Record<string, QueryUpdateFn>
       arguments?: any
+      selector?: Selector
     } = {}
   ) {}
 

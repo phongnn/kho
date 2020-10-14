@@ -1,5 +1,6 @@
 import { deepEqual, mergeOptions } from "../helpers"
 import { NormalizedShape, TransformShape } from "../NormalizedType"
+import { Selector } from "../Selector"
 import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
 
 export interface QueryOptions<TResult, TArguments, TContext> {
@@ -18,6 +19,7 @@ export interface QueryOptions<TResult, TArguments, TContext> {
   mutations?: Record<string, QueryUpdateFn>
   fetchPolicy?: "cache-first" | "cache-and-network" | "network-only"
   pollInterval?: number
+  selector?: Selector
 }
 
 class QueryKey<TArguments> implements BaseQueryKey {

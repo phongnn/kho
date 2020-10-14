@@ -8,7 +8,7 @@ import {
   NormalizedObjectRef,
 } from "../common"
 import { extractPlainKey } from "../common/helpers"
-import { DataNormalizer, DataDenormalizer } from "../normalization"
+import { DataNormalizer, DataDenormalizer, Selector } from "../normalization"
 import ChangeTracker from "./ChangeTracker"
 import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
@@ -49,7 +49,7 @@ class CacheContainer {
     const cacheKey = existingCacheKey || new CacheKey(query)
     let affectedCacheKeys: Set<CacheKey>
 
-    const { shape } = query.options
+    const { shape, selector: userProvidedSelector } = query.options
     if (!shape) {
       // data not normalized
       this.queryBucket.set(cacheKey, { query, data, selector: null })
@@ -58,7 +58,13 @@ class CacheContainer {
       const normalizer = this.createNormalizer()
       const { result, objects, selector } = normalizer.normalize(data, shape)
 
-      this.queryBucket.set(cacheKey, { query, data: result, selector })
+      this.queryBucket.set(cacheKey, {
+        query,
+        data: result,
+        selector: userProvidedSelector
+          ? Selector.from(userProvidedSelector)
+          : selector,
+      })
       this.objectBucket.addObjects(objects)
       affectedCacheKeys = this.changeTracker.saveQueryData(
         cacheKey,
