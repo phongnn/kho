@@ -1,4 +1,9 @@
-import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
+import {
+  BaseQueryKey,
+  BaseQuery,
+  QueryUpdateFn,
+  RelatedQueryUpdateFn,
+} from "./BaseQuery"
 import { NormalizedShape, TransformShape } from "../NormalizedType"
 import { Selector } from "../Selector"
 
@@ -18,10 +23,11 @@ export class LocalQuery<TData> extends BaseQuery {
       transform?: TransformShape
       initialValue?: TData
       mutations?: Record<string, QueryUpdateFn>
+      relatedQueries?: Record<string, RelatedQueryUpdateFn>
       selector?: Selector
     } = {}
   ) {
-    super(new LocalQueryKey(name), options)
+    super(new LocalQueryKey(name), name, options)
   }
 
   clone() {

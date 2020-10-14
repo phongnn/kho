@@ -1,7 +1,12 @@
 import { deepEqual, mergeOptions } from "../helpers"
 import { NormalizedShape, TransformShape } from "../NormalizedType"
 import { Selector } from "../Selector"
-import { BaseQueryKey, BaseQuery, QueryUpdateFn } from "./BaseQuery"
+import {
+  BaseQueryKey,
+  BaseQuery,
+  QueryUpdateFn,
+  RelatedQueryUpdateFn,
+} from "./BaseQuery"
 
 export interface QueryOptions<TResult, TArguments, TContext> {
   arguments?: TArguments
@@ -17,6 +22,7 @@ export interface QueryOptions<TResult, TArguments, TContext> {
     }
   ) => any
   mutations?: Record<string, QueryUpdateFn>
+  relatedQueries?: Record<string, RelatedQueryUpdateFn>
   fetchPolicy?: "cache-first" | "cache-and-network" | "network-only"
   pollInterval?: number
   selector?: Selector
@@ -43,7 +49,7 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
     // prettier-ignore
     readonly options: QueryOptions<TResult, TArguments, TContext> = {}
   ) {
-    super(new QueryKey(name, options.arguments), options)
+    super(new QueryKey(name, options.arguments), name, options)
     this.options.fetchPolicy = options.fetchPolicy ?? "cache-first"
     this.options.pollInterval = options.pollInterval ?? 0
 

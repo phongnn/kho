@@ -1,4 +1,4 @@
-import { BaseQuery, BaseQueryKey, QueryUpdateFn, Mutation } from "../common"
+import { BaseQuery, BaseQueryKey, Mutation } from "../common"
 import { Selector } from "../normalization"
 
 // Equivalent query keys will share the same cache key
@@ -21,6 +21,10 @@ interface QueryBucketItem {
   query: BaseQuery
   data: any
   selector: Selector | null
+}
+
+interface TrackQueryFn {
+  (cacheKey: CacheKey, data: any, selector: Selector): void
 }
 
 class QueryBucket {
@@ -62,18 +66,14 @@ class QueryBucket {
     this.queryData.clear()
   }
 
-  updateRelatedQueries<TResult, TArguments, TContext>(
+  updateQueriesRelatedToMutation<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
     info: {
       mutationResult: any
       mutationArgs: any
       optimistic: boolean
     },
-    trackQueryCallback: (
-      cacheKey: CacheKey,
-      data: any,
-      selector: Selector
-    ) => void
+    trackQuery: TrackQueryFn
   ) {
     const updatedCacheKeys: CacheKey[] = []
     for (const [cacheKey, item] of this.queryData) {
@@ -89,7 +89,37 @@ class QueryBucket {
 
         // inform ChangeTracker to update query's dependencies
         if (selector) {
-          trackQueryCallback(cacheKey, item.data, selector)
+          trackQuery(cacheKey, item.data, selector)
+        }
+      }
+    }
+    return new Set(updatedCacheKeys)
+  }
+
+  updateRelatedQueries(
+    query: BaseQuery,
+    info: {
+      queryResult: any
+      queryArgs: any
+    },
+    trackQuery: TrackQueryFn
+  ) {
+    const updatedCacheKeys: CacheKey[] = []
+    for (const [cacheKey, item] of this.queryData) {
+      const { data: currentData, query: relatedQuery, selector } = item
+      const { relatedQueries = {}, arguments: queryArgs } = relatedQuery.options
+      const updateFn = relatedQueries[query.name]
+      if (updateFn) {
+        item.data = updateFn(currentData, {
+          relatedQueryResult: info.queryResult,
+          relatedQueryArgs: info.queryArgs,
+          queryArgs,
+        })
+        updatedCacheKeys.push(cacheKey)
+
+        // inform ChangeTracker to update query's dependencies
+        if (selector) {
+          trackQuery(cacheKey, item.data, selector)
         }
       }
     }

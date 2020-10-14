@@ -54,7 +54,7 @@ class CacheController {
 
   storeQueryData(query: BaseQuery, data: any) {
     // prettier-ignore
-    const { newCacheKey, affectedCacheKeys } = this.cache.saveQueryData(query, data)
+    const { newCacheKey, affectedCacheKeys: cacheKeys_1, normalizedData } = this.cache.saveQueryData(query, data)
     if (newCacheKey) {
       this.cache.changeTracker.track(newCacheKey)
 
@@ -65,6 +65,12 @@ class CacheController {
         }
       }
     }
+
+    const cacheKeys_2 = this.cache.updateRelatedQueries(query, {
+      queryResult: normalizedData,
+      queryArgs: query.options.arguments,
+    })
+    const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2)
 
     this.notifyActiveQueries(affectedCacheKeys)
   }
@@ -81,7 +87,14 @@ class CacheController {
 
     const { shape } = query.original.options
     // prettier-ignore
-    const affectedCacheKeys = this.cache.saveMoreQueryData(cacheKey, newData, shape, mergeFn)
+    const { affectedCacheKeys: cacheKeys_1, normalizedData } = this.cache.saveMoreQueryData(cacheKey, newData, shape, mergeFn)
+
+    const cacheKeys_2 = this.cache.updateRelatedQueries(query, {
+      queryResult: normalizedData,
+      queryArgs: undefined,
+    })
+    const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2)
+
     this.notifyActiveQueries(affectedCacheKeys)
   }
 
@@ -119,7 +132,10 @@ class CacheController {
       cacheKeys_2 = this.cache.changeTracker.findAffectedCacheKeys(cacheProxy.changedObjectKeys)
     }
 
-    const cacheKeys_3 = this.cache.updateRelatedQueries(mutation, info)
+    const cacheKeys_3 = this.cache.updateQueriesRelatedToMutation(
+      mutation,
+      info
+    )
     const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2, cacheKeys_3)
 
     this.notifyActiveQueries(affectedCacheKeys)

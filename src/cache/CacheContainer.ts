@@ -48,11 +48,13 @@ class CacheContainer {
     const existingCacheKey = this.findCacheKey(query)
     const cacheKey = existingCacheKey || new CacheKey(query)
     let affectedCacheKeys: Set<CacheKey>
+    let normalizedData: any
 
     const { shape, selector: userProvidedSelector } = query.options
     if (!shape) {
       // data not normalized
       this.queryBucket.set(cacheKey, { query, data, selector: null })
+      normalizedData = data
       affectedCacheKeys = new Set([cacheKey])
     } else {
       const normalizer = this.createNormalizer()
@@ -70,10 +72,12 @@ class CacheContainer {
         cacheKey,
         toObjectKeysSet(objects)
       )
+      normalizedData = result
     }
 
     return {
       newCacheKey: existingCacheKey ? null : cacheKey,
+      normalizedData,
       affectedCacheKeys,
     }
   }
@@ -86,9 +90,11 @@ class CacheContainer {
   ) {
     const existingItem = this.queryBucket.get(cacheKey)!
     const { data: existingData, selector: existingSelector } = existingItem
+    let affectedCacheKeys: Set<CacheKey>
+
     if (!shape) {
       existingItem.data = mergeFn(existingData, newData)
-      return new Set([cacheKey])
+      affectedCacheKeys = new Set([cacheKey])
     } else {
       const normalizer = this.createNormalizer()
       // prettier-ignore
@@ -98,11 +104,15 @@ class CacheContainer {
         existingSelector!.merge(newSelector)
       }
       existingItem.data = mergeFn(existingData, result)
-      // return affected cache keys
-      return this.changeTracker.saveMoreQueryData(
+      affectedCacheKeys = this.changeTracker.saveMoreQueryData(
         cacheKey,
         toObjectKeysSet(objects)
       )
+    }
+
+    return {
+      affectedCacheKeys,
+      normalizedData: existingItem.data,
     }
   }
 
@@ -119,7 +129,7 @@ class CacheContainer {
     }
   }
 
-  updateRelatedQueries<TResult, TArguments, TContext>(
+  updateQueriesRelatedToMutation<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
     info: {
       mutationResult: any
@@ -128,8 +138,24 @@ class CacheContainer {
     }
   ) {
     // return set of updated cache keys
-    return this.queryBucket.updateRelatedQueries(
+    return this.queryBucket.updateQueriesRelatedToMutation(
       mutation,
+      info,
+      (cacheKey, data, selector) =>
+        this.changeTracker.updateQueryData(cacheKey, data, selector)
+    )
+  }
+
+  updateRelatedQueries(
+    query: BaseQuery,
+    info: {
+      queryResult: any
+      queryArgs: any
+    }
+  ) {
+    // return set of updated cache keys
+    return this.queryBucket.updateRelatedQueries(
+      query,
       info,
       (cacheKey, data, selector) =>
         this.changeTracker.updateQueryData(cacheKey, data, selector)

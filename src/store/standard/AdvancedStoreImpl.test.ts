@@ -36,6 +36,86 @@ describe("LocalQuery", () => {
   })
 })
 
+describe("Query options", () => {
+  test("user-provided selector", (done) => {
+    const ProductType = NormalizedType.register("Product")
+    const query = new Query(
+      "Products",
+      () => new Promise((r) => setTimeout(() => r([]))),
+      {
+        shape: [ProductType],
+        selector: ["id", "name"],
+        mutations: {
+          AddProduct: (currentList, { mutationResult: newProductRef }) => [
+            ...currentList,
+            newProductRef,
+          ],
+        },
+      }
+    )
+    const mutation = new Mutation(
+      "AddProduct",
+      () =>
+        new Promise((r) => setTimeout(() => r({ id: 1, name: "Product A" }))),
+      { shape: ProductType }
+    )
+
+    const store = new AdvancedStoreImpl()
+    store.registerQuery(query, {
+      onData: (data: any) => {
+        if (data.length === 0) {
+          setTimeout(() => store.processMutation(mutation))
+        } else {
+          expect(data[0]).toStrictEqual({ id: 1, name: "Product A" })
+          done()
+        }
+      },
+    })
+  })
+
+  test("relatedQueries", (done) => {
+    let count = 10
+    const query = new Query(
+      "UsersQuery",
+      (args: { page: number }) =>
+        new Promise((r) =>
+          setTimeout(() => r({ userCount: count++, users: [] }))
+        ),
+      {
+        relatedQueries: {
+          UsersQuery: (
+            currentValue,
+            { relatedQueryResult, relatedQueryArgs, queryArgs }
+          ) => {
+            return queryArgs.page === relatedQueryArgs.page
+              ? currentValue
+              : {
+                  ...currentValue,
+                  userCount: relatedQueryResult.userCount,
+                }
+          },
+        },
+      }
+    )
+
+    const store = new AdvancedStoreImpl()
+    store.registerQuery(query.withOptions({ arguments: { page: 1 } }), {
+      onData: (data: any) => {
+        if (data.userCount === 10) {
+          setTimeout(() =>
+            store.registerQuery(query.withOptions({ arguments: { page: 2 } }), {
+              onData: jest.fn(),
+            })
+          )
+        } else {
+          expect(data.userCount).toBe(11) // updated following 2nd query's result
+          done()
+        }
+      },
+    })
+  })
+})
+
 describe("query()", () => {
   it("should load and return data", async () => {
     const query = new Query("GetData", jest.fn().mockResolvedValue("hello"))
@@ -761,40 +841,5 @@ describe("change notification", () => {
         }
       },
     })
-  })
-})
-
-test("user-provided selector", (done) => {
-  const ProductType = NormalizedType.register("Product")
-  const query = new Query(
-    "Products",
-    () => new Promise((r) => setTimeout(() => r([]))),
-    {
-      shape: [ProductType],
-      selector: ["id", "name"],
-      mutations: {
-        AddProduct: (currentList, { mutationResult: newProductRef }) => [
-          ...currentList,
-          newProductRef,
-        ],
-      },
-    }
-  )
-  const mutation = new Mutation(
-    "AddProduct",
-    () => new Promise((r) => setTimeout(() => r({ id: 1, name: "Product A" }))),
-    { shape: ProductType }
-  )
-
-  const store = new AdvancedStoreImpl()
-  store.registerQuery(query, {
-    onData: (data: any) => {
-      if (data.length === 0) {
-        setTimeout(() => store.processMutation(mutation))
-      } else {
-        expect(data[0]).toStrictEqual({ id: 1, name: "Product A" })
-        done()
-      }
-    },
   })
 })

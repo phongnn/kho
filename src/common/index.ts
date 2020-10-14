@@ -1,5 +1,5 @@
 export { Store } from "./Store"
-export { BaseQuery, BaseQueryKey, QueryUpdateFn } from "./query/BaseQuery"
+export { BaseQuery, BaseQueryKey } from "./query/BaseQuery"
 export { QueryOptions, Query } from "./query/Query"
 export { LocalQuery } from "./query/LocalQuery"
 export { CompoundQuery } from "./query/CompoundQuery"

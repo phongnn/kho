@@ -17,15 +17,28 @@ export interface QueryUpdateFn {
   ): any
 }
 
+export interface RelatedQueryUpdateFn {
+  (
+    currentValue: any,
+    info: {
+      relatedQueryResult: any
+      relatedQueryArgs: any
+      queryArgs: any
+    }
+  ): any
+}
+
 export abstract class BaseQuery {
   constructor(
     readonly key: BaseQueryKey,
+    readonly name: string,
     readonly options: {
+      arguments?: any
       shape?: NormalizedShape
       transform?: TransformShape
-      mutations?: Record<string, QueryUpdateFn>
-      arguments?: any
       selector?: Selector
+      mutations?: Record<string, QueryUpdateFn>
+      relatedQueries?: Record<string, RelatedQueryUpdateFn>
     } = {}
   ) {}
 
