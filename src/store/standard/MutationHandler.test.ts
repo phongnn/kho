@@ -1,4 +1,5 @@
-import AdvancedStoreImpl from "./AdvancedStoreImpl"
+import { AdvancedStore } from "../AdvancedStore"
+import { createStore } from "../createStore"
 import { Query, LocalQuery, Mutation, NormalizedType } from "../../common"
 
 afterEach(() => {
@@ -26,7 +27,7 @@ describe("callbacks", () => {
 
     const onRequest = jest.fn()
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation, {
       onRequest,
       onComplete: (data) => {
@@ -44,7 +45,7 @@ describe("callbacks", () => {
     const mutation = new Mutation("UpdateData", fn)
 
     jest.spyOn(console, "error").mockImplementation(() => {})
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation, {
       onComplete: () => {
         throw new Error("It should not have invoked onComplete callback.")
@@ -69,7 +70,7 @@ describe("callbacks", () => {
       { shape: [UserType] }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data) => {
         const y = data.find((u) => u.username === "y")
@@ -135,7 +136,7 @@ describe("optimistic response", () => {
 
     expect.assertions(2)
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data) => {
         if (data.length > 2) {
@@ -163,7 +164,7 @@ describe("optimistic response", () => {
       },
     })
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation)
   })
 })
@@ -179,7 +180,7 @@ describe("beforeQueryUpdates()", () => {
         done()
       },
     })
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation.withOptions({ arguments: args, context }))
   })
 
@@ -204,7 +205,7 @@ describe("beforeQueryUpdates()", () => {
         shape: UserType,
       }
     )
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data) => {
         if (data.length === 1) {
@@ -237,7 +238,7 @@ describe("beforeQueryUpdates()", () => {
     })
 
     let updated = false
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data) => {
         if (!updated) {
@@ -265,7 +266,7 @@ describe("beforeQueryUpdates()", () => {
       { shape: [UserType] }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data) => {
         if (data.length === 1) {
@@ -290,7 +291,7 @@ describe("afterQueryUpdates()", () => {
       afterQueryUpdates: (store) => store.setQueryData(query, "something"),
     })
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation, {
       onComplete: () => {
         setTimeout(() =>
@@ -321,7 +322,7 @@ describe("syncMode", () => {
       }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation, {
       onComplete: () => {
         expect(count).toBe(0) // onComplete is called BEFORE query is fetched
@@ -350,7 +351,7 @@ describe("syncMode", () => {
       }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation, {
       onComplete: () => {
         expect(dataFetched).toBe(true)
@@ -372,7 +373,7 @@ describe("syncMode", () => {
       }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation, {
       onComplete: () => {
         expect(happened).toBe(true)
@@ -391,7 +392,7 @@ describe("syncMode", () => {
       }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation, {
       onError: (err) => {
         expect(err).toBe("strange err")
@@ -409,7 +410,7 @@ describe("syncMode", () => {
       }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.processMutation(mutation, {
       onError: () => {
         throw new Error("onError is unexpectedly called")

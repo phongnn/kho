@@ -1,5 +1,6 @@
+import { AdvancedStore } from "../AdvancedStore"
+import { createStore } from "../createStore"
 import { Query, LocalQuery, Mutation, NormalizedType } from "../../common"
-import AdvancedStoreImpl from "./AdvancedStoreImpl"
 
 afterEach(() => {
   // @ts-ignore
@@ -22,7 +23,7 @@ describe("LocalQuery", () => {
         UpdateData: (_, { mutationResult }) => mutationResult,
       },
     })
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerLocalQuery(query, {
       onData: (data) => {
         if (data === initialValue) {
@@ -60,7 +61,7 @@ describe("Query options", () => {
       { shape: ProductType }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data: any) => {
         if (data.length === 0) {
@@ -98,7 +99,7 @@ describe("Query options", () => {
       }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query.withOptions({ arguments: { page: 1 } }), {
       onData: (data: any) => {
         if (data.userCount === 10) {
@@ -119,7 +120,7 @@ describe("Query options", () => {
 describe("query()", () => {
   it("should load and return data", async () => {
     const query = new Query("GetData", jest.fn().mockResolvedValue("hello"))
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     const result = await store.query(query)
     expect(result).toBe("hello")
   })
@@ -127,7 +128,7 @@ describe("query()", () => {
   it("should load and return error", async () => {
     // prettier-ignore
     const query = new Query("GetData", jest.fn().mockRejectedValue("strange error"))
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
 
     jest.spyOn(console, "error").mockImplementation(() => {})
     expect.assertions(1)
@@ -144,7 +145,7 @@ describe("query()", () => {
       "GetData",
       () => new Promise((r) => setTimeout(() => r(++count)))
     )
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
 
     store.registerQuery(query, {
       onData: () => {
@@ -163,7 +164,7 @@ describe("query()", () => {
       "GetData",
       () => new Promise((r) => setTimeout(() => r(++count)))
     )
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
 
     const { unregister } = store.registerQuery(query, {
       onData: () => {
@@ -186,7 +187,7 @@ describe("query()", () => {
       () => new Promise((r) => setTimeout(() => r(++count))),
       { merge: (e, n) => e + n }
     )
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
 
     store.registerQuery(query, {
       onData: () => {
@@ -206,7 +207,7 @@ describe("query()", () => {
       () => new Promise((r) => setTimeout(() => r(++count))),
       { merge: (e, n) => e + n }
     )
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
 
     store.query(query).then(() => {
       store.registerQuery(query, {
@@ -224,7 +225,7 @@ describe("query()", () => {
       "GetData",
       () => new Promise((r) => setTimeout(() => r(++count)))
     )
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
 
     store.registerQuery(query, {
       onRequest: () => {
@@ -251,7 +252,7 @@ describe("mutate()", () => {
       syncMode: true,
     })
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     await store.mutate(mutation, { arguments: args })
 
     expect(mutateFn).toBeCalledWith(args, {}, store)
@@ -269,7 +270,7 @@ describe("refetchQueries()", () => {
     const q2 = query.withOptions({ arguments: { name: "y" } })
 
     let refetched = false
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(q1, {
       onData: (countValue) => {
         if (countValue > 2) {
@@ -311,7 +312,7 @@ describe("refetchQueries()", () => {
 
     let mutationTriggered = false
     let mutationCompleted = false
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     const { fetchMore } = store.registerQuery(
       query.withOptions({ arguments: { x: 1 } }),
       {
@@ -341,7 +342,7 @@ describe("refetchQueries()", () => {
       () => new Promise<number>((r) => setTimeout(() => r(++count)))
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     const { unregister } = store.registerQuery(query, {
       onData: async () => {
         unregister() // make the query inactive
@@ -361,7 +362,7 @@ describe("refetchQueries()", () => {
     const q3 = query.withOptions({ arguments: { name: "z" } })
 
     let refeched = false
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     const { unregister: unregisterQ1 } = store.registerQuery(q1, {
       onData: (countValue) => expect(countValue).toBe(1), // should not be refetched
     })
@@ -394,7 +395,7 @@ describe("refetchQueries()", () => {
     const q3 = query.withOptions({ arguments: { name: "y", page: 2 } })
 
     let refeched = false
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(q1, {
       onData: (countValue) => expect(countValue).toBe(1), // should not be refetched
     })
@@ -434,7 +435,7 @@ describe("setQueryData()", () => {
       { shape: [UserType] }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data) => {
         if (data.length === 1) {
@@ -454,7 +455,7 @@ describe("setQueryData()", () => {
     const query = new Query("GetData", () => Promise.resolve(1), {
       merge: (e, n) => e + n,
     })
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     const { fetchMore } = store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -474,7 +475,7 @@ describe("resetStore()", () => {
   it("should reset cache and refetch active query", (done) => {
     let count = 0
     const query = new Query("GetData", () => Promise.resolve(++count))
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data) => {
         if (data === 1) {
@@ -496,7 +497,7 @@ describe("resetStore()", () => {
     })
     // prettier-ignore
     const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     let valueSet = false
     store.registerLocalQuery(query, {
       onData: (data) => {
@@ -522,7 +523,7 @@ describe("resetStore()", () => {
         merge: (e, n) => n,
       }
     )
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     const { fetchMore } = store.registerQuery(
       query.withOptions({ arguments: { x: 1 } }),
       {
@@ -580,7 +581,7 @@ describe("change notification", () => {
       let q1Done = false
       let q2Done = false
 
-      const store = new AdvancedStoreImpl()
+      const store = createStore() as AdvancedStore
       store.registerQuery(q1, {
         onData: (data: any) => {
           if (data.name === "Updated name") {
@@ -626,7 +627,7 @@ describe("change notification", () => {
       )
 
       const q1Handler = jest.fn()
-      const store = new AdvancedStoreImpl()
+      const store = createStore() as AdvancedStore
       store.registerQuery(q1, { onData: q1Handler })
       store.registerQuery(q2, {
         onData: () => {
@@ -670,7 +671,7 @@ describe("change notification", () => {
     let q1Done = false
     let q2Done = false
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(q1, {
       onData: (data: any) => {
         if (data.author.name === "U2") {
@@ -727,7 +728,7 @@ describe("change notification", () => {
     )
 
     const q1Handler = jest.fn()
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(q1, {
       onData: q1Handler,
     })
@@ -771,7 +772,7 @@ describe("change notification", () => {
       { shape: UserType }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data: any) => {
         if (data.length === 1) {
@@ -825,7 +826,7 @@ describe("change notification", () => {
       { shape: UserType }
     )
 
-    const store = new AdvancedStoreImpl()
+    const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data: any) => {
         if (data.length === 1) {

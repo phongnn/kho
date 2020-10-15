@@ -17,6 +17,8 @@ class AdvancedStoreImpl implements AdvancedStore {
   private queryHandler = new QueryHandler(this.cache)
   private mutationHandler = new MutationHandler(this, this.cache)
 
+  constructor(private storeOptions: { queryExpiryMs: number }) {}
+
   //========== AdvancedStore interface's methods =============
 
   registerQuery<TResult, TArguments, TContext>(
@@ -28,7 +30,34 @@ class AdvancedStoreImpl implements AdvancedStore {
       onComplete?: () => void
     }
   ) {
-    return this.queryHandler.registerQuery(query, callbacks)
+    // prettier-ignore
+    const { unregister, ...rest } = this.queryHandler.registerQuery(query, callbacks)
+    let unregistered = false
+    const registrationResult = {
+      unregister: () => {
+        unregistered = true
+        unregister()
+      },
+      ...rest,
+    }
+
+    // refetch query when expired
+    const {
+      expiryMs = this.storeOptions.queryExpiryMs,
+      fetchPolicy,
+    } = query.options
+    // network-only queries don't have expired data as they always get latest from backend
+    if (fetchPolicy !== "network-only" && expiryMs > 0) {
+      const refetchWhenExpired = () => {
+        this.refetchQueries([query])
+        if (!unregistered) {
+          setTimeout(refetchWhenExpired, expiryMs)
+        }
+      }
+      setTimeout(refetchWhenExpired, expiryMs)
+    }
+
+    return registrationResult
   }
 
   registerLocalQuery<TResult>(

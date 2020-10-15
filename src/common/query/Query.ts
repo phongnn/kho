@@ -11,6 +11,7 @@ import {
 export interface QueryOptions<TResult, TArguments, TContext> {
   arguments?: TArguments
   context?: Partial<TContext>
+  expiryMs?: number
   shape?: NormalizedShape
   transform?: TransformShape
   merge?: (
