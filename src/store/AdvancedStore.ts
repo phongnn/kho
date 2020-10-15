@@ -33,8 +33,6 @@ export interface QueryRegistrationResult<TResult, TArguments, TContext> {
   unregister: () => void
   refetch: RefetchFn
   fetchMore: FetchMoreFn<TResult, TArguments, TContext>
-  startPolling: (interval?: number) => void
-  stopPolling: () => void
 }
 
 export interface LocalQueryRegistrationResult {

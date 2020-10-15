@@ -44,7 +44,7 @@ class QueryHandler {
     }
   ) {
     const { onRequest, onData, onError, onComplete } = callbacks
-    const { fetchPolicy, pollInterval = 0 } = query.options
+    const { fetchPolicy } = query.options
     const networkOnly = fetchPolicy === "network-only"
     const cacheAndNetwork = fetchPolicy === "cache-and-network"
 
@@ -82,19 +82,8 @@ class QueryHandler {
       )
     }
 
-    let stopPollingFn = () => {} // no-op
-    if (pollInterval > 0) {
-      stopPollingFn = this.startPolling(
-        queryHandle,
-        pollInterval,
-        onDataCallback,
-        { ignoreDedupOnData: !networkOnly }
-      )
-    }
-
     const result: QueryRegistrationResult<TResult, TArguments, TContext> = {
       unregister: () => {
-        stopPollingFn()
         this.cache.unsubscribe(queryHandle) // if (!networkOnly)
       },
       refetch: (callbacks = {}) =>
@@ -137,16 +126,6 @@ class QueryHandler {
           },
         })
       },
-      startPolling: (interval?: number) => {
-        stopPollingFn() // clear the previous interval
-        stopPollingFn = this.startPolling(
-          queryHandle,
-          interval || pollInterval,
-          onDataCallback,
-          { ignoreDedupOnData: !networkOnly }
-        )
-      },
-      stopPolling: () => stopPollingFn(),
     }
 
     return result
@@ -164,22 +143,6 @@ class QueryHandler {
     }
   ) {
     this.fetcher.addRequest(query, callbacks, { ignoreDedupOnData: true })
-  }
-
-  private startPolling<TResult, TArguments, TContext>(
-    queryHandle:
-      | Query<TResult, TArguments, TContext>
-      | CompoundQuery<TResult, TArguments, TContext>,
-    pollInterval: number,
-    onData: (data: TResult) => void,
-    options: { ignoreDedupOnData: boolean }
-  ) {
-    const interval = setInterval(
-      () => this.fetcher.addRequest(queryHandle, { onData }, options),
-      pollInterval
-    )
-
-    return () => clearInterval(interval)
   }
 }
 

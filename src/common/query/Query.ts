@@ -24,7 +24,6 @@ export interface QueryOptions<TResult, TArguments, TContext> {
   mutations?: Record<string, QueryUpdateFn>
   relatedQueries?: Record<string, RelatedQueryUpdateFn>
   fetchPolicy?: "cache-first" | "cache-and-network" | "network-only"
-  pollInterval?: number
   selector?: Selector
 }
 
@@ -51,7 +50,6 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
   ) {
     super(new QueryKey(name, options.arguments), name, options)
     this.options.fetchPolicy = options.fetchPolicy ?? "cache-first"
-    this.options.pollInterval = options.pollInterval ?? 0
 
     // make sure a query name can't be registered with more than 1 fetcher function
     const prevFetcher = Query.registry.get(name)
