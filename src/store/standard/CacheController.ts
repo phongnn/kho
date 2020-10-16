@@ -52,6 +52,11 @@ class CacheController {
     }
   }
 
+  retrieveQueryData(query: BaseQuery) {
+    const cacheKey = this.cache.findCacheKey(query)
+    return cacheKey ? this.cache.get(cacheKey) : undefined
+  }
+
   storeQueryData(query: BaseQuery, data: any) {
     // prettier-ignore
     const { newCacheKey, affectedCacheKeys: cacheKeys_1, normalizedData } = this.cache.saveQueryData(query, data)
@@ -96,11 +101,6 @@ class CacheController {
     const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2)
 
     this.notifyActiveQueries(affectedCacheKeys)
-  }
-
-  retrieveQueryData(query: BaseQuery) {
-    const cacheKey = this.cache.findCacheKey(query)
-    return cacheKey ? this.cache.get(cacheKey) : undefined
   }
 
   storeMutationResult<TResult, TArguments, TContext>(
@@ -205,6 +205,16 @@ class CacheController {
 
     cb(queriesToRefetch)
     this.notifyActiveQueries(cacheKeysToNotify)
+  }
+
+  getActiveNonLocalQueries() {
+    const result = []
+    for (let q of this.activeQueries.keys()) {
+      if (q instanceof Query || q instanceof CompoundQuery) {
+        result.push(q)
+      }
+    }
+    return result
   }
 
   //========== Private methods =============

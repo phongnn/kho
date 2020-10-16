@@ -421,6 +421,40 @@ describe("refetchQueries()", () => {
   })
 })
 
+describe("refetchActiveQueries()", () => {
+  it("should work", (done) => {
+    let count1 = 0
+    const q1 = new Query("Q1", () => Promise.resolve(++count1))
+    let count2 = 0
+    const q2 = new Query("Q2", () => Promise.resolve([++count2]), {
+      merge: (e, n) => [...e, ...n],
+    })
+
+    let refetched = false
+    const store = createStore() as AdvancedStore
+    const { unregister } = store.registerQuery(q1, {
+      onData: jest.fn(),
+      onComplete: () => setTimeout(unregister), // make Q1 inactive
+    })
+
+    const { fetchMore } = store.registerQuery(q2, {
+      onData: (data) => {
+        if (data.length === 1) {
+          setTimeout(() => fetchMore(q2))
+        } else if (!refetched) {
+          expect(data).toStrictEqual([1, 2])
+          refetched = true
+          setTimeout(() => store.refetchActiveQueries())
+        } else {
+          expect(data).toStrictEqual([3, 3]) // same value because of request dedup
+          expect(count1).toBe(1) // Q1 wasn't refetched because it's inactive
+          done()
+        }
+      },
+    })
+  })
+})
+
 describe("setQueryData()", () => {
   it("should update query result", (done) => {
     // prettier-ignore

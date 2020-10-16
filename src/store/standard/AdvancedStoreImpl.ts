@@ -137,6 +137,13 @@ class AdvancedStoreImpl implements AdvancedStore {
     return this.doRefetchQueries(activeQueries)
   }
 
+  refetchActiveQueries() {
+    return new Promise<void>((resolve, reject) => {
+      const queries = this.cache.getActiveNonLocalQueries()
+      this.doRefetchQueries(queries).then(resolve).catch(reject)
+    })
+  }
+
   resetStore() {
     return new Promise<void>((resolve, reject) => {
       this.cache.reset((activeQueries) => {
