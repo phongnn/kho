@@ -1,23 +1,7 @@
 import { Store } from "../Store"
-import { Query } from "./Query"
-import { LocalQuery } from "./LocalQuery"
-import {
-  NormalizedShape,
-  NormalizedType,
-} from "../normalization/NormalizedType"
-import { NormalizedObjectRef } from "../normalization/NormalizedObject"
+import { NormalizedShape } from "../normalization/NormalizedType"
 import { mergeOptions } from "../helpers"
-
-/** Interface exposed for use only in mutations' beforeQueryUpdates() */
-export interface CacheProxy {
-  // prettier-ignore
-  readQuery<TResult>(query: Query<TResult, any, any> | LocalQuery<TResult>): TResult
-  addObject(type: NormalizedType, data: any): NormalizedObjectRef
-  findObjectRef(type: NormalizedType, key: any): NormalizedObjectRef | null
-  readObject(ref: NormalizedObjectRef): any
-  updateObject(ref: NormalizedObjectRef, data: any): void
-  deleteObject(ref: NormalizedObjectRef): void
-}
+import { CacheProxy } from "./CacheProxy"
 
 export interface MutationOptions<TResult, TArguments, TContext> {
   arguments?: TArguments

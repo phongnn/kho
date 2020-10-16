@@ -132,10 +132,8 @@ class CacheController {
       cacheKeys_2 = this.cache.changeTracker.findAffectedCacheKeys(cacheProxy.changedObjectKeys)
     }
 
-    const cacheKeys_3 = this.cache.updateQueriesRelatedToMutation(
-      mutation,
-      info
-    )
+    // prettier-ignore
+    const cacheKeys_3 = this.cache.updateQueriesRelatedToMutation(mutation, info)
     const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2, cacheKeys_3)
 
     this.notifyActiveQueries(affectedCacheKeys)

@@ -432,9 +432,9 @@ describe("refetchActiveQueries()", () => {
 
     let refetched = false
     const store = createStore() as AdvancedStore
-    const { unregister } = store.registerQuery(q1, {
+    const q1Reg = store.registerQuery(q1, {
       onData: jest.fn(),
-      onComplete: () => setTimeout(unregister), // make Q1 inactive
+      onComplete: () => setTimeout(() => q1Reg.unregister()), // make Q1 inactive
     })
 
     const { fetchMore } = store.registerQuery(q2, {
