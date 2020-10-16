@@ -157,7 +157,7 @@ class CacheContainer {
     this.queryBucket.clear()
   }
 
-  //============= methods called by CacheProxy (which implements CacheFacade interface) =========
+  //============= methods called by CacheProxyImpl =========
 
   readQuery(query: BaseQuery) {
     const cacheKey = this.findCacheKey(query)

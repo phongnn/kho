@@ -1,7 +1,7 @@
 import { CacheContainer } from "../../cache"
 import {
   BaseQuery,
-  CacheFacade,
+  CacheProxy,
   NormalizedObjectKey,
   NormalizedObjectRef,
   NormalizedType,
@@ -10,7 +10,7 @@ import {
 import { getActualQuery } from "../../common/helpers"
 
 /** keeps track of which normalized objects are changed by a mutation's beforeQueryUpdates() */
-export default class CacheProxy implements CacheFacade {
+export default class CacheProxyImpl implements CacheProxy {
   readonly changedObjectKeys = new Set<NormalizedObjectKey>()
 
   constructor(private cache: CacheContainer) {}

@@ -3,7 +3,7 @@ export { BaseQuery, BaseQueryKey } from "./query/BaseQuery"
 export { QueryOptions, Query } from "./query/Query"
 export { LocalQuery } from "./query/LocalQuery"
 export { CompoundQuery } from "./query/CompoundQuery"
-export { Mutation, MutationOptions, CacheFacade } from "./query/Mutation"
+export { Mutation, MutationOptions, CacheProxy } from "./query/Mutation"
 export {
   NormalizedTypePlaceholder,
   NormalizedType,

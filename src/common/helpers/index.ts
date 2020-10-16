@@ -1,6 +1,6 @@
 import { Query } from "../query/Query"
 import CompoundQuery from "../query/CompoundQuery"
-import { NormalizedType } from "../NormalizedType"
+import { NormalizedType } from "../normalization/NormalizedType"
 
 export const env = process.env.NODE_ENV
 export const isProduction = env === "production"

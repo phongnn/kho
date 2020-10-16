@@ -4,8 +4,11 @@ import {
   QueryUpdateFn,
   RelatedQueryUpdateFn,
 } from "./BaseQuery"
-import { NormalizedShape, TransformShape } from "../NormalizedType"
-import { Selector } from "../Selector"
+import {
+  NormalizedShape,
+  TransformShape,
+} from "../normalization/NormalizedType"
+import { Selector } from "../normalization/Selector"
 
 class LocalQueryKey implements BaseQueryKey {
   constructor(private name: string) {}

@@ -9,7 +9,7 @@ import { NormalizedObjectRef } from "../normalization/NormalizedObject"
 import { mergeOptions } from "../helpers"
 
 /** Interface exposed for use only in mutations' beforeQueryUpdates() */
-export interface CacheFacade {
+export interface CacheProxy {
   // prettier-ignore
   readQuery<TResult>(query: Query<TResult, any, any> | LocalQuery<TResult>): TResult
   addObject(type: NormalizedType, data: any): NormalizedObjectRef
@@ -26,7 +26,7 @@ export interface MutationOptions<TResult, TArguments, TContext> {
   optimisticResponse?: any
 
   beforeQueryUpdates?: (
-    cache: CacheFacade,
+    cache: CacheProxy,
     info: {
       mutationResult: any // normalized data
       mutationArgs: TArguments

@@ -1,6 +1,9 @@
 import { deepEqual, mergeOptions } from "../helpers"
-import { NormalizedShape, TransformShape } from "../NormalizedType"
-import { Selector } from "../Selector"
+import {
+  NormalizedShape,
+  TransformShape,
+} from "../normalization/NormalizedType"
+import { Selector } from "../normalization/Selector"
 import {
   BaseQueryKey,
   BaseQuery,

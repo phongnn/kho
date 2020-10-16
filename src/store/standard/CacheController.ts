@@ -2,7 +2,7 @@
 import { BaseQuery, Query, LocalQuery, CompoundQuery, Mutation } from "../../common"
 import { CacheContainer, CacheKey } from "../../cache"
 import { mergeSets } from "../../common/helpers"
-import CacheProxy from "./CacheProxy"
+import CacheProxyImpl from "./CacheProxyImpl"
 
 interface ActiveQueryInfo {
   readonly onData: (data: any) => void
@@ -126,7 +126,7 @@ class CacheController {
 
     let cacheKeys_2 = new Set<CacheKey>()
     if (beforeQueryUpdates) {
-      const cacheProxy = new CacheProxy(this.cache)
+      const cacheProxy = new CacheProxyImpl(this.cache)
       beforeQueryUpdates(cacheProxy, info)
       // prettier-ignore
       cacheKeys_2 = this.cache.changeTracker.findAffectedCacheKeys(cacheProxy.changedObjectKeys)

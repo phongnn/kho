@@ -5,11 +5,10 @@ export {
   LocalQuery,
   Mutation,
   MutationOptions,
-  // CacheFacade,
   NormalizedObjectRef,
   NormalizedType,
-} from // NormalizedShape,
-"./common"
+  CacheProxy,
+} from "./common"
 
 export {
   createStore,
