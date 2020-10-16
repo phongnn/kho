@@ -1,5 +1,5 @@
 import { NormalizedType } from "./NormalizedType"
-import { deepEqual } from "./helpers"
+import { deepEqual } from "../helpers"
 
 export class NormalizedObjectKey {
   constructor(private plainKey: any) {}

@@ -1,8 +1,11 @@
 import { Store } from "../Store"
 import { Query } from "./Query"
 import { LocalQuery } from "./LocalQuery"
-import { NormalizedShape, NormalizedType } from "../NormalizedType"
-import { NormalizedObjectRef } from "../NormalizedObject"
+import {
+  NormalizedShape,
+  NormalizedType,
+} from "../normalization/NormalizedType"
+import { NormalizedObjectRef } from "../normalization/NormalizedObject"
 import { mergeOptions } from "../helpers"
 
 /** Interface exposed for use only in mutations' beforeQueryUpdates() */

@@ -10,6 +10,9 @@ export {
   NormalizedTypeShape,
   NormalizedShape,
   TransformShape,
-} from "./NormalizedType"
-export { NormalizedObjectKey, NormalizedObjectRef } from "./NormalizedObject"
-export { Selector } from "./Selector"
+} from "./normalization/NormalizedType"
+export {
+  NormalizedObjectKey,
+  NormalizedObjectRef,
+} from "./normalization/NormalizedObject"
+export { Selector } from "./normalization/Selector"
