@@ -43,7 +43,7 @@ class QueryHandler {
       onComplete?: () => void
     }
   ) {
-    const { onRequest, onData, onError, onComplete } = callbacks
+    const { onData, onComplete } = callbacks
     const { fetchPolicy } = query.options
     const networkOnly = fetchPolicy === "network-only"
     const cacheAndNetwork = fetchPolicy === "cache-and-network"
@@ -72,12 +72,7 @@ class QueryHandler {
     if (!alreadyCached || cacheAndNetwork) {
       this.fetcher.addRequest(
         uniqueQuery,
-        {
-          onRequest,
-          onError,
-          onComplete,
-          onData: onDataCallback,
-        },
+        { ...callbacks, onData: onDataCallback },
         { ignoreDedupOnData: !networkOnly }
       )
     }
@@ -86,16 +81,19 @@ class QueryHandler {
       unregister: () => {
         this.cache.unsubscribe(queryHandle) // if (!networkOnly)
       },
-      refetch: (callbacks = {}) =>
+      retry: () =>
         this.fetcher.addRequest(
-          queryHandle,
-          {
-            ...callbacks,
-            onData: onDataCallback,
-          },
+          uniqueQuery,
+          { ...callbacks, onData: onDataCallback },
           { ignoreDedupOnData: !networkOnly }
         ),
-      fetchMore: (nextQuery, callbacks) => {
+      refetch: (cbFuncs = {}) =>
+        this.fetcher.addRequest(
+          queryHandle,
+          { ...cbFuncs, onData: onDataCallback },
+          { ignoreDedupOnData: !networkOnly }
+        ),
+      fetchMore: (nextQuery, cbFuncs) => {
         if (!(queryHandle instanceof CompoundQuery)) {
           // prettier-ignore
           throw new Error(`[Kho] merge() function not defined for query ${query.name}.`)
@@ -107,7 +105,7 @@ class QueryHandler {
         const mergeFn =
           nextQuery.options.merge || queryHandle.original.options.merge
         this.fetcher.addRequest(nextQuery, {
-          ...callbacks,
+          ...cbFuncs,
           onData: (newData) => {
             const { arguments: args, context } = nextQuery.options
             if (!networkOnly) {

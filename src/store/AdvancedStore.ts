@@ -31,6 +31,7 @@ export interface AdvancedStore extends Store {
 
 export interface QueryRegistrationResult<TResult, TArguments, TContext> {
   unregister: () => void
+  retry: () => void
   refetch: RefetchFn
   fetchMore: FetchMoreFn<TResult, TArguments, TContext>
 }

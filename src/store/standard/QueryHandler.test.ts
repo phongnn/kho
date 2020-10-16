@@ -354,6 +354,32 @@ describe("refetch", () => {
   })
 })
 
+describe("retry", () => {
+  it("should work", (done) => {
+    let firstCall = true
+    const query = new Query("GetData", () => {
+      if (firstCall) {
+        firstCall = false
+        return Promise.reject("Some error")
+      }
+      return Promise.resolve("Hello!")
+    })
+
+    jest.spyOn(console, "error").mockImplementation(() => {})
+    const store = createStore() as AdvancedStore
+    const { retry } = store.registerQuery(query, {
+      onError: (err) => {
+        expect(err.message).toMatch(/Some error/)
+        setTimeout(retry)
+      },
+      onData: (data) => {
+        expect(data).toBe("Hello!")
+        done()
+      },
+    })
+  })
+})
+
 describe("expiryMs", () => {
   const intervalMs = 5 * 60 * 1000
 
