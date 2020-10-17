@@ -108,7 +108,7 @@ class CacheController {
     data: TResult,
     optimistic: boolean = false
   ) {
-    const { shape, beforeQueryUpdates } = mutation.options
+    const { resultShape: shape, beforeQueryUpdates } = mutation.options
     let normalizedData: any = null
     let cacheKeys_1 = new Set<CacheKey>()
 

@@ -64,7 +64,7 @@ describe("Query options", () => {
       "AddProduct",
       () =>
         new Promise((r) => setTimeout(() => r({ id: 1, name: "Product A" }))),
-      { shape: ProductType }
+      { resultShape: ProductType }
     )
 
     const store = createStore() as AdvancedStore
@@ -783,7 +783,7 @@ describe("change notification", () => {
     const updateUser2Mutation = new Mutation(
       "UpdateUser",
       () => Promise.resolve({ id: 2, name: "U2 Updated" }),
-      { shape: UserType }
+      { resultShape: UserType }
     )
 
     const q1Handler = jest.fn()
@@ -823,12 +823,12 @@ describe("change notification", () => {
     const addUserMutation = new Mutation(
       "AddUser",
       () => Promise.resolve({ id: 2, name: "User 2" }),
-      { shape: UserType }
+      { resultShape: UserType }
     )
     const updateUserMutation = new Mutation(
       "UpdateUser",
       () => Promise.resolve({ id: 2, name: "Updated Name" }),
-      { shape: UserType }
+      { resultShape: UserType }
     )
 
     const store = createStore() as AdvancedStore
@@ -877,12 +877,12 @@ describe("change notification", () => {
           title: "Article 2",
           author: { id: 2, name: "User 2" },
         }),
-      { shape: ArticleType }
+      { resultShape: ArticleType }
     )
     const updateUserMutation = new Mutation(
       "UpdateUser",
       () => Promise.resolve({ id: 2, name: "Updated Name" }),
-      { shape: UserType }
+      { resultShape: UserType }
     )
 
     const store = createStore() as AdvancedStore

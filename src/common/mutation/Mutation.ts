@@ -11,7 +11,7 @@ export interface MutationOptions<TResult, TArguments, TContext> {
   context?: Partial<TContext>
 
   // the shape of data received from backend (used for data normalization purposes)
-  shape?: NormalizedShape
+  resultShape?: NormalizedShape
 
   optimisticResponse?: any
 

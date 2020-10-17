@@ -99,7 +99,7 @@ describe("callbacks", () => {
           { username: "z", email: "z@test.com" },
           { username: "y", email: "new-y@test.com" },
         ]),
-      { shape: [UserType] }
+      { resultShape: [UserType] }
     )
     store.processMutation(mutation)
   })
@@ -135,7 +135,7 @@ describe("optimistic response", () => {
           (r) => setTimeout(() => r({ username: "z", email: "z@test.com", __optimistic__: false }))
         ),
       {
-        shape: UserType,
+        resultShape: UserType,
         // prettier-ignore
         optimisticResponse: { username: "z", email: "z@test.com", __optimistic__: true },
       }
@@ -209,7 +209,7 @@ describe("beforeQueryUpdates()", () => {
       "AddUser",
       () => Promise.resolve({ username: "y", email: "y@t.s", avatar: "http" }),
       {
-        shape: UserType,
+        resultShape: UserType,
       }
     )
     const store = createStore() as AdvancedStore
