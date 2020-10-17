@@ -1,11 +1,11 @@
 import CacheController from "./CacheController"
-import { Store, Mutation } from "../../common"
+import { Store, Mutation, LocalMutation } from "../../common"
 import { isProduction } from "../../common/helpers"
 
 class MutationHandler {
   constructor(private store: Store, private cache: CacheController) {}
 
-  processMutation<TResult, TArguments, TContext>(
+  process<TResult, TArguments, TContext>(
     mutation: Mutation<TResult, TArguments, TContext>,
     callbacks: {
       onRequest?: () => void
@@ -37,11 +37,14 @@ class MutationHandler {
         )
 
         if (options.afterQueryUpdates) {
-          options.afterQueryUpdates(this.store, {
+          const x = options.afterQueryUpdates(this.store, {
             mutationResult: options.optimisticResponse,
             mutationArgs: options.arguments!,
             optimistic: true,
           })
+          if (x && x.then) {
+            x.catch((e) => console.error(e))
+          }
         }
       })
     }
@@ -60,7 +63,12 @@ class MutationHandler {
           }
 
           if (!syncMode) {
-            setTimeout(() => afterQueryUpdates(this.store, info))
+            setTimeout(() => {
+              const x = afterQueryUpdates(this.store, info)
+              if (x && x.then) {
+                x.catch((e) => console.error(e))
+              }
+            })
           } else {
             const x = afterQueryUpdates(this.store, info)
             if (x && x.then) {
@@ -83,6 +91,35 @@ class MutationHandler {
           onError(err)
         }
       })
+  }
+
+  processLocal<TResult>(
+    mutation: LocalMutation<TResult>,
+    callbacks: {
+      onComplete?: (data: TResult) => void
+    } = {}
+  ) {
+    const { input, syncMode = false, afterQueryUpdates } = mutation.options
+    const { onComplete } = callbacks
+
+    this.cache.storeLocalMutationInput(mutation, input!)
+
+    if (afterQueryUpdates) {
+      const info = { mutationInput: input! }
+
+      if (!syncMode) {
+        setTimeout(() => afterQueryUpdates(this.store, info))
+      } else {
+        const x = afterQueryUpdates(this.store, info)
+        if (x && x.then) {
+          return x.then(onComplete)
+        }
+      }
+    }
+
+    if (onComplete) {
+      onComplete(input!)
+    }
   }
 }
 

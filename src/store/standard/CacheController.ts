@@ -1,5 +1,5 @@
 // prettier-ignore
-import { BaseQuery, Query, LocalQuery, CompoundQuery, Mutation } from "../../common"
+import { BaseQuery, Query, LocalQuery, CompoundQuery, Mutation, LocalMutation } from "../../common"
 import { CacheContainer, CacheKey } from "../../cache"
 import { mergeSets } from "../../common/helpers"
 import CacheProxyImpl from "./CacheProxyImpl"
@@ -71,7 +71,7 @@ class CacheController {
       }
     }
 
-    const cacheKeys_2 = this.cache.updateRelatedQueries(query, {
+    const cacheKeys_2 = this.cache.updateRelatedQueries(query.name, {
       queryResult: normalizedData,
       queryArgs: query.options.arguments,
     })
@@ -94,7 +94,7 @@ class CacheController {
     // prettier-ignore
     const { affectedCacheKeys: cacheKeys_1, normalizedData } = this.cache.saveMoreQueryData(cacheKey, newData, shape, mergeFn)
 
-    const cacheKeys_2 = this.cache.updateRelatedQueries(query, {
+    const cacheKeys_2 = this.cache.updateRelatedQueries(query.name, {
       queryResult: normalizedData,
       queryArgs: undefined,
     })
@@ -133,7 +133,39 @@ class CacheController {
     }
 
     // prettier-ignore
-    const cacheKeys_3 = this.cache.updateQueriesRelatedToMutation(mutation, info)
+    const cacheKeys_3 = this.cache.updateQueriesRelatedToMutation(mutation.name, info)
+    const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2, cacheKeys_3)
+
+    this.notifyActiveQueries(affectedCacheKeys)
+  }
+
+  storeLocalMutationInput<Input>(mutation: LocalMutation<Input>, input: Input) {
+    const { inputShape: shape, beforeQueryUpdates } = mutation.options
+    let normalizedData: any = null
+    let cacheKeys_1 = new Set<CacheKey>()
+
+    if (input && shape) {
+      const tmp = this.cache.saveMutationResult(input, shape)
+      normalizedData = tmp.normalizedData
+      cacheKeys_1 = tmp.affectedCacheKeys
+    }
+
+    let cacheKeys_2 = new Set<CacheKey>()
+    if (beforeQueryUpdates) {
+      const cacheProxy = new CacheProxyImpl(this.cache)
+      beforeQueryUpdates(cacheProxy, {
+        mutationInput: normalizedData ?? input,
+      })
+      // prettier-ignore
+      cacheKeys_2 = this.cache.changeTracker.findAffectedCacheKeys(cacheProxy.changedObjectKeys)
+    }
+
+    // prettier-ignore
+    const cacheKeys_3 = this.cache.updateQueriesRelatedToMutation(mutation.name, {
+      mutationResult: normalizedData ?? input,
+      mutationArgs: undefined,
+      optimistic: false,
+    })
     const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2, cacheKeys_3)
 
     this.notifyActiveQueries(affectedCacheKeys)

@@ -5,6 +5,7 @@ import {
   CompoundQuery,
   Mutation,
   MutationOptions,
+  LocalMutation,
 } from "../../common"
 import { getActualQuery } from "../../common/helpers"
 import { AdvancedStore } from "../AdvancedStore"
@@ -82,7 +83,16 @@ class AdvancedStoreImpl implements AdvancedStore {
       onComplete?: (data: TResult) => void
     } = {}
   ) {
-    this.mutationHandler.processMutation(mutation, callbacks)
+    this.mutationHandler.process(mutation, callbacks)
+  }
+
+  processLocalMutation<Input>(
+    mutation: LocalMutation<Input>,
+    callbacks: {
+      onComplete?: (data: Input) => void
+    } = {}
+  ) {
+    this.mutationHandler.processLocal(mutation, callbacks)
   }
 
   //========== Store interface's methods =============

@@ -67,7 +67,7 @@ class QueryBucket {
   }
 
   updateQueriesRelatedToMutation<TResult, TArguments, TContext>(
-    mutation: Mutation<TResult, TArguments, TContext>,
+    mutationName: string,
     info: {
       mutationResult: any
       mutationArgs: any
@@ -79,7 +79,7 @@ class QueryBucket {
     for (const [cacheKey, item] of this.queryData) {
       const { data: currentData, query, selector } = item
       const { mutations = {}, arguments: queryArgs } = query.options
-      const updateFn = mutations[mutation.name]
+      const updateFn = mutations[mutationName]
       if (updateFn) {
         item.data = updateFn(currentData, {
           ...info,
@@ -97,7 +97,7 @@ class QueryBucket {
   }
 
   updateRelatedQueries(
-    query: BaseQuery,
+    queryName: string,
     info: {
       queryResult: any
       queryArgs: any
@@ -108,7 +108,7 @@ class QueryBucket {
     for (const [cacheKey, item] of this.queryData) {
       const { data: currentData, query: relatedQuery, selector } = item
       const { relatedQueries = {}, arguments: queryArgs } = relatedQuery.options
-      const updateFn = relatedQueries[query.name]
+      const updateFn = relatedQueries[queryName]
       if (updateFn) {
         item.data = updateFn(currentData, {
           relatedQueryResult: info.queryResult,

@@ -1,4 +1,4 @@
-import { Store, Query, LocalQuery, Mutation } from "../common"
+import { Store, Query, LocalQuery, Mutation, LocalMutation } from "../common"
 
 /** Interface for use by view connectors, e.g. React hooks, NOT directly in the views */
 export interface AdvancedStore extends Store {
@@ -25,6 +25,13 @@ export interface AdvancedStore extends Store {
       onRequest?: () => void
       onError?: (err: Error) => void
       onComplete?: (data: TResult) => void
+    }
+  ): void
+
+  processLocalMutation<Input>(
+    mutation: LocalMutation<Input>,
+    callbacks?: {
+      onComplete?: (data: Input) => void
     }
   ): void
 }

@@ -123,11 +123,11 @@ class CacheContainer {
   }
 
   updateRelatedQueries(
-    query: BaseQuery,
+    queryName: string,
     info: { queryResult: any; queryArgs: any }
   ) {
     const updatedCacheKeys = this.queryBucket.updateRelatedQueries(
-      query,
+      queryName,
       info,
       (cacheKey, data, selector) =>
         this.changeTracker.updateQueryData(cacheKey, data, selector)
@@ -136,11 +136,11 @@ class CacheContainer {
   }
 
   updateQueriesRelatedToMutation<TResult, TArguments, TContext>(
-    mutation: Mutation<TResult, TArguments, TContext>,
+    mutationName: string,
     info: { mutationResult: any; mutationArgs: any; optimistic: boolean }
   ) {
     const updatedCacheKeys = this.queryBucket.updateQueriesRelatedToMutation(
-      mutation,
+      mutationName,
       info,
       (cacheKey, data, selector) =>
         this.changeTracker.updateQueryData(cacheKey, data, selector)

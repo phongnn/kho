@@ -1,6 +1,13 @@
 import { AdvancedStore } from "../AdvancedStore"
 import { createStore } from "../createStore"
-import { Query, LocalQuery, Mutation, NormalizedType } from "../../common"
+import {
+  Query,
+  LocalQuery,
+  Mutation,
+  NormalizedType,
+  LocalMutation,
+  NormalizedObjectRef,
+} from "../../common"
 
 afterEach(() => {
   // @ts-ignore
@@ -406,7 +413,10 @@ describe("syncMode", () => {
       "UpdateData",
       jest.fn().mockResolvedValue(null),
       {
-        afterQueryUpdates: jest.fn().mockRejectedValue("strange err"),
+        afterQueryUpdates: () => {
+          setTimeout(done)
+          return Promise.reject("strange err")
+        },
       }
     )
 
@@ -415,7 +425,120 @@ describe("syncMode", () => {
       onError: () => {
         throw new Error("onError is unexpectedly called")
       },
-      onComplete: done,
+      // onComplete: done,
+    })
+  })
+})
+
+describe("LocalMutation", () => {
+  it("should update cache and notify active queries", (done) => {
+    const UserType = NormalizedType.register("User")
+    const query = new Query(
+      "GetUsers",
+      () =>
+        Promise.resolve([
+          { id: 1, email: "x@test.com" },
+          { id: 2, email: "y@test.com" },
+        ]),
+      { shape: [UserType] }
+    )
+    const mutation = new LocalMutation("UpdateUser", { inputShape: UserType })
+    const updatedUser2 = { id: 2, email: "new-y@test.com" }
+
+    expect.assertions(2)
+    const store = createStore() as AdvancedStore
+    store.registerQuery(query, {
+      onData: (data) => {
+        const user2 = data.find((u) => u.id === 2)!
+        if (user2.email === "y@test.com") {
+          setTimeout(() =>
+            store.processLocalMutation(
+              mutation.withOptions({ input: updatedUser2 }),
+              {
+                onComplete: (r) => {
+                  expect(r).toStrictEqual(updatedUser2)
+                  done()
+                },
+              }
+            )
+          )
+        } else {
+          expect(user2).toStrictEqual(updatedUser2)
+        }
+      },
+    })
+  })
+
+  it("should update related queries", (done) => {
+    const UserType = NormalizedType.register("User")
+    const query = new Query(
+      "GetUsers",
+      () => Promise.resolve([{ id: 1, email: "x@test.com" }]),
+      {
+        shape: [UserType],
+        mutations: {
+          NewUser: (currentList, { mutationResult: newUserRef }) => [
+            ...currentList,
+            newUserRef,
+          ],
+        },
+      }
+    )
+    const user2 = { id: 2, email: "y@test.com" }
+    const mutation = new LocalMutation("NewUser", {
+      input: user2,
+      inputShape: UserType,
+    })
+
+    const store = createStore() as AdvancedStore
+    store.registerQuery(query, {
+      onData: (data) => {
+        if (data.length === 1) {
+          setTimeout(() => store.processLocalMutation(mutation))
+        } else {
+          expect(data[1]).toStrictEqual(user2)
+          done()
+        }
+      },
+    })
+  })
+
+  it("should invoke beforeQueryUpdates() and afterQueryUpdates()", (done) => {
+    const UserType = NormalizedType.register("User")
+    const mutation = new LocalMutation("NewUser", {
+      inputShape: UserType,
+      beforeQueryUpdates: (cache, { mutationInput }) => {
+        expect(cache.updateObject).toBeTruthy()
+        expect(mutationInput).toBeInstanceOf(NormalizedObjectRef)
+      },
+      afterQueryUpdates: (s, { mutationInput }) => {
+        expect(s).toBe(store)
+        expect(mutationInput).toStrictEqual(updatedUser2)
+        done()
+      },
+    })
+    const updatedUser2 = { id: 1, email: "y@test.com" }
+
+    expect.assertions(4)
+    const store = createStore() as AdvancedStore
+    store.processLocalMutation(mutation.withOptions({ input: updatedUser2 }))
+  })
+
+  it("should invoke onComplete after afterQueryUpdates() in syncMode", (done) => {
+    let called = false
+    const mutation = new LocalMutation("Test", {
+      afterQueryUpdates: () => {
+        called = true
+      },
+      syncMode: true,
+    })
+
+    const store = createStore() as AdvancedStore
+    store.processLocalMutation(mutation, {
+      onComplete: () => {
+        expect(called).toBe(true)
+        done()
+      },
     })
   })
 })
