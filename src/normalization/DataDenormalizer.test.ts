@@ -6,7 +6,7 @@ import {
 import Selector from "./Selector"
 import DataDenormalizer from "./DataDenormalizer"
 
-afterAll(() => {
+afterEach(() => {
   // @ts-ignore
   NormalizedType.registry = new Map()
 })
@@ -281,7 +281,9 @@ it("should transform data", () => {
       OrderType,
       new NormalizedObjectKey("Order-123")
     ),
-    notes: "blah",
+    extra: {
+      notes: ["blah"],
+    },
   }
 
   const selector = Selector.from([
@@ -295,7 +297,7 @@ it("should transform data", () => {
         ["items", [["product", ["id", "name", "brand"]], "quantity"]],
       ],
     ],
-    "notes",
+    "extra",
   ])
 
   const denormalizer = new DataDenormalizer((type, key) => {
@@ -308,7 +310,10 @@ it("should transform data", () => {
       : null
   })
   const result = denormalizer.denormalize(data, selector, {
-    notes: (val) => val.toUpperCase(),
+    extra: (val: any) => ({
+      ...val,
+      notes: val.notes.map((n: string) => n.toUpperCase()),
+    }),
   })
 
   expect(result).toStrictEqual({
@@ -323,6 +328,44 @@ it("should transform data", () => {
         { product: { id: "p2", name: "Phone", brand: "APPLE" }, quantity: 2 },
       ],
     },
-    notes: "BLAH", // converted to uppercase
+    extra: {
+      notes: ["BLAH"], // converted to uppercase
+    },
   })
+})
+
+it("should transform array", () => {
+  const CustomerType = NormalizedType.register("Customer")
+  const customerObjects = [{ id: "x", name: "X", email: "x@test.com" }]
+  const data = [
+    {
+      record: {
+        customer: new NormalizedObjectRef(
+          CustomerType,
+          new NormalizedObjectKey("x")
+        ),
+        notes: "blah",
+      },
+    },
+  ]
+  const selector = Selector.from([
+    ["record", [["customer", ["id", "name", "email"]], "notes"]],
+  ])
+  const denormalizer = new DataDenormalizer((type, key) => {
+    return type === CustomerType
+      ? customerObjects.find((c) => key.matches(c.id))
+      : null
+  })
+
+  const result = denormalizer.denormalize(data, selector, [
+    { record: { notes: (val) => val.toUpperCase() } },
+  ])
+  expect(result).toStrictEqual([
+    {
+      record: {
+        customer: { id: "x", name: "X", email: "x@test.com" },
+        notes: "BLAH", // converted to uppercase
+      },
+    },
+  ])
 })
