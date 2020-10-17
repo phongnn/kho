@@ -89,7 +89,8 @@ class AdvancedStoreImpl implements AdvancedStore {
   processLocalMutation<Input>(
     mutation: LocalMutation<Input>,
     callbacks: {
-      onComplete?: (data: Input) => void
+      onComplete?: () => void
+      onError?: (err: Error) => void
     } = {}
   ) {
     this.mutationHandler.processLocal(mutation, callbacks)
@@ -121,6 +122,19 @@ class AdvancedStoreImpl implements AdvancedStore {
     const actualMutation = mutation.withOptions(options)
     return new Promise<TResult>((resolve, reject) => {
       this.processMutation(actualMutation, {
+        onComplete: resolve,
+        onError: reject,
+      })
+    })
+  }
+
+  mutateLocal<Input>(
+    mutation: LocalMutation<Input>,
+    options?: { input: Input }
+  ) {
+    const actualMutation = options ? mutation.withOptions(options) : mutation
+    return new Promise<void>((resolve, reject) => {
+      this.processLocalMutation(actualMutation, {
         onComplete: resolve,
         onError: reject,
       })

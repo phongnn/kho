@@ -62,18 +62,18 @@ class MutationHandler {
             optimistic: false,
           }
 
-          if (!syncMode) {
+          if (syncMode) {
+            const x = afterQueryUpdates(this.store, info)
+            if (x && x.then) {
+              return x.then(onComplete, onError)
+            }
+          } else {
             setTimeout(() => {
               const x = afterQueryUpdates(this.store, info)
               if (x && x.then) {
                 x.catch((e) => console.error(e))
               }
             })
-          } else {
-            const x = afterQueryUpdates(this.store, info)
-            if (x && x.then) {
-              return x.then(onComplete, onError)
-            }
           }
         }
 
@@ -93,32 +93,49 @@ class MutationHandler {
       })
   }
 
-  processLocal<TResult>(
-    mutation: LocalMutation<TResult>,
+  processLocal<Input>(
+    mutation: LocalMutation<Input>,
     callbacks: {
-      onComplete?: (data: TResult) => void
+      onComplete?: () => void
+      onError?: (err: Error) => void
     } = {}
   ) {
     const { input, syncMode = false, afterQueryUpdates } = mutation.options
-    const { onComplete } = callbacks
+    const { onComplete, onError } = callbacks
 
-    this.cache.storeLocalMutationInput(mutation, input!)
+    try {
+      this.cache.storeLocalMutationInput(mutation, input!)
+    } catch (e) {
+      const err = toErrorObj(e)
+      if (!isProduction) {
+        console.error(err)
+      }
+      if (onError) {
+        onError(err)
+      }
+      return
+    }
 
     if (afterQueryUpdates) {
       const info = { mutationInput: input! }
 
-      if (!syncMode) {
-        setTimeout(() => afterQueryUpdates(this.store, info))
-      } else {
+      if (syncMode) {
         const x = afterQueryUpdates(this.store, info)
         if (x && x.then) {
-          return x.then(onComplete)
+          return x.then(onComplete, onError)
         }
+      } else {
+        setTimeout(() => {
+          const x = afterQueryUpdates(this.store, info)
+          if (x && x.then) {
+            x.catch((e) => console.error(e))
+          }
+        })
       }
     }
 
     if (onComplete) {
-      onComplete(input!)
+      onComplete()
     }
   }
 }

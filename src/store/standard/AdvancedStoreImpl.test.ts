@@ -1,6 +1,12 @@
 import { AdvancedStore } from "../AdvancedStore"
 import { createStore } from "../createStore"
-import { Query, LocalQuery, Mutation, NormalizedType } from "../../common"
+import {
+  Query,
+  LocalQuery,
+  Mutation,
+  NormalizedType,
+  LocalMutation,
+} from "../../common"
 
 afterEach(() => {
   // @ts-ignore
@@ -258,6 +264,25 @@ describe("mutate()", () => {
     expect(mutateFn).toBeCalledWith(args, {}, store)
     expect(fn1).toBeCalled()
     expect(fn2).toBeCalled()
+  })
+})
+
+describe("mutateLocal()", () => {
+  it("should work", async () => {
+    const input = { a: "bc" }
+    const fn1 = jest.fn()
+    const fn2 = jest.fn()
+    const mutation = new LocalMutation("UpdateData", {
+      beforeQueryUpdates: fn1,
+      afterQueryUpdates: fn2,
+      syncMode: true,
+    })
+
+    const store = createStore() as AdvancedStore
+    await store.mutateLocal(mutation.withOptions({ input }))
+
+    expect(fn1).toBeCalled()
+    expect(fn2).toBeCalledWith(store, { mutationInput: input })
   })
 })
 

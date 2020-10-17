@@ -32,6 +32,7 @@ export interface AdvancedStore extends Store {
     mutation: LocalMutation<Input>,
     callbacks?: {
       onComplete?: (data: Input) => void
+      onError?: (err: Error) => void
     }
   ): void
 }

@@ -445,7 +445,7 @@ describe("LocalMutation", () => {
     const mutation = new LocalMutation("UpdateUser", { inputShape: UserType })
     const updatedUser2 = { id: 2, email: "new-y@test.com" }
 
-    expect.assertions(2)
+    expect.assertions(1)
     const store = createStore() as AdvancedStore
     store.registerQuery(query, {
       onData: (data) => {
@@ -455,10 +455,7 @@ describe("LocalMutation", () => {
             store.processLocalMutation(
               mutation.withOptions({ input: updatedUser2 }),
               {
-                onComplete: (r) => {
-                  expect(r).toStrictEqual(updatedUser2)
-                  done()
-                },
+                onComplete: done,
               }
             )
           )
@@ -537,6 +534,38 @@ describe("LocalMutation", () => {
     store.processLocalMutation(mutation, {
       onComplete: () => {
         expect(called).toBe(true)
+        done()
+      },
+    })
+  })
+
+  it("should call onError if beforeQueryUpdates() throws", (done) => {
+    const mutation = new LocalMutation("UpdateData", {
+      beforeQueryUpdates: () => {
+        throw new Error("strange err")
+      },
+    })
+
+    jest.spyOn(console, "error").mockImplementation(() => {})
+    const store = createStore() as AdvancedStore
+    store.processLocalMutation(mutation, {
+      onError: (err) => {
+        expect(err.message).toBe("strange err")
+        done()
+      },
+    })
+  })
+
+  it("should call onError if afterQueryUpdates() throws in sync mode", (done) => {
+    const mutation = new LocalMutation("UpdateData", {
+      afterQueryUpdates: jest.fn().mockRejectedValue("strange err"),
+      syncMode: true,
+    })
+
+    const store = createStore() as AdvancedStore
+    store.processLocalMutation(mutation, {
+      onError: (err) => {
+        expect(err).toBe("strange err")
         done()
       },
     })
