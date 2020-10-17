@@ -116,7 +116,7 @@ class AdvancedStoreImpl implements AdvancedStore {
     mutation: Mutation<TResult, TArguments, TContext>,
     options: Pick<
       MutationOptions<TResult, TArguments, TContext>,
-      "arguments" | "context" | "optimisticResponse"
+      "arguments" | "context" | "optimisticResponse" | "syncMode"
     > = {}
   ) {
     const actualMutation = mutation.withOptions(options)
@@ -130,7 +130,7 @@ class AdvancedStoreImpl implements AdvancedStore {
 
   mutateLocal<Input>(
     mutation: LocalMutation<Input>,
-    options?: { input: Input }
+    options: { input?: Input; syncMode?: boolean } = {}
   ) {
     const actualMutation = options ? mutation.withOptions(options) : mutation
     return new Promise<void>((resolve, reject) => {

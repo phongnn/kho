@@ -3,10 +3,14 @@ import { LocalQuery } from "../query/LocalQuery"
 import { NormalizedType } from "../normalization/NormalizedType"
 import { NormalizedObjectRef } from "../normalization/NormalizedObject"
 
-/** Interface exposed for use only in mutations' beforeQueryUpdates() */
+/**
+ * This interface is exposed for use only in mutations' beforeQueryUpdates().
+ * Note that all methods of this interface work with normalized data, not the original data from backend.
+ */
 export interface CacheProxy {
-  // prettier-ignore
-  readQuery<TResult>(query: Query<TResult, any, any> | LocalQuery<TResult>): TResult
+  /** reads query's normalized data from cache */
+  readQuery(query: Query<any, any, any> | LocalQuery<any>): any
+
   addObject(type: NormalizedType, data: any): NormalizedObjectRef
   findObjectRef(type: NormalizedType, key: any): NormalizedObjectRef | null
   readObject(ref: NormalizedObjectRef): any

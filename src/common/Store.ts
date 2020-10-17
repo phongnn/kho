@@ -19,7 +19,7 @@ export interface Store {
     mutation: Mutation<TResult, TArguments, TContext>,
     options?: Pick<
       MutationOptions<TResult, TArguments, TContext>,
-      "arguments" | "context" | "optimisticResponse"
+      "arguments" | "context" | "optimisticResponse" | "syncMode"
     >
   ): Promise<TResult>
 
@@ -27,7 +27,8 @@ export interface Store {
   mutateLocal<Input>(
     mutation: LocalMutation<Input>,
     options?: {
-      input: Input
+      input?: Input
+      syncMode?: boolean
     }
   ): Promise<void>
 

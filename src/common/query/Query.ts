@@ -81,6 +81,7 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
 
   clone = () => new Query(this.name, this.fetcher, this.options)
 
+  /** clones the query but overrides its options */
   withOptions(...args: Array<QueryOptions<TResult, TArguments, TContext>>) {
     return new Query(
       this.name,
@@ -89,6 +90,7 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
     )
   }
 
+  /** returns true if the query parameter has the same name and same partial arguments (e.g. different pages of the same query) */
   isSibling(query: BaseQuery): boolean {
     if (!(query instanceof Query) || query.name !== this.name) {
       return false
@@ -100,6 +102,8 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
     }
     return deepEqual(partialArgs, this.getPartialArgs(partialArgs))
   }
+
+  // ============= private methods ================
 
   private getPartialArgs(partialArgs: any) {
     const result: any = {}

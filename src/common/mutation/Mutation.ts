@@ -4,9 +4,15 @@ import { mergeOptions } from "../helpers"
 import { CacheProxy } from "./CacheProxy"
 
 export interface MutationOptions<TResult, TArguments, TContext> {
+  // an object to pass through to the API call
   arguments?: TArguments
+
+  // use this object to pass request headers and so on to the API call
   context?: Partial<TContext>
+
+  // the shape of data received from backend (used for data normalization purposes)
   shape?: NormalizedShape
+
   optimisticResponse?: any
 
   beforeQueryUpdates?: (
@@ -21,12 +27,14 @@ export interface MutationOptions<TResult, TArguments, TContext> {
   afterQueryUpdates?: (
     store: Store,
     info: {
-      mutationResult: TResult // original, not normalized data
+      mutationResult: TResult // original data from backend, not normalized data
       mutationArgs: TArguments
       optimistic: boolean
     }
   ) => void | Promise<any>
 
+  // wait for afterQueryUpdates() to finish before calling onComplete?
+  // default value is false (async mode by default)
   syncMode?: boolean
 }
 
@@ -55,6 +63,7 @@ export class Mutation<TResult, TArguments, TContext> {
     }
   }
 
+  /** clones the mutation but overrides its options */
   withOptions(...args: Array<MutationOptions<TResult, TArguments, TContext>>) {
     return new Mutation(
       this.name,

@@ -1,6 +1,7 @@
 import { Store } from "../Store"
 import { NormalizedShape } from "../normalization/NormalizedType"
 import { CacheProxy } from "./CacheProxy"
+import { override } from "../helpers"
 
 export class LocalMutation<Input> {
   constructor(
@@ -17,7 +18,8 @@ export class LocalMutation<Input> {
     this.options.syncMode = options.syncMode ?? false
   }
 
-  withOptions(options: { input: Input }) {
-    return new LocalMutation(this.name, { ...this.options, ...options })
+  /** clones the mutation but overrides its options */
+  withOptions(options: { input?: Input; syncMode?: boolean }) {
+    return new LocalMutation<Input>(this.name, override(this.options, options))
   }
 }

@@ -30,6 +30,10 @@ export class NormalizedType {
     return newType
   }
 
+  /**
+   * use this method if you need to refer to a normalized type that hasn't been defined yet
+   * (e.g. due to a circular dependency)
+   */
   static of(name: string) {
     return new NormalizedTypePlaceholder(name, () => {
       const type = this.registry.get(name)

@@ -77,13 +77,13 @@ export function mergeOptions(opts: any, newOpts: any) {
   return result
 }
 
-function override(existingObj: any, newObj: any) {
+export function override(existingObj: any, newObj: any) {
   const result: any = {}
   Object.getOwnPropertyNames(existingObj).forEach(
-    (prop) => (result[prop] = newObj[prop] || existingObj[prop])
+    (prop) => (result[prop] = newObj[prop] ?? existingObj[prop])
   )
   Object.getOwnPropertyNames(newObj).forEach(
-    (prop) => (result[prop] = newObj[prop] || existingObj[prop])
+    (prop) => (result[prop] = newObj[prop] ?? existingObj[prop])
   )
   return result
 }
