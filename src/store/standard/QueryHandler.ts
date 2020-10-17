@@ -110,15 +110,11 @@ class QueryHandler {
             const { arguments: args, context } = nextQuery.options
             if (!networkOnly) {
               this.cache.mergeQueryData(queryHandle, newData, (edata, ndata) =>
-                mergeFn!(edata, ndata, {
-                  arguments: args!,
-                  context: context!,
-                })
+                mergeFn!(edata, ndata, { arguments: args! })
               )
             } else {
               networkOnlyDataCallback(
-                // prettier-ignore
-                mergeFn!(networkOnlyData, newData, { arguments: args!, context: context! })
+                mergeFn!(networkOnlyData, newData, { arguments: args! })
               )
             }
           },

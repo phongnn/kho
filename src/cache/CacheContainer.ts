@@ -26,15 +26,18 @@ class CacheContainer {
     }
 
     const { data, selector, query } = cacheEntry
+    const { transform } = query.options
     if (!selector) {
-      return data
+      return transform && typeof transform === "function"
+        ? transform(data)
+        : data
     }
 
     const denormalizer = new DataDenormalizer((type, key) =>
       this.objectBucket.get(type, key)
     )
 
-    return denormalizer.denormalize(data, selector, query.options.transform)
+    return denormalizer.denormalize(data, selector, transform)
   }
 
   saveQueryData(query: BaseQuery, data: any) {

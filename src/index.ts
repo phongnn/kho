@@ -5,6 +5,7 @@ export {
   LocalQuery,
   Mutation,
   MutationOptions,
+  LocalMutation,
   NormalizedObjectRef,
   NormalizedType,
   CacheProxy,

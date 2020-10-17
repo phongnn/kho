@@ -1,33 +1,46 @@
-import { deepEqual, mergeOptions } from "../helpers"
-import {
-  NormalizedShape,
-  TransformShape,
-} from "../normalization/NormalizedType"
+// prettier-ignore
+import { BaseQueryKey, BaseQuery, QueryUpdateFn, RelatedQueryUpdateFn } from "./BaseQuery"
 import { Selector } from "../normalization/Selector"
-import {
-  BaseQueryKey,
-  BaseQuery,
-  QueryUpdateFn,
-  RelatedQueryUpdateFn,
-} from "./BaseQuery"
+// prettier-ignore
+import { NormalizedShape, TransformShape } from "../normalization/NormalizedType"
+import { deepEqual, mergeOptions } from "../helpers"
 
 export interface QueryOptions<TResult, TArguments, TContext> {
+  // an object to pass through to the API call
   arguments?: TArguments
+
+  // use this object to pass request headers and so on to the API call
   context?: Partial<TContext>
+
+  // when will this query's data expire and need to be refetched (if active) or removed (if inactive)?
+  // default 15 minutes (15 * 60 * 1,000ms)
   expiryMs?: number
+
+  // the shape of data received from backend (used for data normalization purposes)
   shape?: NormalizedShape
+
+  // data transformation when reading data from cache
   transform?: TransformShape
+
+  // executed when fetchMore() is invoked (e.g. infinite scroll).
+  // its result will replace the existing data of the query in the cache
   merge?: (
-    existingData: any,
-    newData: any,
-    info: {
-      arguments: TArguments
-      context: Partial<TContext>
-    }
+    existingData: any, // normalized data
+    newData: any, // normalized data
+    info: { arguments: TArguments }
   ) => any
+
+  // updates this query's data when related mutations take place
   mutations?: Record<string, QueryUpdateFn>
+
+  // updates this query's data upon receipt of other queries' result
   relatedQueries?: Record<string, RelatedQueryUpdateFn>
+
+  // default: "cache-first"
   fetchPolicy?: "cache-first" | "cache-and-network" | "network-only"
+
+  // "selector" is only needed when mutation/relatedQueries options above are used
+  // AND the first request to backend may return blank result
   selector?: Selector
 }
 
