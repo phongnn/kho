@@ -31,7 +31,7 @@ export interface AdvancedStore extends Store {
   processLocalMutation<Input>(
     mutation: LocalMutation<Input>,
     callbacks?: {
-      onComplete?: (data: Input) => void
+      onComplete?: () => void
       onError?: (err: Error) => void
     }
   ): void

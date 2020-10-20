@@ -251,9 +251,11 @@ class CacheController {
 
   // notify active queries of possible state change
   private notifyActiveQueries(cacheKeys: Set<CacheKey>) {
-    for (const [q, qInfo] of this.activeQueries) {
-      if (qInfo.cacheKey && cacheKeys.has(qInfo.cacheKey)) {
-        qInfo.onData(this.cache.get(qInfo.cacheKey))
+    if (cacheKeys.size > 0) {
+      for (const [q, qInfo] of this.activeQueries) {
+        if (qInfo.cacheKey && cacheKeys.has(qInfo.cacheKey)) {
+          qInfo.onData(this.cache.get(qInfo.cacheKey))
+        }
       }
     }
   }
