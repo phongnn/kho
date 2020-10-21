@@ -1,7 +1,7 @@
 import { Store, StoreOptions } from "../common"
 import AdvancedStoreImpl from "./standard/AdvancedStoreImpl"
 
-export function createStore(options?: StoreOptions): Store {
+export function createStore(options?: Partial<StoreOptions>): Store {
   const {
     queryExpiryMs = 15 * 60 * 1000, // 15 minutes
     ...rest

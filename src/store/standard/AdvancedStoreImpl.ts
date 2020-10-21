@@ -19,7 +19,7 @@ class AdvancedStoreImpl implements AdvancedStore {
   private queryHandler = new QueryHandler(this.cache)
   private mutationHandler = new MutationHandler(this, this.cache)
 
-  constructor(readonly options: Required<StoreOptions>) {}
+  constructor(readonly options: StoreOptions) {}
 
   //========== AdvancedStore interface's methods =============
 

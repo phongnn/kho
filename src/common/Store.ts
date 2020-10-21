@@ -4,7 +4,7 @@ import { Mutation, MutationOptions } from "./mutation/Mutation"
 import { LocalMutation } from "./mutation/LocalMutation"
 
 export interface StoreOptions {
-  queryExpiryMs?: number
+  queryExpiryMs: number
 }
 
 /** Public interface exposed to developers */
