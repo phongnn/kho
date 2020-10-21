@@ -3,8 +3,14 @@ import { LocalQuery } from "./query/LocalQuery"
 import { Mutation, MutationOptions } from "./mutation/Mutation"
 import { LocalMutation } from "./mutation/LocalMutation"
 
+export interface StoreOptions {
+  queryExpiryMs: number
+}
+
 /** Public interface exposed to developers */
 export interface Store {
+  options: StoreOptions
+
   /** queries data from backend and saves into cache */
   query<TResult, TArguments, TContext>(
     query: Query<TResult, TArguments, TContext>,

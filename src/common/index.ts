@@ -1,4 +1,4 @@
-export { Store } from "./Store"
+export { Store, StoreOptions } from "./Store"
 export { BaseQuery, BaseQueryKey } from "./query/BaseQuery"
 export { QueryOptions, Query } from "./query/Query"
 export { LocalQuery } from "./query/LocalQuery"

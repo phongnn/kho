@@ -6,6 +6,7 @@ import {
   Mutation,
   MutationOptions,
   LocalMutation,
+  StoreOptions,
 } from "../../common"
 import { getActualQuery } from "../../common/helpers"
 import { AdvancedStore } from "../AdvancedStore"
@@ -18,7 +19,7 @@ class AdvancedStoreImpl implements AdvancedStore {
   private queryHandler = new QueryHandler(this.cache)
   private mutationHandler = new MutationHandler(this, this.cache)
 
-  constructor(private storeOptions: { queryExpiryMs: number }) {}
+  constructor(readonly options: StoreOptions) {}
 
   //========== AdvancedStore interface's methods =============
 
@@ -43,10 +44,7 @@ class AdvancedStoreImpl implements AdvancedStore {
     }
 
     // refetch query when expired
-    const {
-      expiryMs = this.storeOptions.queryExpiryMs,
-      fetchPolicy,
-    } = query.options
+    const { expiryMs = this.options.queryExpiryMs, fetchPolicy } = query.options
     // network-only queries don't have expired data as they always get latest from backend
     if (fetchPolicy !== "network-only" && expiryMs > 0) {
       const refetchWhenExpired = () => {

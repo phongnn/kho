@@ -1,5 +1,6 @@
 export {
   Store,
+  StoreOptions,
   Query,
   QueryOptions,
   LocalQuery,
