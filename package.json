@@ -2,7 +2,7 @@
   "name": "kho",
   "description": "A library that fetches, normalizes and caches data for your frontend application.",
   "author": "Nguyen Nam Phong <phongnn@gmail.com>",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "keywords": ["kho", "state", "fetch", "normalize", "cache"],
   "homepage": "https://github.com/phongnn/kho",
