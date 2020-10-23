@@ -1,4 +1,4 @@
-import { BaseQuery, Selector as PlainSelector } from "../common"
+import { BaseQuery, Query, Selector as PlainSelector } from "../common"
 import { Selector } from "../normalization"
 
 // Equivalent query keys will share the same cache key
@@ -19,6 +19,8 @@ export class CacheKey {
 
 interface QueryBucketItem {
   query: BaseQuery
+  name: string
+  arguments: any
   data: any
   selector: Selector | null
 }
@@ -73,12 +75,11 @@ class QueryBucket {
     return null
   }
 
-  /** same query but with different arguments */
-  findSiblingQueries(baseQuery: BaseQuery) {
-    const result: Array<[BaseQuery, CacheKey]> = []
-    for (const [cacheKey, { query }] of this.queryData) {
-      if (query.isSibling(baseQuery)) {
-        result.push([query, cacheKey])
+  findCachedQueryArgs(query: Query<any, any, any>) {
+    const result: Array<[CacheKey, any]> = []
+    for (const [cacheKey, { name, arguments: args }] of this.queryData) {
+      if (query.name === name && query.argumentsMatch(args)) {
+        result.push([cacheKey, args])
       }
     }
     return result

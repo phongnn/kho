@@ -97,27 +97,15 @@ export class Query<TResult, TArguments, TContext> extends BaseQuery {
     )
   }
 
-  /** returns true if the query parameter has the same name and same partial arguments (e.g. different pages of the same query) */
-  isSibling(query: BaseQuery): boolean {
-    if (!(query instanceof Query) || query.name !== this.name) {
-      return false
-    }
-
-    const { arguments: partialArgs } = query.options
-    if (!partialArgs || !this.options.arguments) {
+  argumentsMatch(fullArgs: any): boolean {
+    if (!fullArgs || !this.options.arguments) {
       return true
     }
-    return deepEqual(partialArgs, this.getPartialArgs(partialArgs))
-  }
 
-  // ============= private methods ================
-
-  private getPartialArgs(partialArgs: any) {
-    const result: any = {}
-    Object.getOwnPropertyNames(partialArgs).forEach(
-      // @ts-ignore
-      (prop) => (result[prop] = this.options.arguments[prop])
+    const partialArgs: any = {}
+    Object.getOwnPropertyNames(this.options.arguments).forEach(
+      (prop) => (partialArgs[prop] = fullArgs[prop])
     )
-    return result
+    return deepEqual(this.options.arguments, partialArgs)
   }
 }

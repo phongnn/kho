@@ -387,7 +387,7 @@ describe("expiryMs", () => {
 
   it("should refetch data when expired", (done) => {
     let count = 0
-    const query = new Query("GetData", () => Promise.resolve(++count), {
+    const query = new Query("GetX", () => Promise.resolve(++count), {
       expiryMs: intervalMs,
     })
     const store = createStore() as AdvancedStore
@@ -408,7 +408,7 @@ describe("expiryMs", () => {
 
   it("should refetch compound query when expired", (done) => {
     let count = 0
-    const query = new Query("GetData", () => Promise.resolve([++count]), {
+    const query = new Query("GetY", () => Promise.resolve([++count]), {
       merge: (existingList, newList) => [...existingList, ...newList],
       expiryMs: intervalMs,
     })

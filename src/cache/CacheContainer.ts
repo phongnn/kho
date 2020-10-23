@@ -1,5 +1,5 @@
 // prettier-ignore
-import { Query, BaseQuery, Mutation, NormalizedType, NormalizedShape, NormalizedObjectKey, NormalizedObjectRef } from "../common"
+import { Query, BaseQuery, NormalizedType, NormalizedShape, NormalizedObjectKey, NormalizedObjectRef } from "../common"
 import { extractPlainKey } from "../common/helpers"
 import { DataNormalizer, DataDenormalizer, Selector } from "../normalization"
 import ChangeTracker from "./ChangeTracker"
@@ -33,8 +33,8 @@ class CacheContainer {
     return this.queryBucket.findCacheKey(query)
   }
 
-  findSiblingQueries(query: Query<any, any, any>) {
-    return this.queryBucket.findSiblingQueries(query)
+  findCachedQueryArgs(query: Query<any, any, any>) {
+    return this.queryBucket.findCachedQueryArgs(query)
   }
 
   get(cacheKey: CacheKey) {
@@ -67,7 +67,13 @@ class CacheContainer {
     const { shape, selector: userProvidedSelector } = query.options
     if (!shape) {
       // data not normalized
-      this.queryBucket.set(cacheKey, { query, data, selector: null })
+      this.queryBucket.set(cacheKey, {
+        name: query.name,
+        arguments: query.options.arguments,
+        query,
+        data,
+        selector: null,
+      })
       normalizedData = data
       affectedCacheKeys = new Set([cacheKey])
     } else {
@@ -75,6 +81,8 @@ class CacheContainer {
       const { result, objects, selector } = normalizer.normalize(data, shape)
 
       this.queryBucket.set(cacheKey, {
+        name: query.name,
+        arguments: query.options.arguments,
         query,
         data: result,
         selector: userProvidedSelector

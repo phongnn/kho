@@ -46,8 +46,4 @@ export abstract class BaseQuery {
       relatedQueries?: Record<string, RelatedQueryUpdateFn>
     } = {}
   ) {}
-
-  isSibling(query: BaseQuery): boolean {
-    return false
-  }
 }

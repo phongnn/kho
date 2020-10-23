@@ -208,9 +208,9 @@ class CacheController {
       } else {
         // query may be specified with partial or no arguments
         // so we need to find all the matching queries currently in cache
-        const siblingQueriesInCache = this.cache.findSiblingQueries(query)
-        for (const [sibling, cacheKey] of siblingQueriesInCache) {
-          const q = this.findActiveQuery(sibling)
+        const cachedQueries = this.cache.findCachedQueryArgs(query)
+        for (const [cacheKey, args] of cachedQueries) {
+          const q = this.findActiveQuery(query.withOptions({ arguments: args }))
           if (q) {
             queriesToRefetch.push(
               q as Query<any, any, any> | CompoundQuery<any, any, any>
