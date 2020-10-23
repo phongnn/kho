@@ -1,7 +1,15 @@
 import { NormalizedType, NormalizedObjectKey } from "../common"
 
 class ObjectBucket {
-  private objects = new Map<NormalizedType, Map<NormalizedObjectKey, any>>()
+  private objects: Map<NormalizedType, Map<NormalizedObjectKey, any>>
+
+  constructor(preloadedState?: any) {
+    this.objects = new Map<NormalizedType, Map<NormalizedObjectKey, any>>()
+  }
+
+  getState() {
+    return null
+  }
 
   findObjectKey(type: NormalizedType, plainKey: any) {
     const objectMap = this.objects.get(type)

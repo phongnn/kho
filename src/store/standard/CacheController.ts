@@ -10,8 +10,22 @@ interface ActiveQueryInfo {
 }
 
 class CacheController {
-  private activeQueries = new Map<BaseQuery, ActiveQueryInfo>()
-  private cache = new CacheContainer()
+  private activeQueries: Map<BaseQuery, ActiveQueryInfo>
+  private cache: CacheContainer
+
+  constructor(preloadedState?: any) {
+    this.cache = new CacheContainer(
+      preloadedState ? preloadedState.cache : undefined
+    )
+    this.activeQueries = new Map<BaseQuery, ActiveQueryInfo>()
+  }
+
+  getState() {
+    return {
+      // activeQueries: [], // TODO: implement this
+      cache: this.cache.getState(),
+    }
+  }
 
   /** returns true if query's data is already in cache */
   subscribe(query: BaseQuery, onData: (data: any) => void) {

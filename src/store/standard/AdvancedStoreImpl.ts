@@ -15,11 +15,18 @@ import QueryHandler from "./QueryHandler"
 import MutationHandler from "./MutationHandler"
 
 class AdvancedStoreImpl implements AdvancedStore {
-  private cache = new CacheController()
-  private queryHandler = new QueryHandler(this.cache)
-  private mutationHandler = new MutationHandler(this, this.cache)
+  readonly options: Omit<StoreOptions, "preloadedState">
+  private cache: CacheController
+  private queryHandler: QueryHandler
+  private mutationHandler: MutationHandler
 
-  constructor(readonly options: StoreOptions) {}
+  constructor(options: StoreOptions) {
+    const { preloadedState, ...rest } = options
+    this.options = rest
+    this.cache = new CacheController(preloadedState)
+    this.queryHandler = new QueryHandler(this.cache)
+    this.mutationHandler = new MutationHandler(this, this.cache)
+  }
 
   //========== AdvancedStore interface's methods =============
 
@@ -175,6 +182,10 @@ class AdvancedStoreImpl implements AdvancedStore {
         this.doRefetchQueries(queriesToFetch).then(resolve).catch(reject)
       })
     })
+  }
+
+  getState() {
+    return this.cache.getState()
   }
 
   //========== Private methods =============

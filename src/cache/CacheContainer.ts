@@ -7,9 +7,27 @@ import ObjectBucket from "./ObjectBucket"
 import QueryBucket, { CacheKey } from "./QueryBucket"
 
 class CacheContainer {
-  readonly changeTracker = new ChangeTracker(this)
-  private queryBucket = new QueryBucket()
-  private objectBucket = new ObjectBucket()
+  readonly changeTracker: ChangeTracker
+  private queryBucket: QueryBucket
+  private objectBucket: ObjectBucket
+
+  constructor(preloadedState?: any) {
+    this.objectBucket = new ObjectBucket(
+      preloadedState ? preloadedState.objects : undefined
+    )
+    this.queryBucket = new QueryBucket(
+      preloadedState ? preloadedState.queries : undefined
+    )
+    this.changeTracker = new ChangeTracker(this)
+  }
+
+  getState() {
+    return {
+      objects: this.objectBucket.getState(),
+      queries: this.queryBucket.getState(),
+      // changeTracker: [] // TODO: implement this
+    }
+  }
 
   findCacheKey(query: BaseQuery) {
     return this.queryBucket.findCacheKey(query)
@@ -42,7 +60,7 @@ class CacheContainer {
 
   saveQueryData(query: BaseQuery, data: any) {
     const existingCacheKey = this.findCacheKey(query)
-    const cacheKey = existingCacheKey || new CacheKey(query)
+    const cacheKey = existingCacheKey || new CacheKey(query.key.plain())
     let affectedCacheKeys: Set<CacheKey>
     let normalizedData: any
 

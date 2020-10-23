@@ -7,6 +7,13 @@ class CompoundQueryKey implements BaseQueryKey {
   matches(qk: BaseQueryKey): boolean {
     return qk instanceof CompoundQueryKey && qk.name === this.name
   }
+
+  matchesPlain(plainKey: any): boolean {
+    const { type, name } = plainKey
+    return type === "CompoundQuery" && name === this.name
+  }
+
+  plain = () => ({ type: "CompoundQuery", name: this.name })
 }
 
 /**

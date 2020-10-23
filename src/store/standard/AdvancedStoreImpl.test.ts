@@ -903,3 +903,25 @@ describe("change notification", () => {
     })
   })
 })
+
+describe("preloadedState", () => {
+  xtest("should work with a trivial query", async () => {
+    let count = 0
+    const query = new Query(
+      "GetData",
+      () => new Promise((r) => setTimeout(() => r(++count)))
+    )
+
+    // fetch data and save into cache
+    const originalStore = createStore()
+    await originalStore.query(query)
+    const state = JSON.stringify(originalStore.getState())
+
+    // restore store from the serialized state
+    const preloadedState = JSON.parse(state)
+    const restoredStore = createStore({ preloadedState })
+
+    // verify query's cached data
+    expect(restoredStore.getQueryData(query)).toBe(1)
+  })
+})

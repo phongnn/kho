@@ -1,4 +1,4 @@
-import { BaseQuery, BaseQueryKey, Mutation } from "../common"
+import { BaseQuery, Selector as PlainSelector } from "../common"
 import { Selector } from "../normalization"
 
 // Equivalent query keys will share the same cache key
@@ -6,14 +6,14 @@ import { Selector } from "../normalization"
 // Cache keys help us avoid deep comparison of query key against cached query keys
 // every time we need to notify active queries of possible state change.
 export class CacheKey {
-  private queryKey: BaseQueryKey
-
-  constructor(query: BaseQuery) {
-    this.queryKey = query.key
-  }
+  constructor(private plainQueryKey: any) {}
 
   matches(query: BaseQuery) {
-    return this.queryKey.matches(query.key)
+    return query.key.matchesPlain(this.plainQueryKey)
+  }
+
+  plain() {
+    return this.plainQueryKey
   }
 }
 
@@ -23,12 +23,46 @@ interface QueryBucketItem {
   selector: Selector | null
 }
 
+interface QueryBucketSerializableItem {
+  cacheKey: any
+  data: any
+  selector: PlainSelector | null
+  // query:
+}
+
 interface TrackQueryFn {
   (cacheKey: CacheKey, data: any, selector: Selector): void
 }
 
 class QueryBucket {
-  private queryData = new Map<CacheKey, QueryBucketItem>()
+  private queryData: Map<CacheKey, QueryBucketItem>
+
+  constructor(preloadedState?: QueryBucketSerializableItem[]) {
+    const queryData = new Map<CacheKey, QueryBucketItem>()
+    if (preloadedState) {
+      preloadedState.forEach(({ cacheKey, data, selector }) => {
+        // @ts-ignore
+        queryData.set(new CacheKey(cacheKey), {
+          data,
+          selector: selector ? Selector.from(selector) : null,
+        })
+      })
+    }
+    this.queryData = queryData
+  }
+
+  getState() {
+    const result: QueryBucketSerializableItem[] = []
+    this.queryData.forEach(({ data, selector }, cacheKey) => {
+      result.push({
+        cacheKey: cacheKey.plain(),
+        selector: selector ? selector.plain() : null,
+        data,
+        // query,
+      })
+    })
+    return result
+  }
 
   findCacheKey(query: BaseQuery) {
     for (const key of this.queryData.keys()) {
@@ -66,7 +100,7 @@ class QueryBucket {
     this.queryData.clear()
   }
 
-  updateQueriesRelatedToMutation<TResult, TArguments, TContext>(
+  updateQueriesRelatedToMutation(
     mutationName: string,
     info: {
       mutationResult: any

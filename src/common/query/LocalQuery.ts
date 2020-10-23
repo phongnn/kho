@@ -16,6 +16,13 @@ class LocalQueryKey implements BaseQueryKey {
   matches(qk: BaseQueryKey): boolean {
     return qk instanceof LocalQueryKey && qk.name === this.name
   }
+
+  matchesPlain(plainKey: any): boolean {
+    const { type, name } = plainKey
+    return type === "LocalQuery" && name === this.name
+  }
+
+  plain = () => ({ type: "LocalQuery", name: this.name })
 }
 
 export class LocalQuery<TData> extends BaseQuery {

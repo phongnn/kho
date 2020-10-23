@@ -5,7 +5,9 @@ import {
 import { Selector } from "../normalization/Selector"
 
 export interface BaseQueryKey {
-  matches(qk: BaseQueryKey): boolean
+  matches(key: BaseQueryKey): boolean
+  matchesPlain(plainKey: any): boolean
+  plain(): any
 }
 
 export interface QueryUpdateFn {

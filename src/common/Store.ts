@@ -5,11 +5,12 @@ import { LocalMutation } from "./mutation/LocalMutation"
 
 export interface StoreOptions {
   queryExpiryMs: number
+  preloadedState?: any
 }
 
 /** Public interface exposed to developers */
 export interface Store {
-  options: StoreOptions
+  options: Omit<StoreOptions, "preloadedState">
 
   /** queries data from backend and saves into cache */
   query<TResult, TArguments, TContext>(
@@ -56,4 +57,7 @@ export interface Store {
 
   /** clears cache, resets local queries to their initial values, then refetches remote active queries */
   resetStore(): Promise<void>
+
+  /** returns an object tree that represents the current state of the store */
+  getState(): any
 }

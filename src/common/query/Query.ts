@@ -54,6 +54,13 @@ class QueryKey<TArguments> implements BaseQueryKey {
       return deepEqual(qk.args, this.args)
     }
   }
+
+  matchesPlain(plainKey: any): boolean {
+    const { type, name, args } = plainKey
+    return type === "Query" && name === this.name && deepEqual(args, this.args)
+  }
+
+  plain = () => ({ type: "Query", name: this.name, args: this.args })
 }
 
 export class Query<TResult, TArguments, TContext> extends BaseQuery {
