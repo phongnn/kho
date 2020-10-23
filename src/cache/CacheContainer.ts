@@ -151,13 +151,10 @@ class CacheContainer {
     }
   }
 
-  updateRelatedQueries(
-    queryName: string,
-    info: { queryResult: any; queryArgs: any }
-  ) {
+  updateRelatedQueries(query: BaseQuery, queryResult: any) {
     const updatedCacheKeys = this.queryBucket.updateRelatedQueries(
-      queryName,
-      info,
+      query,
+      queryResult,
       (cacheKey, data, selector) =>
         this.changeTracker.updateQueryData(cacheKey, data, selector)
     )

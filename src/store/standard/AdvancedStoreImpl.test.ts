@@ -80,7 +80,7 @@ describe("Query options", () => {
     })
   })
 
-  test("relatedQueries", (done) => {
+  test("queryUpdates", (done) => {
     let count = 10
     const query = new Query(
       "UsersQuery",
@@ -89,7 +89,7 @@ describe("Query options", () => {
           setTimeout(() => r({ userCount: count++, users: [] }))
         ),
       {
-        relatedQueries: {
+        queryUpdates: {
           UsersQuery: (
             currentValue,
             { relatedQueryResult, relatedQueryArgs, queryArgs }

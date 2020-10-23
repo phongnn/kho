@@ -85,10 +85,7 @@ class CacheController {
       }
     }
 
-    const cacheKeys_2 = this.cache.updateRelatedQueries(query.name, {
-      queryResult: normalizedData,
-      queryArgs: query.options.arguments,
-    })
+    const cacheKeys_2 = this.cache.updateRelatedQueries(query, normalizedData)
     const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2)
 
     this.notifyActiveQueries(affectedCacheKeys)
@@ -108,10 +105,7 @@ class CacheController {
     // prettier-ignore
     const { affectedCacheKeys: cacheKeys_1, normalizedData } = this.cache.saveMoreQueryData(cacheKey, newData, shape, mergeFn)
 
-    const cacheKeys_2 = this.cache.updateRelatedQueries(query.name, {
-      queryResult: normalizedData,
-      queryArgs: undefined,
-    })
+    const cacheKeys_2 = this.cache.updateRelatedQueries(query, normalizedData)
     const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2)
 
     this.notifyActiveQueries(affectedCacheKeys)

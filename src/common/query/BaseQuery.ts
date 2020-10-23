@@ -43,7 +43,7 @@ export abstract class BaseQuery {
       transform?: TransformShape
       selector?: Selector
       mutations?: Record<string, QueryUpdateFn>
-      relatedQueries?: Record<string, RelatedQueryUpdateFn>
+      queryUpdates?: Record<string, RelatedQueryUpdateFn>
     } = {}
   ) {}
 }

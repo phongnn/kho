@@ -131,23 +131,21 @@ class QueryBucket {
     return new Set(updatedCacheKeys)
   }
 
-  updateRelatedQueries(
-    queryName: string,
-    info: {
-      queryResult: any
-      queryArgs: any
-    },
-    trackQuery: TrackQueryFn
-  ) {
+  // prettier-ignore
+  updateRelatedQueries(query: BaseQuery, queryResult: any, trackQuery: TrackQueryFn) {
+    const { queryUpdates, arguments: relatedQueryArgs } = query.options
+    if (!queryUpdates || Object.getOwnPropertyNames(queryUpdates).length === 0) {
+      return new Set<CacheKey>()
+    }
+
     const updatedCacheKeys: CacheKey[] = []
     for (const [cacheKey, item] of this.queryData) {
-      const { data: currentData, query: relatedQuery, selector } = item
-      const { relatedQueries = {}, arguments: queryArgs } = relatedQuery.options
-      const updateFn = relatedQueries[queryName]
+      const { data: currentData, selector, name: queryName, arguments: queryArgs } = item
+      const updateFn = queryUpdates[queryName]
       if (updateFn) {
         item.data = updateFn(currentData, {
-          relatedQueryResult: info.queryResult,
-          relatedQueryArgs: info.queryArgs,
+          relatedQueryResult: queryResult,
+          relatedQueryArgs,
           queryArgs,
         })
         updatedCacheKeys.push(cacheKey)

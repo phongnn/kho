@@ -33,14 +33,14 @@ export interface QueryOptions<TResult, TArguments, TContext> {
   // updates this query's data when related mutations take place
   mutations?: Record<string, QueryUpdateFn>
 
-  // updates this query's data upon receipt of other queries' result
-  relatedQueries?: Record<string, RelatedQueryUpdateFn>
+  // updates related queries upon receipt of this query's data
+  queryUpdates?: Record<string, RelatedQueryUpdateFn>
 
   // default: "cache-first"
   fetchPolicy?: "cache-first" | "cache-and-network" | "network-only"
 
-  // "selector" is only needed when mutation/relatedQueries options above are used
-  // AND the first request to backend may return blank result
+  // "selector" is only needed when the first request to backend may return blank result
+  // AND you want to update this query's data from a related query/mutation (queryUpdates option)
   selector?: Selector
 }
 
