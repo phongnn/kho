@@ -30,9 +30,6 @@ export interface QueryOptions<TResult, TArguments, TContext> {
     info: { arguments: TArguments }
   ) => any
 
-  // updates this query's data when related mutations take place
-  mutations?: Record<string, QueryUpdateFn>
-
   // updates related queries upon receipt of this query's data
   queryUpdates?: Record<string, RelatedQueryUpdateFn>
 

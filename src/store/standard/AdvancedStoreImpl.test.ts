@@ -21,14 +21,16 @@ describe("LocalQuery", () => {
   it("should callback with initial value, then with set data", (done) => {
     const initialValue = { msg: null }
     const testPayload = { msg: "Hello, World" }
-    // prettier-ignore
-    const mutation = new Mutation("UpdateData", () => Promise.resolve(testPayload))
-    const query = new LocalQuery("SomeLocalState", {
-      initialValue,
-      mutations: {
-        UpdateData: (_, { mutationResult }) => mutationResult,
-      },
-    })
+    const query = new LocalQuery("SomeLocalState", { initialValue })
+    const mutation = new Mutation(
+      "UpdateData",
+      () => Promise.resolve(testPayload),
+      {
+        queryUpdates: {
+          SomeLocalState: (_, { mutationResult }) => mutationResult,
+        },
+      }
+    )
     const store = createStore() as AdvancedStore
     store.registerLocalQuery(query, {
       onData: (data) => {
@@ -52,19 +54,21 @@ describe("Query options", () => {
       {
         shape: [ProductType],
         selector: ["id", "name"],
-        mutations: {
-          AddProduct: (currentList, { mutationResult: newProductRef }) => [
-            ...currentList,
-            newProductRef,
-          ],
-        },
       }
     )
     const mutation = new Mutation(
       "AddProduct",
       () =>
         new Promise((r) => setTimeout(() => r({ id: 1, name: "Product A" }))),
-      { resultShape: ProductType }
+      {
+        resultShape: ProductType,
+        queryUpdates: {
+          Products: (currentList, { mutationResult: newProductRef }) => [
+            ...currentList,
+            newProductRef,
+          ],
+        },
+      }
     )
 
     const store = createStore() as AdvancedStore
@@ -548,14 +552,16 @@ describe("resetStore()", () => {
   })
 
   it("should reset active local query's value", (done) => {
-    const query = new LocalQuery("Profile", {
-      initialValue: "nothing",
-      mutations: {
-        UpdateData: (_, { mutationResult }) => mutationResult,
-      },
-    })
-    // prettier-ignore
-    const mutation = new Mutation("UpdateData", () => Promise.resolve("something"))
+    const query = new LocalQuery("Profile", { initialValue: "nothing" })
+    const mutation = new Mutation(
+      "UpdateData",
+      () => Promise.resolve("something"),
+      {
+        queryUpdates: {
+          Profile: (_, { mutationResult }) => mutationResult,
+        },
+      }
+    )
     const store = createStore() as AdvancedStore
     let valueSet = false
     store.registerLocalQuery(query, {
@@ -810,20 +816,20 @@ describe("change notification", () => {
       "UsersQuery",
       () =>
         new Promise((r) => setTimeout(() => r([{ id: 1, name: "User 1" }]))),
+      { shape: [UserType] }
+    )
+    const addUserMutation = new Mutation(
+      "AddUser",
+      () => Promise.resolve({ id: 2, name: "User 2" }),
       {
-        shape: [UserType],
-        mutations: {
-          AddUser: (currentList, { mutationResult: newUserRef }) => [
+        resultShape: UserType,
+        queryUpdates: {
+          UsersQuery: (currentList, { mutationResult: newUserRef }) => [
             ...currentList,
             newUserRef,
           ],
         },
       }
-    )
-    const addUserMutation = new Mutation(
-      "AddUser",
-      () => Promise.resolve({ id: 2, name: "User 2" }),
-      { resultShape: UserType }
     )
     const updateUserMutation = new Mutation(
       "UpdateUser",
@@ -859,15 +865,7 @@ describe("change notification", () => {
             r([{ id: "a1", title: "Article 1", author: { id: 1, name: "User 1" } }])
           )
         ),
-      {
-        shape: [ArticleType],
-        mutations: {
-          AddArticle: (currentList, { mutationResult: newArticleRef }) => [
-            ...currentList,
-            newArticleRef,
-          ],
-        },
-      }
+      { shape: [ArticleType] }
     )
     const addArticleMutation = new Mutation(
       "AddArticle",
@@ -877,7 +875,15 @@ describe("change notification", () => {
           title: "Article 2",
           author: { id: 2, name: "User 2" },
         }),
-      { resultShape: ArticleType }
+      {
+        resultShape: ArticleType,
+        queryUpdates: {
+          ArticlesQuery: (currentList, { mutationResult: newArticleRef }) => [
+            ...currentList,
+            newArticleRef,
+          ],
+        },
+      }
     )
     const updateUserMutation = new Mutation(
       "UpdateUser",

@@ -24,6 +24,20 @@ export interface MutationOptions<TResult, TArguments, TContext> {
     }
   ) => void
 
+  // updates queries related to this mutation
+  queryUpdates?: Record<
+    string,
+    (
+      currentValue: any,
+      info: {
+        mutationResult: any
+        mutationArgs: any
+        optimistic: boolean
+        queryArgs: any
+      }
+    ) => any
+  >
+
   afterQueryUpdates?: (
     store: Store,
     info: {

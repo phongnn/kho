@@ -11,6 +11,7 @@ export class LocalMutation<Input> {
       input?: Input
       inputShape?: NormalizedShape
       beforeQueryUpdates?: (cache: CacheProxy, info: { mutationInput: any }) => void
+      queryUpdates?: Record<string, (currentValue: any, info: { mutationInput: any; queryArgs: any }) => any>
       afterQueryUpdates?: (store: Store, info: { mutationInput: Input }) => void | Promise<any>
       syncMode?: boolean
     } = {}

@@ -111,69 +111,43 @@ class CacheController {
     this.notifyActiveQueries(affectedCacheKeys)
   }
 
-  storeMutationResult<TResult, TArguments, TContext>(
-    mutation: Mutation<TResult, TArguments, TContext>,
-    data: TResult,
+  storeMutationData<TData>(
+    mutation: Mutation<TData, any, any> | LocalMutation<TData>,
+    data: TData,
     optimistic: boolean = false
   ) {
-    const { resultShape: shape, beforeQueryUpdates } = mutation.options
     let normalizedData: any = null
     let cacheKeys_1 = new Set<CacheKey>()
 
+    // prettier-ignore
+    const shape = mutation instanceof LocalMutation ? mutation.options.inputShape : mutation.options.resultShape
     if (data && shape) {
       const tmp = this.cache.saveMutationResult(data, shape)
       normalizedData = tmp.normalizedData
       cacheKeys_1 = tmp.affectedCacheKeys
     }
 
-    const info = {
-      mutationResult: normalizedData ?? data,
-      mutationArgs: mutation.options.arguments!,
-      optimistic,
-    }
+    const info =
+      mutation instanceof LocalMutation
+        ? { mutationInput: normalizedData ?? data }
+        : {
+            mutationResult: normalizedData ?? data,
+            mutationArgs: mutation.options.arguments!,
+            optimistic,
+          }
 
     let cacheKeys_2 = new Set<CacheKey>()
+    const { beforeQueryUpdates } = mutation.options
     if (beforeQueryUpdates) {
       const cacheProxy = new CacheProxyImpl(this.cache)
+      // @ts-ignore
       beforeQueryUpdates(cacheProxy, info)
       // prettier-ignore
       cacheKeys_2 = this.cache.changeTracker.findAffectedCacheKeys(cacheProxy.changedObjectKeys)
     }
 
     // prettier-ignore
-    const cacheKeys_3 = this.cache.updateQueriesRelatedToMutation(mutation.name, info)
-    const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2, cacheKeys_3)
-
-    this.notifyActiveQueries(affectedCacheKeys)
-  }
-
-  storeLocalMutationInput<Input>(mutation: LocalMutation<Input>, input: Input) {
-    const { inputShape: shape, beforeQueryUpdates } = mutation.options
-    let normalizedData: any = null
-    let cacheKeys_1 = new Set<CacheKey>()
-
-    if (input && shape) {
-      const tmp = this.cache.saveMutationResult(input, shape)
-      normalizedData = tmp.normalizedData
-      cacheKeys_1 = tmp.affectedCacheKeys
-    }
-
-    let cacheKeys_2 = new Set<CacheKey>()
-    if (beforeQueryUpdates) {
-      const cacheProxy = new CacheProxyImpl(this.cache)
-      beforeQueryUpdates(cacheProxy, {
-        mutationInput: normalizedData ?? input,
-      })
-      // prettier-ignore
-      cacheKeys_2 = this.cache.changeTracker.findAffectedCacheKeys(cacheProxy.changedObjectKeys)
-    }
-
-    // prettier-ignore
-    const cacheKeys_3 = this.cache.updateQueriesRelatedToMutation(mutation.name, {
-      mutationResult: normalizedData ?? input,
-      mutationArgs: undefined,
-      optimistic: false,
-    })
+    const cacheKeys_3 = this.cache.updateQueriesRelatedToMutation(mutation, info)
     const affectedCacheKeys = mergeSets(cacheKeys_1, cacheKeys_2, cacheKeys_3)
 
     this.notifyActiveQueries(affectedCacheKeys)

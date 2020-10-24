@@ -30,11 +30,7 @@ class MutationHandler {
           return
         }
 
-        this.cache.storeMutationResult(
-          mutation,
-          options.optimisticResponse,
-          true
-        )
+        this.cache.storeMutationData(mutation, options.optimisticResponse, true)
 
         if (options.afterQueryUpdates) {
           const x = options.afterQueryUpdates(this.store, {
@@ -52,7 +48,7 @@ class MutationHandler {
     fn(options.arguments!, options.context as TContext, this.store)
       .then((data) => {
         done = true // note: we can't use finally clause for this
-        this.cache.storeMutationResult(mutation, data)
+        this.cache.storeMutationData(mutation, data)
 
         const { afterQueryUpdates, syncMode = false } = options
         if (afterQueryUpdates) {
@@ -104,7 +100,7 @@ class MutationHandler {
     const { onComplete, onError } = callbacks
 
     try {
-      this.cache.storeLocalMutationInput(mutation, input!)
+      this.cache.storeMutationData(mutation, input!)
     } catch (e) {
       const err = toErrorObj(e)
       if (!isProduction) {

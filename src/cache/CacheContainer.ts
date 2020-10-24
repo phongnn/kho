@@ -1,5 +1,5 @@
 // prettier-ignore
-import { Query, BaseQuery, NormalizedType, NormalizedShape, NormalizedObjectKey, NormalizedObjectRef } from "../common"
+import { Query, BaseQuery, NormalizedType, NormalizedShape, NormalizedObjectKey, NormalizedObjectRef, LocalMutation, Mutation } from "../common"
 import { extractPlainKey } from "../common/helpers"
 import { DataNormalizer, DataDenormalizer, Selector } from "../normalization"
 import ChangeTracker from "./ChangeTracker"
@@ -161,12 +161,12 @@ class CacheContainer {
     return updatedCacheKeys
   }
 
-  updateQueriesRelatedToMutation<TResult, TArguments, TContext>(
-    mutationName: string,
-    info: { mutationResult: any; mutationArgs: any; optimistic: boolean }
+  updateQueriesRelatedToMutation(
+    mutation: Mutation<any, any, any> | LocalMutation<any>,
+    info: any
   ) {
     const updatedCacheKeys = this.queryBucket.updateQueriesRelatedToMutation(
-      mutationName,
+      mutation,
       info,
       (cacheKey, data, selector) =>
         this.changeTracker.updateQueryData(cacheKey, data, selector)

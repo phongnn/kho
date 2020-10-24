@@ -42,7 +42,6 @@ export abstract class BaseQuery {
       shape?: NormalizedShape
       transform?: TransformShape
       selector?: Selector
-      mutations?: Record<string, QueryUpdateFn>
       queryUpdates?: Record<string, RelatedQueryUpdateFn>
     } = {}
   ) {}

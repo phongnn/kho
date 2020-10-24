@@ -32,7 +32,6 @@ export class LocalQuery<TData> extends BaseQuery {
       shape?: NormalizedShape
       transform?: TransformShape
       initialValue?: TData
-      mutations?: Record<string, QueryUpdateFn>
       queryUpdates?: Record<string, RelatedQueryUpdateFn>
       selector?: Selector
     } = {}

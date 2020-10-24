@@ -119,12 +119,6 @@ describe("optimistic response", () => {
         ]),
       {
         shape: [UserType],
-        mutations: {
-          AddUser: (existingData, { optimistic, mutationResult }) => {
-            // this function is called twice, but we should add to list only once
-            return optimistic ? [...existingData, mutationResult] : existingData
-          },
-        },
       }
     )
     const mutation = new Mutation(
@@ -138,6 +132,12 @@ describe("optimistic response", () => {
         resultShape: UserType,
         // prettier-ignore
         optimisticResponse: { username: "z", email: "z@test.com", __optimistic__: true },
+        queryUpdates: {
+          GetUsers: (existingData, { optimistic, mutationResult }) => {
+            // this function is called twice, but we should add to list only once
+            return optimistic ? [...existingData, mutationResult] : existingData
+          },
+        },
       }
     )
 
@@ -199,10 +199,6 @@ describe("beforeQueryUpdates()", () => {
       () => Promise.resolve([{ username: "x", email: "x@test.com" }]),
       {
         shape: [UserType],
-        mutations: {
-          // prettier-ignore
-          AddUser: (currentValue, { mutationResult: newUserRef }) => [...currentValue, newUserRef],
-        },
       }
     )
     const mutation = new Mutation(
@@ -210,6 +206,10 @@ describe("beforeQueryUpdates()", () => {
       () => Promise.resolve({ username: "y", email: "y@t.s", avatar: "http" }),
       {
         resultShape: UserType,
+        queryUpdates: {
+          // prettier-ignore
+          GetUsers: (currentValue, { mutationResult: newUserRef }) => [...currentValue, newUserRef],
+        },
       }
     )
     const store = createStore() as AdvancedStore
@@ -473,18 +473,18 @@ describe("LocalMutation", () => {
       () => Promise.resolve([{ id: 1, email: "x@test.com" }]),
       {
         shape: [UserType],
-        mutations: {
-          NewUser: (currentList, { mutationResult: newUserRef }) => [
-            ...currentList,
-            newUserRef,
-          ],
-        },
       }
     )
     const user2 = { id: 2, email: "y@test.com" }
     const mutation = new LocalMutation("NewUser", {
       input: user2,
       inputShape: UserType,
+      queryUpdates: {
+        GetUsers: (currentList, { mutationInput: newUserRef }) => [
+          ...currentList,
+          newUserRef,
+        ],
+      },
     })
 
     const store = createStore() as AdvancedStore

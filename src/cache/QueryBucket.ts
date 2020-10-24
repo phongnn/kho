@@ -1,4 +1,5 @@
-import { BaseQuery, Query, Selector as PlainSelector } from "../common"
+// prettier-ignore
+import { BaseQuery, LocalMutation, Mutation, Query, Selector as PlainSelector } from "../common"
 import { Selector } from "../normalization"
 
 // Equivalent query keys will share the same cache key
@@ -101,27 +102,24 @@ class QueryBucket {
     this.queryData.clear()
   }
 
+  // prettier-ignore
   updateQueriesRelatedToMutation(
-    mutationName: string,
-    info: {
-      mutationResult: any
-      mutationArgs: any
-      optimistic: boolean
-    },
+    mutation: Mutation<any, any, any> | LocalMutation<any>,
+    info: any,
     trackQuery: TrackQueryFn
   ) {
+    const { queryUpdates } = mutation.options
+    if (!queryUpdates || Object.getOwnPropertyNames(queryUpdates).length === 0) {
+      return new Set<CacheKey>()
+    }
+
     const updatedCacheKeys: CacheKey[] = []
     for (const [cacheKey, item] of this.queryData) {
-      const { data: currentData, query, selector } = item
-      const { mutations = {}, arguments: queryArgs } = query.options
-      const updateFn = mutations[mutationName]
+      const { data: currentData, selector, arguments: queryArgs, name: queryName } = item
+      const updateFn = queryUpdates[queryName]
       if (updateFn) {
-        item.data = updateFn(currentData, {
-          ...info,
-          queryArgs,
-        })
+        item.data = updateFn(currentData, { ...info, queryArgs })
         updatedCacheKeys.push(cacheKey)
-
         // inform ChangeTracker to update query's dependencies
         if (selector) {
           trackQuery(cacheKey, item.data, selector)
