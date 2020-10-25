@@ -67,7 +67,6 @@ class CacheContainer {
       this.queryBucket.set(cacheKey, {
         name: query.name,
         arguments: query.options.arguments,
-        query,
         data,
         selector: null,
       })
@@ -80,7 +79,6 @@ class CacheContainer {
       this.queryBucket.set(cacheKey, {
         name: query.name,
         arguments: query.options.arguments,
-        query,
         data: result,
         selector: userProvidedSelector
           ? Selector.from(userProvidedSelector)

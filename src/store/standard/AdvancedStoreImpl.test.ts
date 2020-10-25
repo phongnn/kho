@@ -911,7 +911,7 @@ describe("change notification", () => {
 })
 
 describe("preloadedState", () => {
-  xtest("should work with a trivial query", async () => {
+  test("should work with a trivial query", async () => {
     let count = 0
     const query = new Query(
       "GetData",

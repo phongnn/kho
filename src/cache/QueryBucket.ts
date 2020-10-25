@@ -19,7 +19,6 @@ export class CacheKey {
 }
 
 interface QueryBucketItem {
-  query: BaseQuery
   name: string
   arguments: any
   data: any
@@ -28,9 +27,10 @@ interface QueryBucketItem {
 
 interface QueryBucketSerializableItem {
   cacheKey: any
+  name: string
+  arguments: any
   data: any
   selector: PlainSelector | null
-  // query:
 }
 
 interface TrackQueryFn {
@@ -43,10 +43,9 @@ class QueryBucket {
   constructor(preloadedState?: QueryBucketSerializableItem[]) {
     const queryData = new Map<CacheKey, QueryBucketItem>()
     if (preloadedState) {
-      preloadedState.forEach(({ cacheKey, data, selector }) => {
-        // @ts-ignore
+      preloadedState.forEach(({ cacheKey, selector, ...rest }) => {
         queryData.set(new CacheKey(cacheKey), {
-          data,
+          ...rest,
           selector: selector ? Selector.from(selector) : null,
         })
       })
@@ -56,12 +55,11 @@ class QueryBucket {
 
   getState() {
     const result: QueryBucketSerializableItem[] = []
-    this.queryData.forEach(({ data, selector }, cacheKey) => {
+    this.queryData.forEach(({ selector, ...rest }, cacheKey) => {
       result.push({
         cacheKey: cacheKey.plain(),
+        ...rest,
         selector: selector ? selector.plain() : null,
-        data,
-        // query,
       })
     })
     return result
