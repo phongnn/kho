@@ -11,7 +11,6 @@ export {
   NormalizedType,
   NormalizedTypeShape,
   NormalizedShape,
-  TransformShape,
 } from "./normalization/NormalizedType"
 export {
   NormalizedObjectKey,

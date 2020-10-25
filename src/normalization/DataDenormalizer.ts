@@ -1,5 +1,8 @@
-// prettier-ignore
-import { NormalizedType, NormalizedObjectKey, NormalizedObjectRef, TransformShape } from "../common"
+import {
+  NormalizedType,
+  NormalizedObjectKey,
+  NormalizedObjectRef,
+} from "../common"
 import Selector from "./Selector"
 
 export default class DataDenormalizer {
@@ -9,51 +12,28 @@ export default class DataDenormalizer {
   ) {}
 
   // prettier-ignore
-  denormalize(normalizedData: any, selector: Selector, transformer?: TransformShape): any {
+  denormalize(normalizedData: any, selector: Selector): any {
     if (Array.isArray(normalizedData)) {
-      if (transformer && !Array.isArray(transformer)) {
-        throw new Error("[Kho] Invalid transform configuration: array expected.")
-      }
-
       return normalizedData
-        .map((dataItem) =>
-          this.denormalize(
-            dataItem,
-            selector,
-            transformer ? transformer[0] : undefined
-          )
-        )
+        .map((dataItem) => this.denormalize(dataItem, selector))
         .filter((dataItem) => !!dataItem)
     } else if (normalizedData instanceof NormalizedObjectRef) {
       const obj = this.lookupObject(normalizedData.type, normalizedData.key)
       return !obj ? null : this.denormalizeObject(obj, selector, normalizedData.type.transform)
     } else if (typeof normalizedData === "object") {
-      return this.denormalizeObject(normalizedData, selector, transformer)
+      return this.denormalizeObject(normalizedData, selector)
     } else {
-      return typeof transformer === "function"
-        ? transformer(normalizedData)
-        : normalizedData ?? null
+      return normalizedData ?? null
     }
   }
 
   // prettier-ignore
-  private denormalizeObject(obj: any, selector: Selector, transformer?: TransformShape) {
+  private denormalizeObject(obj: any, selector: Selector, transform?: Record<string, (value: any) => any>) {
     const result: any = {}
-
-    if (transformer && (Array.isArray(transformer) || typeof transformer === "function")) {
-      throw new Error(
-        `[Kho] Invalid transform configuration: object expected instead of ${ Array.isArray(transformer) ? "array" : "function" }.`
-      )
-    }
-
     for (const item of selector.iterator()) {
       if (typeof item === "string") {
-        if (transformer && transformer[item]) {
-          const fn = transformer[item]
-          if (typeof fn !== "function") {
-            throw new Error(`[Kho] Invalid transform configuration: function expected.`)
-          }
-
+        if (transform && transform[item]) {
+          const fn = transform[item]
           const val = fn(obj[item])
           if (val !== undefined) {
             result[item] = val
@@ -63,11 +43,7 @@ export default class DataDenormalizer {
         }
       } else {
         const [propName, subSelector] = item
-        result[propName] = this.denormalize(
-          obj[propName],
-          subSelector,
-          transformer ? transformer[propName] : undefined
-        )
+        result[propName] = this.denormalize(obj[propName], subSelector)
       }
     }
     return result

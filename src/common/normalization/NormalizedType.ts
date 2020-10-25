@@ -14,7 +14,7 @@ export class NormalizedType {
     settings: {
       shape?: NormalizedTypeShape
       keyFields?: string[]
-      transform?: RecordOf<TransformShape>
+      transform?: Record<string, (value: any) => any>
     } = {}
   ) {
     if (this.registry.has(name)) {
@@ -48,7 +48,7 @@ export class NormalizedType {
     readonly name: string,
     readonly keyFields: string[],
     readonly shape?: NormalizedTypeShape,
-    readonly transform?: RecordOf<TransformShape>
+    readonly transform?: Record<string, (value: any) => any>
   ) {}
 }
 
@@ -64,10 +64,3 @@ export type NormalizedShape =
   | NormalizedType
   | RecordOf<NormalizedShape>
   | [NormalizedType | RecordOf<NormalizedShape>]
-
-/** Cache -> UI data transformation rules */
-type TransformFn = (value: any) => any
-export type TransformShape =
-  | TransformFn
-  | RecordOf<TransformFn | TransformShape>
-  | [TransformFn | RecordOf<TransformFn | TransformShape>]

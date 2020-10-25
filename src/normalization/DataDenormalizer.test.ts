@@ -309,12 +309,7 @@ it("should transform data", () => {
       ? orderObjects.find((o) => key.matches(o.id))
       : null
   })
-  const result = denormalizer.denormalize(data, selector, {
-    extra: (val: any) => ({
-      ...val,
-      notes: val.notes.map((n: string) => n.toUpperCase()),
-    }),
-  })
+  const result = denormalizer.denormalize(data, selector)
 
   expect(result).toStrictEqual({
     order: {
@@ -329,43 +324,7 @@ it("should transform data", () => {
       ],
     },
     extra: {
-      notes: ["BLAH"], // converted to uppercase
+      notes: ["blah"],
     },
   })
-})
-
-it("should transform array", () => {
-  const CustomerType = NormalizedType.register("Customer")
-  const customerObjects = [{ id: "x", name: "X", email: "x@test.com" }]
-  const data = [
-    {
-      record: {
-        customer: new NormalizedObjectRef(
-          CustomerType,
-          new NormalizedObjectKey("x")
-        ),
-        notes: "blah",
-      },
-    },
-  ]
-  const selector = Selector.from([
-    ["record", [["customer", ["id", "name", "email"]], "notes"]],
-  ])
-  const denormalizer = new DataDenormalizer((type, key) => {
-    return type === CustomerType
-      ? customerObjects.find((c) => key.matches(c.id))
-      : null
-  })
-
-  const result = denormalizer.denormalize(data, selector, [
-    { record: { notes: (val) => val.toUpperCase() } },
-  ])
-  expect(result).toStrictEqual([
-    {
-      record: {
-        customer: { id: "x", name: "X", email: "x@test.com" },
-        notes: "BLAH", // converted to uppercase
-      },
-    },
-  ])
 })

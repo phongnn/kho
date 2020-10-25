@@ -1,8 +1,6 @@
-// prettier-ignore
-import { BaseQueryKey, BaseQuery, QueryUpdateFn, RelatedQueryUpdateFn } from "./BaseQuery"
+import { BaseQueryKey, BaseQuery, RelatedQueryUpdateFn } from "./BaseQuery"
 import { Selector } from "../normalization/Selector"
-// prettier-ignore
-import { NormalizedShape, TransformShape } from "../normalization/NormalizedType"
+import { NormalizedShape } from "../normalization/NormalizedType"
 import { deepEqual, mergeOptions } from "../helpers"
 
 export interface QueryOptions<TResult, TArguments, TContext> {
@@ -18,9 +16,6 @@ export interface QueryOptions<TResult, TArguments, TContext> {
 
   // the shape of data received from backend (used for data normalization purposes)
   shape?: NormalizedShape
-
-  // data transformation when reading data from cache
-  transform?: TransformShape
 
   // executed when fetchMore() is invoked (e.g. infinite scroll).
   // its result will replace the existing data of the query in the cache

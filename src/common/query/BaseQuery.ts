@@ -1,7 +1,4 @@
-import {
-  NormalizedShape,
-  TransformShape,
-} from "../normalization/NormalizedType"
+import { NormalizedShape } from "../normalization/NormalizedType"
 import { Selector } from "../normalization/Selector"
 
 export interface BaseQueryKey {
@@ -40,7 +37,6 @@ export abstract class BaseQuery {
     readonly options: {
       arguments?: any
       shape?: NormalizedShape
-      transform?: TransformShape
       selector?: Selector
       queryUpdates?: Record<string, RelatedQueryUpdateFn>
     } = {}

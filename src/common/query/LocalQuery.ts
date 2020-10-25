@@ -1,13 +1,5 @@
-import {
-  BaseQueryKey,
-  BaseQuery,
-  QueryUpdateFn,
-  RelatedQueryUpdateFn,
-} from "./BaseQuery"
-import {
-  NormalizedShape,
-  TransformShape,
-} from "../normalization/NormalizedType"
+import { BaseQueryKey, BaseQuery, RelatedQueryUpdateFn } from "./BaseQuery"
+import { NormalizedShape } from "../normalization/NormalizedType"
 import { Selector } from "../normalization/Selector"
 
 class LocalQueryKey implements BaseQueryKey {
@@ -30,7 +22,6 @@ export class LocalQuery<TData> extends BaseQuery {
     readonly name: string,
     readonly options: {
       shape?: NormalizedShape
-      transform?: TransformShape
       initialValue?: TData
       queryUpdates?: Record<string, RelatedQueryUpdateFn>
       selector?: Selector
