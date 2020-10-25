@@ -7,6 +7,8 @@ export class NormalizedObjectKey {
   matches(plainKey: any) {
     return deepEqual(plainKey, this.plainKey)
   }
+
+  plain = () => this.plainKey
 }
 
 export class NormalizedObjectRef {

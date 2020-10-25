@@ -35,13 +35,15 @@ export class NormalizedType {
    * (e.g. due to a circular dependency)
    */
   static of(name: string) {
-    return new NormalizedTypePlaceholder(name, () => {
-      const type = this.registry.get(name)
-      if (!type) {
-        throw new Error(`[Kho] Normalized type not found: ${name}.`)
-      }
-      return type
-    })
+    return new NormalizedTypePlaceholder(name, () => this.get(name))
+  }
+
+  static get(name: string) {
+    const type = this.registry.get(name)
+    if (!type) {
+      throw new Error(`[Kho] Normalized type not found: ${name}.`)
+    }
+    return type
   }
 
   private constructor(

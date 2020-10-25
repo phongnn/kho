@@ -8,7 +8,7 @@ import {
   LocalMutation,
 } from "../../common"
 
-afterEach(() => {
+beforeEach(() => {
   // @ts-ignore
   Query.registry = new Map()
   // @ts-ignore
@@ -911,10 +911,10 @@ describe("change notification", () => {
 })
 
 describe("preloadedState", () => {
-  test("should work with a trivial query", async () => {
+  it("should work with a trivial query", async () => {
     let count = 0
     const query = new Query(
-      "GetData",
+      "GetX",
       () => new Promise((r) => setTimeout(() => r(++count)))
     )
 
@@ -929,5 +929,83 @@ describe("preloadedState", () => {
 
     // verify query's cached data
     expect(restoredStore.getQueryData(query)).toBe(1)
+  })
+
+  it("should work with normalized data", async () => {
+    const UserType = NormalizedType.register("User", {
+      keyFields: ["username"],
+    })
+    const CommentType = NormalizedType.register("Comment", {
+      shape: {
+        author: UserType,
+      },
+    })
+    const ArticleType = NormalizedType.register("Article", {
+      keyFields: ["slug"],
+      shape: {
+        author: UserType,
+        comments: [CommentType],
+      },
+    })
+    const article = {
+      slug: "a1",
+      title: "blah",
+      author: { username: "u1", name: "Nguyen" },
+      comments: [
+        { id: 1, author: { username: "u2" }, body: "blah..." },
+        { id: 2, author: { username: "u1" }, body: "blah blah..." },
+      ],
+    }
+    const query = new Query(
+      "GetY",
+      () => new Promise((r) => setTimeout(() => r(article))),
+      { shape: ArticleType }
+    )
+
+    // fetch data and save into cache
+    const originalStore = createStore()
+    await originalStore.query(query)
+    const state = JSON.stringify(originalStore.getState())
+
+    // restore store from the serialized state
+    const preloadedState = JSON.parse(state)
+    const restoredStore = createStore({ preloadedState })
+
+    // verify query's cached data
+    expect(restoredStore.getQueryData(query)).toStrictEqual(article)
+  })
+
+  it("should work with compound object key", async () => {
+    const OrderItemType = NormalizedType.register("OrderItem", {
+      keyFields: ["orderId", "productId"],
+    })
+    const order = {
+      items: [
+        { orderId: 1, productId: "A", quantity: 1, price: 100 },
+        { orderId: 1, productId: "B", quantity: 2, price: 50 },
+      ],
+      notes: "blah blah...",
+    }
+    const query = new Query(
+      "GetZ",
+      () => new Promise((r) => setTimeout(() => r(order))),
+      {
+        shape: {
+          items: [OrderItemType],
+        },
+      }
+    )
+
+    // fetch data and save into cache
+    const originalStore = createStore()
+    await originalStore.query(query)
+    const state = JSON.stringify(originalStore.getState())
+
+    // restore store from the serialized state
+    const preloadedState = JSON.parse(state)
+    const restoredStore = createStore({ preloadedState })
+
+    // verify query's cached data
+    expect(restoredStore.getQueryData(query)).toStrictEqual(order)
   })
 })

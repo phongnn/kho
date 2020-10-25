@@ -16,7 +16,12 @@ class CacheContainer {
       preloadedState ? preloadedState.objects : undefined
     )
     this.queryBucket = new QueryBucket(
-      preloadedState ? preloadedState.queries : undefined
+      preloadedState ? preloadedState.queries : undefined,
+      (typeName: string, plainKey: any) => {
+        const type = NormalizedType.get(typeName)
+        const objKey = this.objectBucket.findObjectKey(type, plainKey)!
+        return new NormalizedObjectRef(type, objKey)
+      }
     )
     this.changeTracker = new ChangeTracker(this)
   }

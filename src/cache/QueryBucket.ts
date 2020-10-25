@@ -1,6 +1,7 @@
 // prettier-ignore
-import { BaseQuery, LocalMutation, Mutation, Query, Selector as PlainSelector } from "../common"
+import { BaseQuery, LocalMutation, Mutation, NormalizedObjectRef, Query, Selector as PlainSelector } from "../common"
 import { Selector } from "../normalization"
+import { deserializeData, serializeData } from "./DataSerializer"
 
 // Equivalent query keys will share the same cache key
 // (a query can be used by multiple components or by one component but renderred several times).
@@ -13,9 +14,7 @@ export class CacheKey {
     return query.key.matchesPlain(this.plainQueryKey)
   }
 
-  plain() {
-    return this.plainQueryKey
-  }
+  plain = () => this.plainQueryKey
 }
 
 interface QueryBucketItem {
@@ -25,7 +24,7 @@ interface QueryBucketItem {
   selector: Selector | null
 }
 
-interface QueryBucketSerializableItem {
+interface SerializableBucketItem {
   cacheKey: any
   name: string
   arguments: any
@@ -40,12 +39,16 @@ interface TrackQueryFn {
 class QueryBucket {
   private queryData: Map<CacheKey, QueryBucketItem>
 
-  constructor(preloadedState?: QueryBucketSerializableItem[]) {
+  constructor(
+    preloadedState?: SerializableBucketItem[],
+    getObjectRef?: (typeName: string, plainKey: any) => NormalizedObjectRef
+  ) {
     const queryData = new Map<CacheKey, QueryBucketItem>()
     if (preloadedState) {
-      preloadedState.forEach(({ cacheKey, selector, ...rest }) => {
+      preloadedState.forEach(({ cacheKey, selector, data, ...rest }) => {
         queryData.set(new CacheKey(cacheKey), {
           ...rest,
+          data: data && selector ? deserializeData(data, getObjectRef!) : data,
           selector: selector ? Selector.from(selector) : null,
         })
       })
@@ -54,11 +57,12 @@ class QueryBucket {
   }
 
   getState() {
-    const result: QueryBucketSerializableItem[] = []
-    this.queryData.forEach(({ selector, ...rest }, cacheKey) => {
+    const result: SerializableBucketItem[] = []
+    this.queryData.forEach(({ selector, data, ...rest }, cacheKey) => {
       result.push({
         cacheKey: cacheKey.plain(),
         ...rest,
+        data: data && selector ? serializeData(data) : data,
         selector: selector ? selector.plain() : null,
       })
     })
