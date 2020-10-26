@@ -614,9 +614,11 @@ describe("resetStore()", () => {
 
 describe("change notification", () => {
   const UserType = NormalizedType.register("User")
+  const CommentType = NormalizedType.register("Comment")
   const ArticleType = NormalizedType.register("Article", {
     shape: {
       author: UserType,
+      comments: [CommentType],
     },
   })
 
@@ -902,6 +904,53 @@ describe("change notification", () => {
             setTimeout(() => store.processMutation(updateUserMutation))
           } else {
             expect(author.name).toBe("Updated Name")
+            done()
+          }
+        }
+      },
+    })
+  })
+
+  test("updateObject()", (done) => {
+    const query = new Query(
+      "ArticleQuery",
+      () =>
+        new Promise((r) =>
+          setTimeout(() =>
+            // prettier-ignore
+            r({ id: "a1", title: "Article 1", comments: [{ id: 1, content: "blah"}] })
+          )
+        ),
+      { shape: ArticleType }
+    )
+    const addCommentMutation = new LocalMutation("AddComment", {
+      input: { id: 2, content: "New comment." },
+      inputShape: CommentType,
+      beforeQueryUpdates: (cache, { mutationInput: newCommentRef }) => {
+        const articleRef = cache.findObjectRef(ArticleType, { id: "a1" })!
+        const article = cache.readObject(articleRef)
+        cache.updateObject(articleRef, {
+          ...article,
+          comments: [...article.comments, newCommentRef],
+        })
+      },
+    })
+    const updateCommentMutation = new LocalMutation("UpdateComment", {
+      input: { id: 2, content: "Updated comment." },
+      inputShape: CommentType,
+    })
+
+    const store = createStore() as AdvancedStore
+    store.registerQuery(query, {
+      onData: (data: any) => {
+        if (data.comments.length === 1) {
+          setTimeout(() => store.mutateLocal(addCommentMutation))
+        } else {
+          const { content } = data.comments[1]
+          if (content === "New comment.") {
+            setTimeout(() => store.mutateLocal(updateCommentMutation))
+          } else {
+            expect(content).toBe("Updated comment.")
             done()
           }
         }

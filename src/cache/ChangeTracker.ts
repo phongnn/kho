@@ -99,13 +99,13 @@ export default class ChangeTracker {
       )
     } else if (tree instanceof NormalizedObjectRef) {
       const oKey = tree.key
-      if (!objKeys.has(oKey)) {
-        objKeys.add(oKey)
-        const obj = readObject(tree)
-        if (obj) {
-          this.parseObjectTree(obj, selector, objKeys, readObject)
-        }
+      // if (!objKeys.has(oKey)) {
+      objKeys.add(oKey)
+      const obj = readObject(tree)
+      if (obj) {
+        this.parseObjectTree(obj, selector, objKeys, readObject)
       }
+      // }
     } else {
       for (let item of selector.iterator()) {
         if (Array.isArray(item)) {

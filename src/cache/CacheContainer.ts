@@ -224,6 +224,18 @@ class CacheContainer {
 
   updateObject(ref: NormalizedObjectRef, data: any) {
     this.objectBucket.set(ref.type, ref.key, data)
+
+    // prettier-ignore
+    const cacheKeys = this.changeTracker.findAffectedCacheKeys(new Set([ref.key]))
+    cacheKeys.forEach((cacheKey) => {
+      const queryBucketItem = this.queryBucket.get(cacheKey)
+      if (queryBucketItem) {
+        const { selector, data } = queryBucketItem
+        if (data && selector) {
+          this.changeTracker.updateQueryData(cacheKey, data, selector)
+        }
+      }
+    })
   }
 
   deleteObject(ref: NormalizedObjectRef) {
