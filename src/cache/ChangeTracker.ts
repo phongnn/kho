@@ -55,34 +55,51 @@ export default class ChangeTracker {
   }
 
   updateQueryData(cacheKey: CacheKey, data: any, selector: Selector) {
-    const objKeys =
-      this.queryObjectsMap.get(cacheKey) || new Set<NormalizedObjectKey>()
-    this.parseObjectTree(data, selector, objKeys) // update object keys for this cache key
+    const objKeys = this.queryObjectsMap.get(cacheKey)!
+    // update object keys for this cache key
+    this.parseObjectTree(data, selector, objKeys, (ref) =>
+      this.cache.readObject(ref)
+    )
+  }
+
+  // called when restoring store from preloaded state
+  setQueryData(
+    cacheKey: CacheKey,
+    data: any,
+    selector: Selector,
+    readObject: (ref: NormalizedObjectRef) => any
+  ) {
+    const objKeys = new Set<NormalizedObjectKey>()
+    this.parseObjectTree(data, selector, objKeys, readObject)
+    this.queryObjectsMap.set(cacheKey, objKeys)
   }
 
   private parseObjectTree(
     tree: any,
     selector: Selector,
-    objKeys: Set<NormalizedObjectKey>
+    objKeys: Set<NormalizedObjectKey>,
+    readObject: (ref: NormalizedObjectRef) => any
   ) {
     if (!tree) {
       return
     } else if (Array.isArray(tree)) {
-      tree.forEach((item) => this.parseObjectTree(item, selector, objKeys))
+      tree.forEach((item) =>
+        this.parseObjectTree(item, selector, objKeys, readObject)
+      )
     } else if (tree instanceof NormalizedObjectRef) {
       const oKey = tree.key
       if (!objKeys.has(oKey)) {
         objKeys.add(oKey)
-        const obj = this.cache.readObject(tree)
+        const obj = readObject(tree)
         if (obj) {
-          this.parseObjectTree(obj, selector, objKeys)
+          this.parseObjectTree(obj, selector, objKeys, readObject)
         }
       }
     } else {
       for (let item of selector.iterator()) {
         if (Array.isArray(item)) {
           const [propName, subSelector] = item
-          this.parseObjectTree(tree[propName], subSelector, objKeys)
+          this.parseObjectTree(tree[propName], subSelector, objKeys, readObject)
         }
       }
     }

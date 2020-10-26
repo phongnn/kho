@@ -952,19 +952,33 @@ describe("preloadedState", () => {
       title: "blah",
       author: { username: "u1", name: "Nguyen" },
       comments: [
-        { id: 1, author: { username: "u2" }, body: "blah..." },
-        { id: 2, author: { username: "u1" }, body: "blah blah..." },
+        { id: 1, author: { username: "u2", name: "Tran" }, body: "blah..." },
+        {
+          id: 2,
+          author: { username: "u1", name: "Nguyen" },
+          body: "blah blah...",
+        },
       ],
     }
-    const query = new Query(
-      "GetY",
-      () => new Promise((r) => setTimeout(() => r(article))),
+    const userQuery = new Query(
+      "GetY1",
+      () =>
+        new Promise<{ username: string; name: string }>((r) =>
+          setTimeout(() => r(article.author))
+        ),
+      { shape: UserType }
+    )
+    const articleQuery = new Query(
+      "GetY2",
+      () => new Promise<typeof article>((r) => setTimeout(() => r(article))),
       { shape: ArticleType }
     )
+    const mutation = new LocalMutation("UpdateY", { inputShape: UserType })
 
     // fetch data and save into cache
     const originalStore = createStore()
-    await originalStore.query(query)
+    await originalStore.query(userQuery)
+    await originalStore.query(articleQuery)
     const state = JSON.stringify(originalStore.getState())
 
     // restore store from the serialized state
@@ -972,7 +986,14 @@ describe("preloadedState", () => {
     const restoredStore = createStore({ preloadedState })
 
     // verify query's cached data
-    expect(restoredStore.getQueryData(query)).toStrictEqual(article)
+    expect(restoredStore.getQueryData(articleQuery)).toStrictEqual(article)
+
+    // update an object and verify if the change propagates to all related queries
+    await restoredStore.mutateLocal(mutation, {
+      input: { username: "u1", name: "Le" },
+    })
+    expect(restoredStore.getQueryData(userQuery)?.name).toBe("Le")
+    expect(restoredStore.getQueryData(articleQuery)?.author.name).toBe("Le")
   })
 
   it("should work with compound object key", async () => {
@@ -1007,5 +1028,58 @@ describe("preloadedState", () => {
 
     // verify query's cached data
     expect(restoredStore.getQueryData(query)).toStrictEqual(order)
+  })
+
+  it("should notify related queries of changes", async () => {
+    const ProductType = NormalizedType.register("Product")
+    const product = { id: 1, name: "Laptop" }
+    const productQuery = new Query(
+      "GetT1",
+      () => new Promise<typeof product>((r) => setTimeout(() => r(product))),
+      { shape: ProductType }
+    )
+    const productsQuery = new Query(
+      "GetT2",
+      () =>
+        new Promise<Array<typeof product>>((r) =>
+          setTimeout(() => r([product]))
+        ),
+      { shape: [ProductType] }
+    )
+    const mutation = new LocalMutation("UpdateT", {
+      input: { id: 1, name: "PC" },
+      inputShape: ProductType,
+    })
+
+    // fetch data and save into cache
+    const originalStore = createStore()
+    await originalStore.query(productQuery)
+    await originalStore.query(productsQuery)
+    const state = JSON.stringify(originalStore.getState())
+
+    // restore store from the serialized state
+    const preloadedState = JSON.parse(state)
+    const restoredStore = createStore({ preloadedState }) as AdvancedStore
+
+    // register the 2 queries
+    restoredStore.registerQuery(productQuery, {
+      onData: (data) => {
+        if (data.name !== "Laptop") {
+          expect(data.name).toBe("PC")
+        }
+      },
+    })
+
+    restoredStore.registerQuery(productsQuery, {
+      onData: (data) => {
+        if (data[0].name !== "Laptop") {
+          expect(data[0].name).toBe("PC")
+        }
+      },
+    })
+
+    // mutate data and verify if both queries are notified
+    expect.assertions(2)
+    await restoredStore.mutateLocal(mutation)
   })
 })

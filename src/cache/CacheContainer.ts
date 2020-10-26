@@ -12,6 +12,7 @@ class CacheContainer {
   private objectBucket: ObjectBucket
 
   constructor(preloadedState?: any) {
+    this.changeTracker = new ChangeTracker(this)
     this.objectBucket = new ObjectBucket(
       preloadedState ? preloadedState.objects : undefined
     )
@@ -21,16 +22,20 @@ class CacheContainer {
         const type = NormalizedType.get(typeName)
         const objKey = this.objectBucket.findObjectKey(type, plainKey)!
         return new NormalizedObjectRef(type, objKey)
+      },
+      (cacheKey: CacheKey, data: any, selector: Selector) => {
+        this.changeTracker.setQueryData(cacheKey, data, selector, (ref) =>
+          this.objectBucket.get(ref.type, ref.key)
+        )
       }
     )
-    this.changeTracker = new ChangeTracker(this)
   }
 
   getState() {
     return {
+      // note: no need to serialize ChangeTracker's data as we can derive it from QueryBucket + ObjectBucket data
       objects: this.objectBucket.getState(),
       queries: this.queryBucket.getState(),
-      // changeTracker: [] // TODO: implement this
     }
   }
 

@@ -41,16 +41,25 @@ class QueryBucket {
 
   constructor(
     preloadedState?: SerializableBucketItem[],
-    getObjectRef?: (typeName: string, plainKey: any) => NormalizedObjectRef
+    getObjectRef?: (typeName: string, plainKey: any) => NormalizedObjectRef,
+    trackQuery?: (cacheKey: CacheKey, data: any, selector: Selector) => void
   ) {
     const queryData = new Map<CacheKey, QueryBucketItem>()
     if (preloadedState) {
       preloadedState.forEach(({ cacheKey, selector, data, ...rest }) => {
-        queryData.set(new CacheKey(cacheKey), {
+        const restoredCacheKey = new CacheKey(cacheKey)
+        const restoredData =
+          data && selector ? deserializeData(data, getObjectRef!) : data
+        const restoredSelector = selector ? Selector.from(selector) : null
+        queryData.set(restoredCacheKey, {
           ...rest,
-          data: data && selector ? deserializeData(data, getObjectRef!) : data,
-          selector: selector ? Selector.from(selector) : null,
+          data: restoredData,
+          selector: restoredSelector,
         })
+
+        if (data && selector) {
+          trackQuery!(restoredCacheKey, restoredData, restoredSelector!)
+        }
       })
     }
     this.queryData = queryData
