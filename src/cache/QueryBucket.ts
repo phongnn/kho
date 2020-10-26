@@ -36,6 +36,30 @@ interface TrackQueryFn {
   (cacheKey: CacheKey, data: any, selector: Selector): void
 }
 
+function parsePreloadedState(
+  state: SerializableBucketItem[],
+  getObjectRef: (typeName: string, plainKey: any) => NormalizedObjectRef,
+  trackQuery: (cacheKey: CacheKey, data: any, selector: Selector) => void
+) {
+  const result = new Map<CacheKey, QueryBucketItem>()
+  state.forEach(({ cacheKey, selector, data, ...rest }) => {
+    const restoredCacheKey = new CacheKey(cacheKey)
+    const restoredData =
+      data && selector ? deserializeData(data, getObjectRef) : data
+    const restoredSelector = selector ? Selector.from(selector) : null
+    result.set(restoredCacheKey, {
+      ...rest,
+      data: restoredData,
+      selector: restoredSelector,
+    })
+
+    if (data && selector) {
+      trackQuery(restoredCacheKey, restoredData, restoredSelector!)
+    }
+  })
+  return result
+}
+
 class QueryBucket {
   private queryData: Map<CacheKey, QueryBucketItem>
 
@@ -44,25 +68,9 @@ class QueryBucket {
     getObjectRef?: (typeName: string, plainKey: any) => NormalizedObjectRef,
     trackQuery?: (cacheKey: CacheKey, data: any, selector: Selector) => void
   ) {
-    const queryData = new Map<CacheKey, QueryBucketItem>()
-    if (preloadedState) {
-      preloadedState.forEach(({ cacheKey, selector, data, ...rest }) => {
-        const restoredCacheKey = new CacheKey(cacheKey)
-        const restoredData =
-          data && selector ? deserializeData(data, getObjectRef!) : data
-        const restoredSelector = selector ? Selector.from(selector) : null
-        queryData.set(restoredCacheKey, {
-          ...rest,
-          data: restoredData,
-          selector: restoredSelector,
-        })
-
-        if (data && selector) {
-          trackQuery!(restoredCacheKey, restoredData, restoredSelector!)
-        }
-      })
-    }
-    this.queryData = queryData
+    this.queryData = preloadedState
+      ? parsePreloadedState(preloadedState, getObjectRef!, trackQuery!)
+      : new Map<CacheKey, QueryBucketItem>()
   }
 
   getState() {

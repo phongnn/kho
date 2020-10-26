@@ -13,22 +13,24 @@ class CacheContainer {
 
   constructor(preloadedState?: any) {
     this.changeTracker = new ChangeTracker(this)
-    this.objectBucket = new ObjectBucket(
-      preloadedState ? preloadedState.objects : undefined
-    )
-    this.queryBucket = new QueryBucket(
-      preloadedState ? preloadedState.queries : undefined,
-      (typeName: string, plainKey: any) => {
+    if (!preloadedState) {
+      this.objectBucket = new ObjectBucket()
+      this.queryBucket = new QueryBucket()
+    } else {
+      const { objects, queries } = preloadedState
+      const getObjectRef = (typeName: string, plainKey: any) => {
         const type = NormalizedType.get(typeName)
         const objKey = this.objectBucket.findObjectKey(type, plainKey)!
         return new NormalizedObjectRef(type, objKey)
-      },
-      (cacheKey: CacheKey, data: any, selector: Selector) => {
-        this.changeTracker.setQueryData(cacheKey, data, selector, (ref) =>
-          this.objectBucket.get(ref.type, ref.key)
-        )
       }
-    )
+      const readObject = (ref: NormalizedObjectRef) =>
+        this.objectBucket.get(ref.type, ref.key)
+      const trackQuery = (cacheKey: CacheKey, data: any, selector: Selector) =>
+        this.changeTracker.setQueryData(cacheKey, data, selector, readObject)
+
+      this.objectBucket = new ObjectBucket(objects)
+      this.queryBucket = new QueryBucket(queries, getObjectRef, trackQuery)
+    }
   }
 
   getState() {

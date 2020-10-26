@@ -11,51 +11,53 @@ interface SerializableObjectList {
   objects: any[]
 }
 
+function parsePreloadedState(state: SerializableObjectList[]) {
+  const objKeys = new Map<string, NormalizedObjectKey[]>()
+  const getObjKey = (typeName: string, plainKey: any) => {
+    const existingKeys = objKeys.get(typeName)
+    if (!existingKeys) {
+      const newKey = new NormalizedObjectKey(plainKey)
+      objKeys.set(typeName, [newKey])
+      return newKey
+    }
+
+    const existingKey = existingKeys.find((k) => k.matches(plainKey))
+    if (existingKey) {
+      return existingKey
+    }
+
+    const newKey = new NormalizedObjectKey(plainKey)
+    existingKeys.push(newKey)
+    return newKey
+  }
+
+  const getObjectRef = (typeName: string, plainKey: any) => {
+    const type = NormalizedType.get(typeName)
+    const oKey = getObjKey(typeName, plainKey)
+    return new NormalizedObjectRef(type, oKey)
+  }
+
+  const result = new Map<NormalizedType, Map<NormalizedObjectKey, any>>()
+  state.forEach(({ type: typeName, objects: plainObjects }) => {
+    const type = NormalizedType.get(typeName)
+    const restoredObjects = new Map(
+      plainObjects.map((obj) => [
+        getObjKey(typeName, extractPlainKey(obj, type)),
+        deserializeData(obj, getObjectRef),
+      ])
+    )
+    result.set(type, restoredObjects)
+  })
+  return result
+}
+
 class ObjectBucket {
   private objects: Map<NormalizedType, Map<NormalizedObjectKey, any>>
 
   constructor(preloadedState?: SerializableObjectList[]) {
-    const objects = new Map<NormalizedType, Map<NormalizedObjectKey, any>>()
-    if (preloadedState) {
-      const objKeys = new Map<string, NormalizedObjectKey[]>()
-      const getObjKey = (typeName: string, plainKey: any) => {
-        const existingKeys = objKeys.get(typeName)
-        if (!existingKeys) {
-          const newKey = new NormalizedObjectKey(plainKey)
-          objKeys.set(typeName, [newKey])
-          return newKey
-        }
-
-        const existingKey = existingKeys.find((k) => k.matches(plainKey))
-        if (existingKey) {
-          return existingKey
-        }
-
-        const newKey = new NormalizedObjectKey(plainKey)
-        existingKeys.push(newKey)
-        return newKey
-      }
-
-      const getObjectRef = (typeName: string, plainKey: any) => {
-        const type = NormalizedType.get(typeName)
-        const oKey = getObjKey(typeName, plainKey)
-        return new NormalizedObjectRef(type, oKey)
-      }
-
-      preloadedState.forEach(({ type: typeName, objects: plainObjects }) => {
-        const type = NormalizedType.get(typeName)
-        objects.set(
-          type,
-          new Map(
-            plainObjects.map((obj) => [
-              getObjKey(typeName, extractPlainKey(obj, type)),
-              deserializeData(obj, getObjectRef),
-            ])
-          )
-        )
-      })
-    }
-    this.objects = objects
+    this.objects = preloadedState
+      ? parsePreloadedState(preloadedState)
+      : new Map<NormalizedType, Map<NormalizedObjectKey, any>>()
   }
 
   getState() {
