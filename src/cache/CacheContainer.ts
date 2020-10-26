@@ -182,12 +182,16 @@ class CacheContainer {
   }
 
   removeQueries(keys: CacheKey[]) {
-    keys.forEach((k) => this.queryBucket.delete(k))
+    keys.forEach((k) => {
+      this.changeTracker.removeQuery(k)
+      this.queryBucket.delete(k)
+    })
   }
 
   clear() {
     this.objectBucket.clear()
     this.queryBucket.clear()
+    this.changeTracker.clear()
   }
 
   //============= methods called by CacheProxyImpl =========

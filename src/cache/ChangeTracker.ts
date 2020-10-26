@@ -17,6 +17,15 @@ export default class ChangeTracker {
     this.activeQueryCacheKeys.delete(cacheKey)
   }
 
+  clear() {
+    // note: don't clear the activeQueryCacheKeys
+    this.queryObjectsMap.clear()
+  }
+
+  removeQuery(cacheKey: CacheKey) {
+    this.queryObjectsMap.delete(cacheKey)
+  }
+
   saveQueryData(cacheKey: CacheKey, objKeys: Set<NormalizedObjectKey>) {
     this.queryObjectsMap.set(cacheKey, objKeys)
     return this.findAffectedCacheKeys(objKeys, cacheKey)
@@ -73,6 +82,8 @@ export default class ChangeTracker {
     this.parseObjectTree(data, selector, objKeys, readObject)
     this.queryObjectsMap.set(cacheKey, objKeys)
   }
+
+  // =============== private methods ======================
 
   private parseObjectTree(
     tree: any,
