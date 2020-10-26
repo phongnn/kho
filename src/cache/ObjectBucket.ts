@@ -60,7 +60,7 @@ class ObjectBucket {
       : new Map<NormalizedType, Map<NormalizedObjectKey, any>>()
   }
 
-  getState() {
+  getState(): any {
     const result: SerializableObjectList[] = []
     this.objects.forEach((objMap, type) => {
       const list: any[] = []

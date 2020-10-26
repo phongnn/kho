@@ -73,7 +73,7 @@ class QueryBucket {
       : new Map<CacheKey, QueryBucketItem>()
   }
 
-  getState() {
+  getState(): any {
     const result: SerializableBucketItem[] = []
     this.queryData.forEach(({ selector, data, ...rest }, cacheKey) => {
       result.push({
