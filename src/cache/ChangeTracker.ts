@@ -64,11 +64,12 @@ export default class ChangeTracker {
   }
 
   updateQueryData(cacheKey: CacheKey, data: any, selector: Selector) {
-    const objKeys = this.queryObjectsMap.get(cacheKey)!
-    // update object keys for this cache key
+    // const objKeys = this.queryObjectsMap.get(cacheKey)!
+    const objKeys = new Set<NormalizedObjectKey>()
     this.parseObjectTree(data, selector, objKeys, (ref) =>
       this.cache.readObject(ref)
     )
+    this.queryObjectsMap.set(cacheKey, objKeys)
   }
 
   // called when restoring store from preloaded state
