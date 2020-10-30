@@ -19,7 +19,7 @@ export class CacheKey {
 
 interface QueryBucketItem {
   name: string
-  arguments: any
+  arguments?: any
   data: any
   selector: Selector | null
 }
@@ -27,7 +27,7 @@ interface QueryBucketItem {
 interface SerializableBucketItem {
   cacheKey: any
   name: string
-  arguments: any
+  arguments?: any
   data: any
   selector: PlainSelector | null
 }
@@ -75,14 +75,20 @@ class QueryBucket {
 
   getState(): any {
     const result: SerializableBucketItem[] = []
-    this.queryData.forEach(({ selector, data, ...rest }, cacheKey) => {
-      result.push({
-        cacheKey: cacheKey.plain(),
-        ...rest,
-        data: data && selector ? serializeData(data) : data,
-        selector: selector ? selector.plain() : null,
-      })
-    })
+    this.queryData.forEach(
+      ({ selector, data, name, arguments: args }, cacheKey) => {
+        const item: any = {
+          cacheKey: cacheKey.plain(),
+          name,
+          data: data && selector ? serializeData(data) : data,
+          selector: selector ? selector.plain() : null,
+        }
+        if (args) {
+          item.arguments = args
+        }
+        result.push(item)
+      }
+    )
     return result
   }
 
