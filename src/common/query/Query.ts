@@ -52,7 +52,10 @@ class QueryKey<TArguments> implements BaseQueryKey {
     return type === "Query" && name === this.name && deepEqual(args, this.args)
   }
 
-  plain = () => ({ type: "Query", name: this.name, args: this.args })
+  plain = () =>
+    this.args
+      ? { type: "Query", name: this.name, args: this.args }
+      : { type: "Query", name: this.name }
 }
 
 export class Query<TResult, TArguments, TContext> extends BaseQuery {
