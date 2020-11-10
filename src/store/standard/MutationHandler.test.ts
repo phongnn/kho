@@ -236,7 +236,7 @@ describe("beforeQueryUpdates()", () => {
     )
     const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
       beforeQueryUpdates: (cache) => {
-        const ref = cache.findObjectRef(UserType, { username: "x" })!
+        const ref = cache.findObjectRef(UserType, "x")!
         cache.updateObject(ref, {
           ...cache.readObject(ref),
           email: "new-x@t.s",
@@ -285,7 +285,7 @@ describe("beforeQueryUpdates()", () => {
 
     const mutation = new Mutation("UpdateData", () => Promise.resolve(), {
       beforeQueryUpdates: (cache) =>
-        cache.deleteObject(cache.findObjectRef(UserType, { username: "x" })!),
+        cache.deleteObject(cache.findObjectRef(UserType, "x")!),
     })
     store.processMutation(mutation)
   })

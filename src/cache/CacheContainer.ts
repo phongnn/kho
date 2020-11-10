@@ -213,7 +213,7 @@ class CacheContainer {
   }
 
   findObjectRef(type: NormalizedType, key: any) {
-    const plainKey = extractPlainKey(key, type)
+    const plainKey = typeof key === "object" ? extractPlainKey(key, type) : key
     const objectKey = this.objectBucket.findObjectKey(type, plainKey)
     return objectKey ? new NormalizedObjectRef(type, objectKey) : null
   }
